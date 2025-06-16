@@ -15,10 +15,11 @@ export const HtmlFileRenderer: React.FC<HtmlFileRendererProps> = ({
   isInlineHtml = false,
   htmlContent: inlineHtmlContent
 }) => {
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [isExpanded, setIsExpanded] = useState<boolean>(true);
   const [htmlContent, setHtmlContent] = useState<string>(inlineHtmlContent || '');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [fileExists, setFileExists] = useState<boolean | null>(null);
 
   const cleanFilePath = (path: string): string => {
     // For inline HTML, return a descriptive name
@@ -36,6 +37,49 @@ export const HtmlFileRenderer: React.FC<HtmlFileRendererProps> = ({
     return cleaned;
   };
 
+  const checkFileExists = async () => {
+    // For inline HTML, file always "exists"
+    if (isInlineHtml && inlineHtmlContent) {
+      setFileExists(true);
+      return;
+    }
+    
+    try {
+      const cleanPath = cleanFilePath(filePath);
+      console.log('Checking if HTML file exists:', cleanPath);
+      
+      // Use a simple GET request to check if file exists
+      // We'll abort quickly to avoid downloading large files
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+      
+      const response = await fetch(`/api/load-html-file?path=${encodeURIComponent(cleanPath)}`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        setFileExists(true);
+      } else if (response.status === 404) {
+        console.log(`File does not exist: ${cleanPath} (404 Not Found)`);
+        setFileExists(false);
+      } else {
+        console.log(`File check failed: ${cleanPath} (${response.status})`);
+        setFileExists(false);
+      }
+    } catch (err: any) {
+      // If it's an abort error, still check - might just be slow
+      if (err.name === 'AbortError') {
+        console.log(`File check timed out, assuming file exists: ${filePath}`);
+        setFileExists(true);
+      } else {
+        console.log(`Error checking file existence: ${err.message}`);
+        setFileExists(false);
+      }
+    }
+  };
+
   const loadHtmlContent = async () => {
     // If it's inline HTML, content is already provided
     if (isInlineHtml && inlineHtmlContent) {
@@ -43,7 +87,7 @@ export const HtmlFileRenderer: React.FC<HtmlFileRendererProps> = ({
       return;
     }
     
-    if (isExpanded && !htmlContent && !error) {
+    if (isExpanded && !htmlContent && !error && fileExists) {
       setIsLoading(true);
       setError('');
       
@@ -69,10 +113,38 @@ export const HtmlFileRenderer: React.FC<HtmlFileRendererProps> = ({
   };
 
   useEffect(() => {
-    if (isExpanded) {
+    // First check if file exists
+    checkFileExists();
+  }, [filePath, isInlineHtml, inlineHtmlContent]);
+
+  useEffect(() => {
+    // Only load content if file exists and component is expanded
+    if (isExpanded && fileExists) {
       loadHtmlContent();
     }
-  }, [isExpanded, filePath, isInlineHtml, inlineHtmlContent]);
+  }, [isExpanded, fileExists]);
+
+  // Don't render the component if file doesn't exist
+  if (fileExists === false) {
+    return null;
+  }
+
+  // Show loading state while checking file existence
+  if (fileExists === null) {
+    return (
+      <div className="my-4 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <IconFile size={20} className="text-green-600 dark:text-green-400" />
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-2"></div>
+              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const openInSystemBrowser = () => {
     if (isInlineHtml) {
@@ -145,7 +217,7 @@ export const HtmlFileRenderer: React.FC<HtmlFileRendererProps> = ({
                 {isInlineHtml ? 'Inline HTML' : 'HTML Plot'}
               </span>
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {isInlineHtml ? 'HTML response content' : 'Interactive Bokeh visualization'}
+                {isInlineHtml ? 'HTML response content' : 'Interactive visualization'}
               </span>
             </div>
           </div>

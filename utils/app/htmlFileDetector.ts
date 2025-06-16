@@ -48,6 +48,10 @@ export interface HtmlFileLink {
       /(?<!href=["']?)`?([^\s"'<>`]+\.html)`?(?!["'])/g,
       // File paths in backticks specifically
       /`([^`]+\.html)`/g,
+      // File paths wrapped in double quotes
+      /"([^"]+\.html)"/g,
+      // File paths wrapped in single quotes
+      /'([^']+\.html)'/g,
     ];
   
     patterns.forEach((pattern, patternIndex) => {
@@ -80,6 +84,24 @@ export interface HtmlFileLink {
           }
         } else if (patternIndex === 4) {
           // File path in backticks specifically
+          filePath = match[1];
+          linkText = extractFilenameFromPath(filePath);
+          
+          // Ensure file:// prefix
+          if (!filePath.startsWith('file://')) {
+            filePath = `file://${filePath}`;
+          }
+        } else if (patternIndex === 5) {
+          // File path wrapped in double quotes
+          filePath = match[1];
+          linkText = extractFilenameFromPath(filePath);
+          
+          // Ensure file:// prefix
+          if (!filePath.startsWith('file://')) {
+            filePath = `file://${filePath}`;
+          }
+        } else if (patternIndex === 6) {
+          // File path wrapped in single quotes
           filePath = match[1];
           linkText = extractFilenameFromPath(filePath);
           
@@ -192,6 +214,12 @@ export interface HtmlFileLink {
     
     // Remove HTML file paths wrapped in backticks specifically
     cleanContent = cleanContent.replace(/`([^`]+\.html)`/g, '');
+    
+    // Remove HTML file paths wrapped in double quotes
+    cleanContent = cleanContent.replace(/"([^"]+\.html)"/g, '');
+    
+    // Remove HTML file paths wrapped in single quotes
+    cleanContent = cleanContent.replace(/'([^']+\.html)'/g, '');
     
     // Clean up extra whitespace
     cleanContent = cleanContent.replace(/\n\s*\n\s*\n/g, '\n\n');
