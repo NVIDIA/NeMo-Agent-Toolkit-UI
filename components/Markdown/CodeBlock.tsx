@@ -1,3 +1,4 @@
+```javascript
 import { IconCheck, IconClipboard, IconDownload } from '@tabler/icons-react';
 import { FC, memo, MouseEvent, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -126,3 +127,4 @@ export const CodeBlock: FC<Props> = memo(({ language, value }) => {
   );
 });
 CodeBlock.displayName = 'CodeBlock';
+```

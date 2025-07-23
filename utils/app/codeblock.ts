@@ -1,3 +1,4 @@
+```typescript
 interface languageMap {
   [key: string]: string | undefined;
 }
@@ -37,3 +38,4 @@ export const generateRandomString = (length: number, lowercase = false) => {
   }
   return lowercase ? result.toLowerCase() : result;
 };
+```

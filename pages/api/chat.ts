@@ -1,3 +1,4 @@
+```typescript
 import { ChatBody } from '@/types/chat';
 import { delay } from '@/utils/app/helper';
 export const config = {
@@ -50,7 +51,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    console.log('aiq - making request to', { url: chatCompletionURL });
+    console.log('Blakes - making request to', { url: chatCompletionURL });
 
     let response = await fetch(chatCompletionURL, {
       method: 'POST',
@@ -61,7 +62,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify(payload),
     });
 
-    console.log('aiq - received response from server', response.status);
+    console.log('Blakes - received response from server', response.status);
 
     if (!response.ok) {
       let errorMessage = await response.text();
@@ -75,7 +76,7 @@ const handler = async (req: Request): Promise<Response> => {
         }
         
       }
-      console.log('aiq - received error response from server', errorMessage);
+      console.log('Blakes - received error response from server', errorMessage);
       // For other errors, return a Response object with the error message
       const formattedError = `Something went wrong. Please try again. \n\n<details><summary>Details</summary>Error Message: ${errorMessage || 'Unknown error'}</details>`
       return new Response(formattedError, {
@@ -87,7 +88,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // response handling for streaming schema
     if (chatCompletionURL.includes('stream')) {
-      console.log('aiq - processing streaming response');
+      console.log('Blakes - processing streaming response');
       const encoder = new TextEncoder();
       const decoder = new TextDecoder();
 
@@ -116,11 +117,11 @@ const handler = async (req: Request): Promise<Response> => {
                     const parsed = JSON.parse(data);
                     const content = parsed.choices[0]?.message?.content || parsed.choices[0]?.delta?.content || '';
                     if (content) {
-                      // console.log(`aiq - stream response received from server with length`, content?.length)
+                      // console.log(`Blakes - stream response received from server with length`, content?.length)
                       controller.enqueue(encoder.encode(content));
                     }
                   } catch (error) {
-                    console.log('aiq - error parsing JSON:', error);
+                    console.log('Blakes - error parsing JSON:', error);
                   }
                 }
                 // TODO - fix or remove this and use websocket to support intermediate data
@@ -164,20 +165,20 @@ const handler = async (req: Request): Promise<Response> => {
                       // await delay(1000)
                     } catch (error) {
                       controller.enqueue(encoder.encode('Error parsing intermediate data: ' + error));
-                      console.log('aiq - error parsing JSON:', error);
+                      console.log('Blakes - error parsing JSON:', error);
                     }
                   }
                   else {
-                    console.log('aiq - intermediate data is not enabled');
+                    console.log('Blakes - intermediate data is not enabled');
                   }
                 }
               }
             }
           } catch (error) {
-            console.log('aiq - stream reading error, closing stream', error);
+            console.log('Blakes - stream reading error, closing stream', error);
             controller.close();
           } finally {
-            console.log('aiq - response processing is completed, closing stream');
+            console.log('Blakes - response processing is completed, closing stream');
             controller.close();
             reader?.releaseLock();
           }
@@ -189,14 +190,14 @@ const handler = async (req: Request): Promise<Response> => {
 
     // response handling for non straming schema
     else {
-      console.log('aiq - processing non streaming response');
+      console.log('Blakes - processing non streaming response');
       const data = await response.text();
       let parsed = null;
     
       try {
         parsed = JSON.parse(data);
       } catch (error) {
-        console.log('aiq - error parsing JSON response', error);
+        console.log('Blakes - error parsing JSON response', error);
       }
     
       // Safely extract content with proper checks
@@ -209,10 +210,10 @@ const handler = async (req: Request): Promise<Response> => {
         data; // Final fallback to raw `data`
     
       if (content) {
-        console.log('aiq - response processing is completed');
+        console.log('Blakes - response processing is completed');
         return new Response(content);
       } else {
-        console.log('aiq - error parsing response');
+        console.log('Blakes - error parsing response');
         return new Response(response.body || data);
       }
     }
@@ -225,3 +226,4 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 export default handler;
+```

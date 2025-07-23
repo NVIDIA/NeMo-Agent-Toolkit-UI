@@ -1,3 +1,4 @@
+```javascript
 'use client';
 import {
   IconCheck,
@@ -355,3 +356,4 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex, onEdit}) =>
 });
 ChatMessage.displayName = 'ChatMessage';
 
+```
