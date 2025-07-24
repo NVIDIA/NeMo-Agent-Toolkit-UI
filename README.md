@@ -129,6 +129,9 @@ npm run dev
 # Build the Docker image
 docker build -t aiqtoolkit-ui .
 
+# Build without using cache (for troubleshooting or after major changes)
+docker build --no-cache -t aiqtoolkit-ui .
+
 # Requires --network=host to access external server
 docker run -d --name aiq-ui --network=host --env-file .env aiqtoolkit-ui
 ```

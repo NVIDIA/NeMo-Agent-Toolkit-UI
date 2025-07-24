@@ -1,12 +1,13 @@
 services:
 
-# To pull the image from NVIDIA's registry, you need to log in first.
-# Make sure you have your NVIDIA API key ready.
+# Building the simple_calculator server depends on images from NVIDIA's registry
+# You'll need to log in first, and have your NVIDIA API key ready.
+# Commands as follows:
 # docker login nvcr.io
 # When prompted:
 # Username: $oauthtoken
 # Password: <nvapi-your_actual_api_key_here>
-# The username really is $oauthtoken (no need to change), and the password is your NVIDIA API key.
+# Note: the username really is $oauthtoken (no need to change). The password is your NVIDIA API key.
   aiq-server:
     build:
       context: ../NeMo-Agent-Toolkit  # Point to the sibling directory
