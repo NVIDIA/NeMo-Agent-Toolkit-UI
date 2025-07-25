@@ -21,6 +21,8 @@ import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import { getReactMarkDownCustomComponents } from '../Markdown/CustomComponents';
 import { fixMalformedHtml, generateContentIntermediate } from '@/utils/app/helper';
+import { HtmlFileRenderer } from './HtmlFileRenderer';
+import { detectHtmlFileLinks, removeHtmlFileLinksFromContent, HtmlFileLink } from '@/utils/app/htmlFileDetector';
 
 export interface Props {
   message: Message;
@@ -188,6 +190,35 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex, onEdit}) =>
     return fixMalformedHtml(result)?.trim()?.replace(/\n\s+/, "\n ");
   };
 
+  // Detect HTML files in assistant messages
+  const htmlFileLinks: HtmlFileLink[] = message.role === 'assistant' ? detectHtmlFileLinks(message.content) : [];
+  
+  // Prepare content with HTML file links removed to avoid duplicate display
+  const prepareContentWithoutHtmlLinks = ({ 
+    message = {}, 
+    responseContent = true, 
+    intermediateStepsContent = false, 
+    role = 'assistant' 
+  } = {}) => {
+    const { content = '', intermediateSteps = [] } = message;
+  
+    if (role === 'user') return content.trim();
+  
+    let result = '';
+    if (intermediateStepsContent) {
+      result += generateContentIntermediate(intermediateSteps);
+    }
+    
+    if (responseContent) {
+      // Remove HTML file links from content
+      const cleanContent = removeHtmlFileLinksFromContent(content);
+      result += result ? `\n\n${cleanContent}` : cleanContent;
+    }
+
+    // fixing malformed html and removing extra spaces to avoid markdown issues
+    return fixMalformedHtml(result)?.trim()?.replace(/\n\s+/, "\n ");
+  };
+
   return (
     <div
       className={`group md:px-4 ${
@@ -296,7 +327,7 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex, onEdit}) =>
                     linkTarget="_blank"
                     components={getReactMarkDownCustomComponents(messageIndex, message?.id)}
                   >
-                    {prepareContent({ message, role: 'assistant', intermediateStepsContent: true, responseContent: false })}
+                    {prepareContentWithoutHtmlLinks({ message, role: 'assistant', intermediateStepsContent: true, responseContent: false })}
                   </MemoizedReactMarkdown>
                 </div>
                 {/* for response content */}
@@ -313,9 +344,23 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex, onEdit}) =>
                     linkTarget="_blank"
                     components={getReactMarkDownCustomComponents(messageIndex, message?.id)}
                   >
-                    {prepareContent({ message, role: 'assistant', intermediateStepsContent: false, responseContent: true })}
+                    {prepareContentWithoutHtmlLinks({ message, role: 'assistant', intermediateStepsContent: false, responseContent: true })}
                   </MemoizedReactMarkdown>
                 </div>
+                {/* HTML File Renderers */}
+                {htmlFileLinks.length > 0 && (
+                  <div className="mt-4">
+                    {htmlFileLinks.map((htmlFile, index) => (
+                      <HtmlFileRenderer
+                        key={`${htmlFile.filePath}-${index}`}
+                        filePath={htmlFile.filePath}
+                        title={htmlFile.title}
+                        isInlineHtml={htmlFile.isInlineHtml}
+                        htmlContent={htmlFile.htmlContent}
+                      />
+                    ))}
+                  </div>
+                )}
                 <div className="mt-1 flex gap-1">
                   { 
                     !messageIsStreaming && 
