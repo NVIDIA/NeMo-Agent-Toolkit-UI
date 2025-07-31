@@ -22,8 +22,8 @@ We welcome the following types of contributions:
 To get started, fork the project on GitHub and clone it locally on your machine. Then, create a new branch to work on your changes.
 
 ```bash
-git clone https://github.com/NVIDIA/AIQ Toolkit-UI.git
-cd AIQ Toolkit-UI
+git clone git@github.com:NVIDIA/NeMo-Agent-Toolkit-UI.git
+cd NeMo-Agent-Toolkit-UI
 git checkout -b my-branch-name
 ```
 
