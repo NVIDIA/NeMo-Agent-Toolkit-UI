@@ -39,7 +39,6 @@ body:
       label: Which installation method(s) does this occur on?
       multiple: true
       options:
-        - PyPi
         - Source
 
   - type: textarea
