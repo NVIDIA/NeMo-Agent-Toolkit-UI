@@ -112,7 +112,7 @@ async function processGenerateStream(response: Response, encoder: TextEncoder, d
                 if (content && typeof content === 'string') {
                   controller.enqueue(encoder.encode(content));
                 }
-              } catch {}
+              } catch { }
             } else if (
               line.includes('<intermediatestep>') &&
               line.includes('</intermediatestep>') &&
@@ -139,7 +139,7 @@ async function processGenerateStream(response: Response, encoder: TextEncoder, d
                 };
                 const msg = `<intermediatestep>${JSON.stringify(intermediateMessage)}</intermediatestep>`;
                 controller.enqueue(encoder.encode(msg));
-              } catch {}
+              } catch { }
             }
           }
         }
@@ -156,7 +156,7 @@ async function processGenerateStream(response: Response, encoder: TextEncoder, d
               controller.enqueue(encoder.encode(value.trim()));
               finalAnswerSent = true;
             }
-          } catch {}
+          } catch { }
         }
         controller.close();
         reader?.releaseLock();
@@ -198,7 +198,7 @@ async function processChatStream(response: Response, encoder: TextEncoder, decod
                 if (content) {
                   controller.enqueue(encoder.encode(content));
                 }
-              } catch {}
+              } catch { }
             } else if (
               line.startsWith('intermediate_data: ') &&
               additionalProps.enableIntermediateSteps
@@ -222,7 +222,7 @@ async function processChatStream(response: Response, encoder: TextEncoder, decod
                 };
                 const msg = `<intermediatestep>${JSON.stringify(intermediateMessage)}</intermediatestep>`;
                 controller.enqueue(encoder.encode(msg));
-              } catch {}
+              } catch { }
             }
           }
         }
@@ -255,6 +255,7 @@ const handler = async (req: Request): Promise<Response> => {
     headers: {
       'Content-Type': 'application/json',
       'Conversation-Id': req.headers.get('Conversation-Id') || '',
+      'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone || 'Etc/UTC',
     },
     body: JSON.stringify(payload),
   });
