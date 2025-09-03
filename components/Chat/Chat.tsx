@@ -875,6 +875,7 @@ export const Chat = () => {
             headers: {
               'Content-Type': 'application/json',
               'Conversation-Id': selectedConversation?.id || '',
+              'User-Message-ID': message?.id || '',
             },
             signal: controllerRef.current.signal, // Use ref here
             body,

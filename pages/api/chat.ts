@@ -256,6 +256,7 @@ const handler = async (req: Request): Promise<Response> => {
       'Content-Type': 'application/json',
       'Conversation-Id': req.headers.get('Conversation-Id') || '',
       'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone || 'Etc/UTC',
+      'User-Message-ID': req.headers.get('User-Message-ID') || '',
     },
     body: JSON.stringify(payload),
   });
