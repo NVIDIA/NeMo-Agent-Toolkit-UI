@@ -118,7 +118,8 @@ export function createAssistantMessage(
   content: string = '',
   intermediateSteps: IntermediateStep[] = [],
   humanInteractionMessages: any[] = [],
-  errorMessages: any[] = []
+  errorMessages: any[] = [],
+  traceId?: string
 ): Message {
   return {
     role: 'assistant' as const,
@@ -128,7 +129,8 @@ export function createAssistantMessage(
     intermediateSteps,
     humanInteractionMessages,
     errorMessages,
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    traceId
   };
 }
 
@@ -138,13 +140,15 @@ export function createAssistantMessage(
 export function updateAssistantMessage(
   message: Message,
   newContent?: string,
-  newIntermediateSteps?: IntermediateStep[]
+  newIntermediateSteps?: IntermediateStep[],
+  traceId?: string
 ): Message {
   return {
     ...message,
     content: newContent !== undefined ? newContent : message.content || '',
     intermediateSteps: newIntermediateSteps || message.intermediateSteps || [],
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    traceId: traceId !== undefined ? traceId : message.traceId
   };
 }
 

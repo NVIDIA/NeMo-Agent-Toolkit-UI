@@ -229,9 +229,9 @@ export const Chat = () => {
   };
 
   const handleUserInteraction = ({
-    interactionMessage = {},
-    userResponse = '',
-  }: any) => {
+                                   interactionMessage = {},
+                                   userResponse = '',
+                                 }: any) => {
     // todo send user input to websocket server as user response to interaction message
     // console.log("User response:", userResponse);
     const wsMessage = {
@@ -342,7 +342,7 @@ export const Chat = () => {
       ws.onopen = () => {
         toast.success(
           'Connected to ' +
-            (sessionStorage.getItem('webSocketURL') || webSocketURL),
+          (sessionStorage.getItem('webSocketURL') || webSocketURL),
           {
             id: 'websocketSuccessToastId',
           }
@@ -555,10 +555,10 @@ export const Chat = () => {
       return messages.map((m, idx) =>
         idx === messages.length - 1
           ? {
-              ...m,
-              errorMessages: [...(m.errorMessages || []), message],
-              timestamp: Date.now(),
-            }
+            ...m,
+            errorMessages: [...(m.errorMessages || []), message],
+            timestamp: Date.now(),
+          }
           : m
       );
     } else {
@@ -599,7 +599,7 @@ export const Chat = () => {
       return; // Don't process invalid messages
     }
 
-        // Filter messages based on active conversation for stop generating functionality
+    // Filter messages based on active conversation for stop generating functionality
     const messageConversationId = message.conversation_id;
     const currentConversationId = selectedConversationRef.current?.id;
 
@@ -789,11 +789,11 @@ export const Chat = () => {
                     'attachments' in message.content &&
                     (message.content as any).attachments?.length > 0
                       ? (message.content as any).attachments?.map(
-                          (attachment: any) => ({
-                            type: 'image',
-                            image_url: attachment?.content,
-                          })
-                        )
+                        (attachment: any) => ({
+                          type: 'image',
+                          image_url: attachment?.content,
+                        })
+                      )
                       : []),
                   ],
                 };
@@ -804,8 +804,8 @@ export const Chat = () => {
           else {
             chatMessages = [
               updatedConversation?.messages[
-                updatedConversation?.messages?.length - 1
-              ],
+              updatedConversation?.messages?.length - 1
+                ],
             ].map(message => {
               return {
                 role: message.role,
@@ -819,7 +819,7 @@ export const Chat = () => {
             });
           }
 
-                              const wsMessage = {
+          const wsMessage = {
             type: webSocketMessageTypes.userMessage,
             schema_type:
               sessionStorage.getItem('webSocketSchema') || webSocketSchema,
@@ -841,8 +841,8 @@ export const Chat = () => {
           return {
             role: message.role,
             content: (typeof message.content === 'string'
-              ? message.content
-              : ''
+                ? message.content
+                : ''
             ).trim(),
           };
         });
@@ -1035,7 +1035,19 @@ export const Chat = () => {
                 );
               }
 
-              text = text + chunkValue;
+              // Check if chunkValue contains embedded trace_id before adding to text
+              let cleanChunkValue = chunkValue;
+              let embeddedTraceId: string | undefined; 
+
+              if (chunkValue.includes('__TRACE_ID__:')) {
+                const parts = chunkValue.split('__TRACE_ID__:');
+                if (parts.length === 2) {
+                  cleanChunkValue = parts[0]; // Use only the content part
+                  embeddedTraceId = parts[1];
+                }
+              }
+
+              text = text + cleanChunkValue;
 
               homeDispatch({ field: 'loading', value: false });
               if (isFirst) {
@@ -1048,7 +1060,7 @@ export const Chat = () => {
                     processedIntermediateSteps,
                     step,
                     sessionStorage.getItem('intermediateStepOverride') ===
-                      'false'
+                    'false'
                       ? false
                       : intermediateStepOverride
                   );
@@ -1061,6 +1073,7 @@ export const Chat = () => {
                     role: 'assistant',
                     content: text, // main response content without intermediate steps
                     intermediateSteps: [...processedIntermediateSteps], // intermediate steps
+                    traceId: embeddedTraceId, // include the extracted trace ID
                   },
                 ];
 
@@ -1089,7 +1102,7 @@ export const Chat = () => {
                           updatedIntermediateSteps,
                           step,
                           sessionStorage.getItem('intermediateStepOverride') ===
-                            'false'
+                          'false'
                             ? false
                             : intermediateStepOverride
                         );
@@ -1100,6 +1113,7 @@ export const Chat = () => {
                         ...message,
                         content: text, // main response content
                         intermediateSteps: updatedIntermediateSteps, // intermediate steps
+                        traceId: embeddedTraceId, // preserve existing or use streaming trace ID
                       };
                       return msg;
                     }
@@ -1295,10 +1309,10 @@ export const Chat = () => {
   useEffect(() => {
     throttledScrollDown();
     selectedConversation &&
-      setCurrentMessage(() => {
-        const len = selectedConversation?.messages.length ?? 0;
-        return len >= 2 ? selectedConversation.messages[len - 2] : undefined;
-      });
+    setCurrentMessage(() => {
+      const len = selectedConversation?.messages.length ?? 0;
+      return len >= 2 ? selectedConversation.messages[len - 2] : undefined;
+    });
   }, [selectedConversation, throttledScrollDown]);
 
   useEffect(() => {

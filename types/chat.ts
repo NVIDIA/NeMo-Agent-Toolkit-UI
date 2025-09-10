@@ -7,6 +7,7 @@ export interface Message {
   errorMessages?: any;
   timestamp?: number;
   parentId?: string;
+  traceId?: string;
 }
 
 export type Role = 'assistant' | 'user' | 'agent' | 'system';
