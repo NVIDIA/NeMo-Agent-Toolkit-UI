@@ -85,6 +85,7 @@ NOTE: Most of the time, you will want to select /chat/stream for intermediate re
   - /generate/stream - Streaming response generation
   - /chat - Single response chat completion
   - /chat/stream - Streaming chat completion
+  - /chat/ca-rag - Single response chat completion with [Context-Aware RAG](https://github.com/NVIDIA/context-aware-rag) backend
 - `WebSocket URL for Completion`: WebSocket URL to connect to running NeMo Agent Toolkit server
 - `WebSocket Schema`: Workflow schema type over WebSocket connection
 
