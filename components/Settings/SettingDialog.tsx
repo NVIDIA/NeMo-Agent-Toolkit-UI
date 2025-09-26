@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 
 import { useTranslation } from 'next-i18next';
 
+import { useTheme } from '@/contexts/ThemeContext';
 import HomeContext from '@/pages/api/home/home.context';
 
 interface Props {
@@ -15,7 +16,6 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const {
     state: {
-      lightMode,
       chatCompletionURL,
       webSocketURL,
       webSocketSchema: schema,
@@ -27,7 +27,13 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
     dispatch: homeDispatch,
   } = useContext(HomeContext);
 
+  const { lightMode, setLightMode } = useTheme();
   const [theme, setTheme] = useState(lightMode);
+
+  // Sync local theme state with global lightMode
+  useEffect(() => {
+    setTheme(lightMode);
+  }, [lightMode]);
   const [chatCompletionEndPoint, setChatCompletionEndPoint] = useState(
     sessionStorage.getItem('chatCompletionURL') || chatCompletionURL,
   );
@@ -74,7 +80,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       return;
     }
 
-    homeDispatch({ field: 'lightMode', value: theme });
+    setLightMode(theme);
     homeDispatch({ field: 'chatCompletionURL', value: chatCompletionEndPoint });
     homeDispatch({ field: 'webSocketURL', value: webSocketEndPoint });
     homeDispatch({ field: 'webSocketSchema', value: webSocketSchema });
