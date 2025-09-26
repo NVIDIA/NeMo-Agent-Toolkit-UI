@@ -1,10 +1,10 @@
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface DataStreamDisplayProps {
   dataStreams: string[];
   selectedStream: string;
-  onStreamChange: (stream: string) => void;
+  onStreamChange: (_stream: string) => void;
 }
 
 interface FinalizedDataEntry {
@@ -16,7 +16,7 @@ interface FinalizedDataEntry {
   pending?: boolean;
 }
 
-export const DataStreamDisplay: React.FC<DataStreamDisplayProps> = React.memo(({
+const DataStreamDisplayComponent: React.FC<DataStreamDisplayProps> = React.memo(({
   dataStreams,
   selectedStream,
   onStreamChange
@@ -164,3 +164,7 @@ export const DataStreamDisplay: React.FC<DataStreamDisplayProps> = React.memo(({
     </div>
   );
 });
+
+DataStreamDisplayComponent.displayName = 'DataStreamDisplay';
+
+export const DataStreamDisplay = DataStreamDisplayComponent;

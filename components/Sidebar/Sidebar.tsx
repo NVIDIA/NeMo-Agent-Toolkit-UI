@@ -2,12 +2,12 @@ import { IconFolderPlus, IconMistOff, IconPlus } from '@tabler/icons-react';
 import { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import Search from '../Search';
+
 import {
   CloseSidebarButton,
   OpenSidebarButton,
 } from './components/OpenCloseButton';
-
-import Search from '../Search';
 
 interface Props<T> {
   isOpen: boolean;
@@ -18,11 +18,11 @@ interface Props<T> {
   folderComponent: ReactNode;
   footerComponent?: ReactNode;
   searchTerm: string;
-  handleSearchTerm: (searchTerm: string) => void;
+  handleSearchTerm: (_searchTerm: string) => void;
   toggleOpen: () => void;
   handleCreateItem: () => void;
   handleCreateFolder: () => void;
-  handleDrop: (e: any) => void;
+  handleDrop: (_e: any) => void;
 }
 
 const Sidebar = <T,>({

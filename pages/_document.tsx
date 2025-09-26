@@ -1,7 +1,9 @@
 import { DocumentProps, Head, Html, Main, NextScript } from 'next/document';
+import Script from 'next/script';
+
+import { APPLICATION_UI_NAME } from '@/constants/constants';
 
 import i18nextConfig from '../next-i18next.config';
-import { APPLICATION_UI_NAME } from '@/constants/constants';
 
 type Props = DocumentProps & {
   // add custom document props
@@ -18,9 +20,9 @@ export default function Document(props: Props) {
           name="apple-mobile-web-app-title"
           content={APPLICATION_UI_NAME}
         ></meta>
-        <script src="/__ENV.js" />
       </Head>
       <body>
+        <Script src="/__ENV.js" strategy="beforeInteractive" />
         <Main />
         <NextScript />
       </body>

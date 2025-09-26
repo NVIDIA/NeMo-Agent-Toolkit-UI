@@ -1,12 +1,11 @@
 import { IconX } from '@tabler/icons-react';
 import { FC } from 'react';
-
 import { useTranslation } from 'next-i18next';
 
 interface Props {
   placeholder: string;
   searchTerm: string;
-  onSearch: (searchTerm: string) => void;
+  onSearch: (_searchTerm: string) => void;
 }
 const Search: FC<Props> = ({ placeholder, searchTerm, onSearch }) => {
   const { t } = useTranslation('sidebar');

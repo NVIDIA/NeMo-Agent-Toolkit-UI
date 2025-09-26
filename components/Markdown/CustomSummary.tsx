@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  IconCheck,
   IconCpu,
   IconTool,
   IconLoader,
@@ -36,14 +35,14 @@ export const CustomSummary = ({ children, id }) => {
   return (
     <summary
       className={`
-        cursor-pointer 
-        font-normal 
-        text-gray-600 
-        hover:text-[#76b900] 
-        dark:text-neutral-300 
+        cursor-pointer
+        font-normal
+        text-gray-600
+        hover:text-[#76b900]
+        dark:text-neutral-300
         dark:hover:text-[#76b900]
-        list-none 
-        flex items-center justify-between 
+        list-none
+        flex items-center justify-between
         p-0 rounded
       `}
       onClick={(e) => {

@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { IconRefresh, IconFilter, IconHistory, IconSortAscending, IconSortDescending, IconClock, IconCheck } from '@tabler/icons-react';
-import { useTheme } from '@/contexts/ThemeContext';
 import Head from 'next/head';
+import { IconRefresh, IconFilter, IconHistory, IconSortAscending, IconSortDescending, IconClock, IconCheck } from '@tabler/icons-react';
+
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface FinalizedDataEntry {
   text: string;
@@ -36,7 +37,6 @@ const DataStreamHistory = () => {
   });
 
   const { lightMode } = useTheme();
-  console.log('lightMode', lightMode);
 
   // Save sort order to localStorage when it changes
   useEffect(() => {

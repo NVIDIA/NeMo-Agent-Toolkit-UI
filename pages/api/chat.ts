@@ -10,6 +10,7 @@ export const config = {
 };
 
 const generateEndpoint = 'generate';
+// eslint-disable-next-line no-unused-vars
 const chatEndpoint = 'chat';
 const chatStreamEndpoint = 'chat/stream';
 const generateStreamEndpoint = 'generate/stream';

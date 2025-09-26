@@ -10,11 +10,12 @@ export const InteractionModal = ({
   onClose,
   onSubmit,
 }) => {
+  const [userInput, setUserInput] = useState('');
+  const [error, setError] = useState('');
+
   if (!isOpen || !interactionMessage) return null;
 
   const { content } = interactionMessage;
-  const [userInput, setUserInput] = useState('');
-  const [error, setError] = useState('');
 
   // Validation for Text Input
   const handleTextSubmit = () => {

@@ -1,6 +1,5 @@
 import { IconFileImport } from '@tabler/icons-react';
 import { FC } from 'react';
-
 import { useTranslation } from 'next-i18next';
 
 import { SupportedExportFormats } from '@/types/export';
@@ -8,7 +7,7 @@ import { SupportedExportFormats } from '@/types/export';
 import { SidebarButton } from '../Sidebar/SidebarButton';
 
 interface Props {
-  onImport: (data: SupportedExportFormats) => void;
+  onImport: (_data: SupportedExportFormats) => void;
 }
 
 export const Import: FC<Props> = ({ onImport }) => {
@@ -27,7 +26,7 @@ export const Import: FC<Props> = ({ onImport }) => {
           const file = e.target.files[0];
           const reader = new FileReader();
           reader.onload = (e) => {
-            let json = JSON.parse(e.target?.result as string);
+            const json = JSON.parse(e.target?.result as string);
             onImport(json);
           };
           reader.readAsText(file);

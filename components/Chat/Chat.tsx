@@ -1,38 +1,32 @@
 
 'use client';
 
-import { ChatInput } from './ChatInput';
-import { ChatLoader } from './ChatLoader';
-import { MemoizedChatMessage } from './MemoizedChatMessage';
+import { v4 as uuidv4 } from 'uuid';
+import toast from 'react-hot-toast';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+
 import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
 import HomeContext from '@/pages/api/home/home.context';
 import { ChatBody, Conversation, Message } from '@/types/chat';
 import {
   WebSocketInbound,
-  validateWebSocketMessage,
   validateWebSocketMessageWithConversationId,
-  validateConversationId,
   isSystemResponseMessage,
   isSystemIntermediateMessage,
   isSystemInteractionMessage,
   isErrorMessage,
-  isSystemResponseInProgress,
   isSystemResponseComplete,
-  isOAuthConsentMessage,
   extractOAuthUrl,
-  shouldAppendResponseContent,
 } from '@/types/websocket';
 import { getEndpoint } from '@/utils/app/api';
 import { webSocketMessageTypes } from '@/utils/app/const';
 import {
   saveConversation,
   saveConversations,
-  updateConversation,
 } from '@/utils/app/conversation';
 import {
   fetchLastMessage,
   processIntermediateMessage,
-  updateConversationTitle,
 } from '@/utils/app/helper';
 import {
   shouldAppendResponse,
@@ -44,14 +38,11 @@ import {
   shouldRenderAssistantMessage,
 } from '@/utils/chatTransform';
 import { throttle } from '@/utils/data/throttle';
-import { useTranslation } from 'next-i18next';
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import toast from 'react-hot-toast';
-import { v4 as uuidv4 } from 'uuid';
-
 import { SESSION_COOKIE_NAME } from '@/constants/constants';
 
-
+import { ChatInput } from './ChatInput';
+import { ChatLoader } from './ChatLoader';
+import { MemoizedChatMessage } from './MemoizedChatMessage';
 
 // Streaming utilities for handling SSE and NDJSON safely
 function normalizeNewlines(s: string): string {
@@ -144,7 +135,6 @@ function parsePossiblyConcatenatedJson(payload: string): any[] {
 // };
 
 export const Chat = () => {
-  const { t } = useTranslation('chat');
   const {
     state: {
       selectedConversation,
@@ -161,13 +151,11 @@ export const Chat = () => {
       intermediateStepOverride,
       enableIntermediateSteps,
     },
-    handleUpdateConversation,
     dispatch: homeDispatch,
   } = useContext(HomeContext);
 
   const [currentMessage, setCurrentMessage] = useState<Message>();
   const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true);
-  const [showSettings, setShowSettings] = useState<boolean>(false);
   const [showScrollDownButton, setShowScrollDownButton] =
     useState<boolean>(false);
 
@@ -320,7 +308,9 @@ export const Chat = () => {
         'ws://127.0.0.1:8000/websocket';
 
       // Determine if this is a cross-origin connection
+      // eslint-disable-next-line no-unused-vars
       const wsUrlObj = new URL(wsUrl);
+      // eslint-disable-next-line no-unused-vars
       const isCrossOrigin = wsUrlObj.origin !== window.location.origin;
 
       // Always add session cookie as query parameter for reliability
@@ -388,7 +378,7 @@ export const Chat = () => {
         }
       };
 
-      ws.onerror = error => {
+      ws.onerror = _error => {
         homeDispatch({ field: 'webSocketConnected', value: false });
         webSocketConnectedRef.current = false;
         homeDispatch({ field: 'loading', value: false });
@@ -411,7 +401,8 @@ export const Chat = () => {
   /**
    * Handles OAuth consent flow by opening popup window
    */
-  const handleOAuthConsent = (message: WebSocketInbound) => {
+  // eslint-disable-next-line no-unused-vars
+  const _handleOAuthConsent = (message: WebSocketInbound) => {
     if (!isSystemInteractionMessage(message)) return false;
 
     if (message.content?.input_type === 'oauth_consent') {
@@ -422,7 +413,7 @@ export const Chat = () => {
           'oauth-popup',
           'width=600,height=700,scrollbars=yes,resizable=yes'
         );
-        const handleOAuthComplete = (event: MessageEvent) => {
+        const handleOAuthComplete = (_event: MessageEvent) => {
           if (popup && !popup.closed) popup.close();
           window.removeEventListener('message', handleOAuthComplete);
         };
@@ -702,7 +693,7 @@ export const Chat = () => {
   };
 
   const handleSend = useCallback(
-    async (message: Message, deleteCount = 0, retry = false) => {
+    async (message: Message, deleteCount = 0, _retry = false) => {
       message.id = uuidv4();
 
       // Set the active user message ID for WebSocket message tracking
@@ -862,8 +853,7 @@ export const Chat = () => {
         };
 
         const endpoint = getEndpoint({ service: 'chat' });
-        let body;
-        body = JSON.stringify({
+        const body = JSON.stringify({
           ...chatBody,
         });
 
@@ -981,6 +971,7 @@ export const Chat = () => {
                 chunkValue = String(chunkValue ?? '');
               }
 
+              // eslint-disable-next-line no-unused-vars
               counter++;
 
               // First, handle any partial chunk from previous iteration
@@ -1005,8 +996,8 @@ export const Chat = () => {
               }
 
               // Process complete intermediate steps
-              let rawIntermediateSteps: any[] = [];
-              let stepMatches =
+              const rawIntermediateSteps: any[] = [];
+              const stepMatches =
                 chunkValue.match(
                   /<intermediatestep>([\s\S]*?)<\/intermediatestep>/g
                 ) || [];
@@ -1016,7 +1007,7 @@ export const Chat = () => {
                     .replace('<intermediatestep>', '')
                     .replace('</intermediatestep>', '')
                     .trim();
-                  let rawIntermediateMessage = tryParseJson<any>(jsonString);
+                  const rawIntermediateMessage = tryParseJson<any>(jsonString);
                   // handle intermediate data
                   if (rawIntermediateMessage?.type === 'system_intermediate') {
                     rawIntermediateSteps.push(rawIntermediateMessage);

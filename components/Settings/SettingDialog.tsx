@@ -1,6 +1,5 @@
 import { FC, useContext, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-
 import { useTranslation } from 'next-i18next';
 
 import { useTheme } from '@/contexts/ThemeContext';

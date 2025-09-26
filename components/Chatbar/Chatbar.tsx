@@ -1,27 +1,22 @@
-import { useCallback, useContext, useEffect } from 'react';
-
+import { useContext, useEffect } from 'react';
 import { useTranslation } from 'next-i18next';
+import { v4 as uuidv4 } from 'uuid';
 
 import { useCreateReducer } from '@/hooks/useCreateReducer';
-
 import { saveConversation, saveConversations } from '@/utils/app/conversation';
 import { saveFolders } from '@/utils/app/folders';
 import { exportData, importData } from '@/utils/app/importExport';
-
 import { Conversation } from '@/types/chat';
 import { LatestExportFormat, SupportedExportFormats } from '@/types/export';
-
 import HomeContext from '@/pages/api/home/home.context';
+
+import Sidebar from '../Sidebar';
 
 import { ChatFolders } from './components/ChatFolders';
 import { ChatbarSettings } from './components/ChatbarSettings';
 import { Conversations } from './components/Conversations';
-
-import Sidebar from '../Sidebar';
 import ChatbarContext from './Chatbar.context';
 import { ChatbarInitialState, initialState } from './Chatbar.state';
-
-import { v4 as uuidv4 } from 'uuid';
 
 export const Chatbar = () => {
   const { t } = useTranslation('sidebar');

@@ -1,6 +1,5 @@
 import {
   IconArrowDown,
-  IconBolt,
   IconPaperclip,
   IconPhoto,
   IconPlayerStop,
@@ -9,7 +8,6 @@ import {
   IconTrash,
   IconMicrophone,
   IconPlayerStopFilled,
-  IconMicrophone2,
 } from '@tabler/icons-react';
 import {
   KeyboardEvent,
@@ -22,18 +20,15 @@ import {
   useState,
 } from 'react';
 import toast from 'react-hot-toast';
-
 import { useTranslation } from 'next-i18next';
 
 import { appConfig } from '@/utils/app/const';
 import { compressImage, getWorkflowName } from '@/utils/app/helper';
-
 import { Message } from '@/types/chat';
-
 import HomeContext from '@/pages/api/home/home.context';
 
 interface Props {
-  onSend: (message: Message) => void;
+  onSend: (_message: Message) => void;
   onRegenerate: () => void;
   onScrollDownClick: () => void;
   textareaRef: MutableRefObject<HTMLTextAreaElement | null>;
@@ -48,14 +43,13 @@ export const ChatInput = ({
   onScrollDownClick,
   textareaRef,
   showScrollDownButton,
-  controller,
+  controller: _controller,
   onStopConversation,
 }: Props) => {
   const { t } = useTranslation('chat');
 
   const {
-    state: { selectedConversation, messageIsStreaming, loading, webSocketMode },
-    dispatch: homeDispatch,
+    state: { selectedConversation, messageIsStreaming }
   } = useContext(HomeContext);
 
   const workflow = getWorkflowName();
@@ -67,8 +61,10 @@ export const ChatInput = ({
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const fileInputRef = useRef(null);
   const [inputFile, setInputFile] = useState(null);
+  // eslint-disable-next-line no-unused-vars
   const [inputFileExtension, setInputFileExtension] = useState('');
   const [inputFileContent, setInputFileContent] = useState('');
+  // eslint-disable-next-line no-unused-vars
   const [inputFileContentCompressed, setInputFileContentCompressed] =
     useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -78,7 +74,7 @@ export const ChatInput = ({
     fileInputRef?.current.click();
   };
 
-  const handleInputFileDelete = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleInputFileDelete = (_e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputFile(null);
     setInputFileExtension('');
     setInputFileContent('');
@@ -220,6 +216,7 @@ export const ChatInput = ({
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleInitModal = () => {
     const selectedPrompt = filteredPrompts[activePromptIndex];
     if (selectedPrompt) {
@@ -235,6 +232,7 @@ export const ChatInput = ({
     setShowPromptList(false);
   };
 
+  // eslint-disable-next-line no-unused-vars
   const parseVariables = (content: string) => {
     const regex = /{{(.*?)}}/g;
     const foundVariables = [];
@@ -247,6 +245,7 @@ export const ChatInput = ({
     return foundVariables;
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleSubmit = (updatedVariables: string[]) => {
     const newContent = content?.replace(/{{(.*?)}}/g, (match, variable) => {
       const index = variables.indexOf(variable);
@@ -285,7 +284,7 @@ export const ChatInput = ({
   }) => {
     const clipboardData =
       event.clipboardData || event.originalEvent.clipboardData;
-    let items = clipboardData.items;
+    const items = clipboardData.items;
     let isImagePasted = false;
 
     if (items) {
@@ -307,7 +306,7 @@ export const ChatInput = ({
 
     // Handle text only if no image was pasted
     if (!isImagePasted) {
-      let text = clipboardData.getData('text/plain');
+      const text = clipboardData.getData('text/plain');
       if (text) {
         // setContent(text); // Set text content only if text is pasted
       }

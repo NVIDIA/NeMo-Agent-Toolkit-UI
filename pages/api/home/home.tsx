@@ -1,17 +1,16 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-
 import { GetServerSideProps } from 'next';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
+import { v4 as uuidv4 } from 'uuid';
 
 import { useCreateReducer } from '@/hooks/useCreateReducer';
 import { DataStreamManager } from '@/components/DataStreamDisplay/DataStreamManager';
 import { ChatHeader } from '@/components/Chat/ChatHeader';
 import { useTheme } from '@/contexts/ThemeContext';
-
 import {
   cleanConversationHistory,
   cleanSelectedConversation,
@@ -24,13 +23,10 @@ import {
 import { saveFolders } from '@/utils/app/folders';
 import { getWorkflowName } from '@/utils/app/helper';
 import { getSettings } from '@/utils/app/settings';
-
 import { APPLICATION_NAME } from '@/constants/constants';
-
 import { Conversation } from '@/types/chat';
 import { KeyValuePair } from '@/types/data';
 import { FolderInterface, FolderType } from '@/types/folder';
-
 import { Chat } from '@/components/Chat/Chat';
 import { Chatbar } from '@/components/Chatbar/Chatbar';
 import { Navbar } from '@/components/Mobile/Navbar';
@@ -38,11 +34,9 @@ import { Navbar } from '@/components/Mobile/Navbar';
 import HomeContext from './home.context';
 import { HomeInitialState, initialState } from './home.state';
 
-import { v4 as uuidv4 } from 'uuid';
-
 const webSocketMode = initialState.webSocketMode;
 
-const Home = (props: any) => {
+const Home = (_props: any) => {
   const { t } = useTranslation('chat');
 
   const contextValue = useCreateReducer<HomeInitialState>({
@@ -57,8 +51,6 @@ const Home = (props: any) => {
   } = contextValue;
 
   const { lightMode, setLightMode } = useTheme();
-
-  const stopConversationRef = useRef<boolean>(false);
 
   const webSocketModeRef = useRef(
     typeof window !== 'undefined' && sessionStorage.getItem('webSocketMode') === 'false' ? false : webSocketMode
@@ -152,8 +144,6 @@ const Home = (props: any) => {
 
       return;
     }
-
-    const lastConversation = conversations[conversations.length - 1];
 
     const newConversation: Conversation = {
       id: uuidv4(),

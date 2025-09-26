@@ -1,7 +1,6 @@
 import { Dispatch, createContext } from 'react';
 
 import { ActionType } from '@/hooks/useCreateReducer';
-
 import { Conversation } from '@/types/chat';
 import { KeyValuePair } from '@/types/data';
 import { FolderType } from '@/types/folder';
@@ -12,13 +11,13 @@ export interface HomeContextProps {
   state: HomeInitialState;
   dispatch: Dispatch<ActionType<HomeInitialState>>;
   handleNewConversation: () => void;
-  handleCreateFolder: (name: string, type: FolderType) => void;
-  handleDeleteFolder: (folderId: string) => void;
-  handleUpdateFolder: (folderId: string, name: string) => void;
-  handleSelectConversation: (conversation: Conversation) => void;
+  handleCreateFolder: (_name: string, _type: FolderType) => void;
+  handleDeleteFolder: (_folderId: string) => void;
+  handleUpdateFolder: (_folderId: string, _name: string) => void;
+  handleSelectConversation: (_conversation: Conversation) => void;
   handleUpdateConversation: (
-    conversation: Conversation,
-    data: KeyValuePair,
+    _conversation: Conversation,
+    _data: KeyValuePair,
   ) => void;
 }
 
