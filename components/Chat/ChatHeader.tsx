@@ -89,6 +89,10 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
       <div
         className={`fixed right-0 top-0 h-12 flex items-center transition-all duration-300 ${
           isExpanded ? 'mr-2' : 'mr-2'
+        } ${
+          selectedConversation?.messages?.length === 0
+            ? 'bg-none'
+            : 'bg-[#76b900] dark:bg-black bo'
         }`}
       >
         <button
