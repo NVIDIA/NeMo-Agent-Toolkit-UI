@@ -207,6 +207,18 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
             </label>
           </div>
 
+          {/* Database Updates Button */}
+          <div className="flex items-center">
+              <button
+                  onClick={() => window.open('/database-updates', '_blank')}
+                  className="flex items-center gap-2 px-3 py-1 text-sm text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                  title="View Database Updates"
+              >
+                  <IconDatabase size={16} />
+                  <span className="hidden sm:inline">Data Updates</span>
+              </button>
+          </div>
+
           {/* Theme Toggle Button */}
           <div className="flex items-center dark:text-white text-black transition-colors duration-300">
             <button

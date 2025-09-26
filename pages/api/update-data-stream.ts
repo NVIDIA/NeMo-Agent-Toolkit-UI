@@ -9,17 +9,17 @@ interface TextData {
   finalized?: boolean;
 }
 
-interface FinalizedTranscript {
+interface FinalizedDataEntry {
   text: string;
   stream_id: string;
   timestamp: number;
-  id: string; // unique identifier for each finalized transcript
+  id: string; // unique identifier for each finalized entry
   uuid?: string; // UUID from the backend for database tracking
-  pending?: boolean; // indicates if transcript is pending database processing
+  pending?: boolean; // indicates if entry is pending database processing
 }
 
 let streamTexts: { [streamId: string]: TextData } = {};
-let finalizedTranscripts: FinalizedTranscript[] = [];
+let finalizedEntries: FinalizedDataEntry[] = [];
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
@@ -31,8 +31,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     const currentTimestamp = timestamp || Date.now();
 
     if (finalized) {
-      // Store finalized transcript
-      const finalizedTranscript: FinalizedTranscript = {
+      // Store finalized entry
+      const finalizedEntry: FinalizedDataEntry = {
         text,
         stream_id: streamId,
         timestamp: currentTimestamp,
@@ -40,10 +40,10 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         uuid: uuid, // Store the UUID from the backend
         pending: true // Initially mark as pending database processing
       };
-      finalizedTranscripts.push(finalizedTranscript);
+      finalizedEntries.push(finalizedEntry);
 
       // Sort by stream_id, then by timestamp
-      finalizedTranscripts.sort((a, b) => {
+      finalizedEntries.sort((a, b) => {
         if (a.stream_id !== b.stream_id) {
           return a.stream_id.localeCompare(b.stream_id);
         }
@@ -71,20 +71,20 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     const { stream, type } = req.query;
 
     if (type === 'finalized') {
-      // Get finalized transcripts
+      // Get finalized entries
       if (stream !== undefined) {
         const streamId = stream as string;
-        const streamFinalizedTranscripts = finalizedTranscripts.filter(
-          transcript => transcript.stream_id === streamId
+        const streamFinalizedEntries = finalizedEntries.filter(
+          entry => entry.stream_id === streamId
         );
         return res.status(200).json({
-          transcripts: streamFinalizedTranscripts,
+          entries: streamFinalizedEntries,
           stream_id: streamId
         });
       } else {
-        // Get all finalized transcripts
+        // Get all finalized entries
         return res.status(200).json({
-          transcripts: finalizedTranscripts
+          entries: finalizedEntries
         });
       }
     }
@@ -107,7 +107,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     }
   }
 
-  // PATCH method for updating transcript processing status
+  // PATCH method for updating entry processing status
   if (req.method === 'PATCH') {
     const { uuid, pending } = req.body;
 
@@ -115,20 +115,20 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       return res.status(400).json({ error: 'UUID is required.' });
     }
 
-    // Find the transcript by UUID and update its pending status
-    const transcriptIndex = finalizedTranscripts.findIndex(
-      transcript => transcript.uuid === uuid
+    // Find the entry by UUID and update its pending status
+    const entryIndex = finalizedEntries.findIndex(
+      entry => entry.uuid === uuid
     );
 
-    if (transcriptIndex === -1) {
-      return res.status(404).json({ error: 'Transcript not found.' });
+    if (entryIndex === -1) {
+      return res.status(404).json({ error: 'Entry not found.' });
     }
 
-    finalizedTranscripts[transcriptIndex].pending = pending;
+    finalizedEntries[entryIndex].pending = pending;
 
     return res.status(200).json({
       success: true,
-      transcript: finalizedTranscripts[transcriptIndex]
+      entry: finalizedEntries[entryIndex]
     });
   }
 

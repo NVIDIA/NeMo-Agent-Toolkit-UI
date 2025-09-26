@@ -7,7 +7,7 @@ interface DataStreamDisplayProps {
   onStreamChange: (stream: string) => void;
 }
 
-interface FinalizedTranscript {
+interface FinalizedDataEntry {
   text: string;
   stream_id: string;
   timestamp: number;
@@ -51,17 +51,17 @@ export const DataStreamDisplay: React.FC<DataStreamDisplayProps> = React.memo(({
         const response = await fetch(`/api/update-data-stream?type=finalized&stream=${selectedStream}`);
         if (response.ok) {
           const data = await response.json();
-          const transcripts: FinalizedTranscript[] = data.transcripts || [];
+          const entries: FinalizedDataEntry[] = data.entries || [];
 
-          if (transcripts.length > 0) {
-            // Find the most recent transcript for this stream
-            const sortedTranscripts = transcripts.sort((a, b) => {
+          if (entries.length > 0) {
+            // Find the most recent entry for this stream
+            const sortedEntries = entries.sort((a, b) => {
               const timestampA = parseTimestampAsUTC(a.timestamp);
               const timestampB = parseTimestampAsUTC(b.timestamp);
               return timestampB - timestampA; // Most recent first
             });
 
-            const latestTimestamp = parseTimestampAsUTC(sortedTranscripts[0].timestamp);
+            const latestTimestamp = parseTimestampAsUTC(sortedEntries[0].timestamp);
             setLastDbUpdate(latestTimestamp);
           } else {
             setLastDbUpdate(null);
