@@ -36,6 +36,7 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
       webSocketConnected,
       lightMode,
       selectedConversation,
+      showDataStreamDisplay,
     },
     dispatch: homeDispatch,
   } = useContext(HomeContext);
@@ -167,6 +168,32 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ease-in-out ${
                     webSocketModeRef.current ? 'translate-x-6' : 'translate-x-0'
+                  }`}
+                />
+              </div>
+            </label>
+          </div>
+
+          {/* Data Stream Display Toggle */}
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            <label className="flex items-center gap-2 cursor-pointer flex-shrink-0">
+              <span className="text-sm font-medium text-black dark:text-white">
+              Data Stream Display
+              </span>
+              <div
+                onClick={() => {
+                  homeDispatch({
+                    field: 'showDataStreamDisplay',
+                    value: !showDataStreamDisplay,
+                  });
+                }}
+                className={`relative inline-flex h-5 w-10 items-center cursor-pointer rounded-full transition-colors duration-300 ease-in-out ${
+                  showDataStreamDisplay ? 'bg-black dark:bg-[#76b900]' : 'bg-gray-200'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ease-in-out ${
+                    showDataStreamDisplay ? 'translate-x-6' : 'translate-x-0'
                   }`}
                 />
               </div>
