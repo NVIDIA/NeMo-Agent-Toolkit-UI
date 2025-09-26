@@ -3,8 +3,6 @@ import { env } from 'next-runtime-env';
 import { Conversation, Message } from '@/types/chat';
 import { FolderInterface } from '@/types/folder';
 
-import { t } from 'i18next';
-
 export interface HomeInitialState {
   loading: boolean;
   lightMode: 'light' | 'dark';

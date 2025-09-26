@@ -1,15 +1,14 @@
-import { IconFileExport, IconSettings } from '@tabler/icons-react';
 import { useContext, useState } from 'react';
-
 import { useTranslation } from 'next-i18next';
+import { IconFileExport, IconSettings } from '@tabler/icons-react';
 
 import HomeContext from '@/pages/api/home/home.context';
-
 import { SettingDialog } from '@/components/Settings/SettingDialog';
 
 import { Import } from '../../Settings/Import';
 import { SidebarButton } from '../../Sidebar/SidebarButton';
 import ChatbarContext from '../Chatbar.context';
+
 import { ClearConversations } from './ClearConversations';
 
 export const ChatbarSettings = () => {
@@ -17,8 +16,7 @@ export const ChatbarSettings = () => {
   const [isSettingDialogOpen, setIsSettingDialog] = useState<boolean>(false);
 
   const {
-    state: { lightMode, conversations },
-    dispatch: homeDispatch,
+    state: { conversations }
   } = useContext(HomeContext);
 
   const {

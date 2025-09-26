@@ -18,8 +18,8 @@ interface FinalizedDataEntry {
   pending?: boolean; // indicates if entry is pending database processing
 }
 
-let streamTexts: { [streamId: string]: TextData } = {};
-let finalizedEntries: FinalizedDataEntry[] = [];
+const streamTexts: { [streamId: string]: TextData } = {};
+const finalizedEntries: FinalizedDataEntry[] = [];
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {

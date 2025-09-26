@@ -10,6 +10,7 @@ export const config = {
 };
 
 const generateEndpoint = 'generate';
+// eslint-disable-next-line no-unused-vars
 const chatEndpoint = 'chat';
 const chatStreamEndpoint = 'chat/stream';
 const generateStreamEndpoint = 'generate/stream';
@@ -63,17 +64,12 @@ async function initializeContextAwareRAG(conversationId: string, chatCompletionU
       });
 
       if (!initResponse.ok) {
-        console.log('aiq - CA RAG initialization failed', initResponse.status);
         throw new Error(`CA RAG initialization failed: ${initResponse.statusText}`);
       }
-
-      const initData = await initResponse.json();
-      console.log('aiq - CA RAG initialization', initData?.status);
 
       // Mark this conversation as initialized
       initializedConversations.add(combinedConversationId);
     } catch (initError) {
-      console.log('aiq - CA RAG initialization error', initError);
       throw new Error(`CA RAG initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
     }
   } else {

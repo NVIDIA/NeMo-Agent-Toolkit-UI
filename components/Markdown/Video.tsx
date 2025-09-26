@@ -6,7 +6,7 @@ import Loading from '@/components/Markdown/Loading';
 
 // First, define the Video component at module level
 
-export const Video = memo(
+const VideoComponent = memo(
   ({ src, controls = true, muted = false, ...props }) => {
     // Use ref to maintain stable reference for video element
     const videoRef = useRef(null);
@@ -40,3 +40,6 @@ export const Video = memo(
     return prevProps.src === nextProps.src;
   },
 );
+
+VideoComponent.displayName = 'Video';
+export const Video = VideoComponent;

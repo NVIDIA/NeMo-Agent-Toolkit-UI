@@ -11,32 +11,27 @@ import {
 } from '@tabler/icons-react';
 import { FC, memo, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-
 import { useTranslation } from 'next-i18next';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 
 import { updateConversation } from '@/utils/app/conversation';
 import {
   fixMalformedHtml,
   generateContentIntermediate,
 } from '@/utils/app/helper';
-
 import { Message } from '@/types/chat';
-
 import HomeContext from '@/pages/api/home/home.context';
-
 import { BotAvatar } from '@/components/Avatar/BotAvatar';
 
 import { getReactMarkDownCustomComponents } from '../Markdown/CustomComponents';
 import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
 
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-
 export interface Props {
   message: Message;
   messageIndex: number;
-  onEdit?: (editedMessage: Message, deleteCount?: number) => void;
+  onEdit?: (_editedMessage: Message, _deleteCount?: number) => void;
 }
 
 export const ChatMessage: FC<Props> = memo(
@@ -60,6 +55,26 @@ export const ChatMessage: FC<Props> = memo(
     const markdownComponents = useMemo(() => {
       return getReactMarkDownCustomComponents(messageIndex, message?.id);
     }, [messageIndex, message?.id]);
+
+    // All useEffect hooks must be called before any conditional returns
+    useEffect(() => {
+      setMessageContent(message.content);
+    }, [message.content]);
+
+    useEffect(() => {
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'inherit';
+        textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      }
+    }, [isEditing]);
+
+    useEffect(() => {
+      return () => {
+        if (speechSynthesisRef.current) {
+          window.speechSynthesis.cancel();
+        }
+      };
+    }, []);
 
     // return if the there is nothing to show
     // no message and no intermediate steps
@@ -138,17 +153,6 @@ export const ChatMessage: FC<Props> = memo(
       });
     };
 
-    useEffect(() => {
-      setMessageContent(message.content);
-    }, [message.content]);
-
-    useEffect(() => {
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'inherit';
-        textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-      }
-    }, [isEditing]);
-
     const removeLinks = (text: string) => {
       // This regex matches http/https URLs
       const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -173,14 +177,6 @@ export const ChatMessage: FC<Props> = memo(
         console.log('Text-to-speech is not supported in your browser.');
       }
     };
-
-    useEffect(() => {
-      return () => {
-        if (speechSynthesisRef.current) {
-          window.speechSynthesis.cancel();
-        }
-      };
-    }, []);
 
     const prepareContent = ({
       message = {} as Message,

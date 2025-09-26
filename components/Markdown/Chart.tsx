@@ -1,13 +1,8 @@
 // Import html-to-image for generating images
 import { IconDownload } from '@tabler/icons-react';
-import React, { useContext } from 'react';
+import React from 'react';
 import toast from 'react-hot-toast';
-
 import dynamic from 'next/dynamic';
-
-// Import dynamic from Next.js
-import HomeContext from '@/pages/api/home/home.context';
-
 import * as htmlToImage from 'html-to-image';
 import {
   BarChart,
@@ -67,11 +62,6 @@ const Chart = (props: any) => {
     Nodes = [],
     Links = [],
   } = data;
-
-  const {
-    state: { selectedConversation, conversations },
-    dispatch,
-  } = useContext(HomeContext);
 
   const colors = {
     fill: '#76b900',
