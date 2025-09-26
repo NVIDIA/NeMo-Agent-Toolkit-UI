@@ -8,12 +8,14 @@ import {
   IconUserFilled,
   IconChevronLeft,
   IconChevronRight,
+  IconDatabase,
 } from '@tabler/icons-react';
 import React, { useContext, useState, useRef, useEffect } from 'react';
 
 import { env } from 'next-runtime-env';
 
 import { getWorkflowName } from '@/utils/app/helper';
+import { useTheme } from '@/contexts/ThemeContext';
 
 import HomeContext from '@/pages/api/home/home.context';
 
@@ -34,12 +36,13 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
       chatHistory,
       webSocketMode,
       webSocketConnected,
-      lightMode,
       selectedConversation,
       showDataStreamDisplay,
     },
     dispatch: homeDispatch,
   } = useContext(HomeContext);
+
+  const { lightMode, setLightMode } = useTheme();
 
   const handleLogin = () => {
     console.log('Login clicked');
@@ -205,10 +208,7 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
             <button
               onClick={() => {
                 const newMode = lightMode === 'dark' ? 'light' : 'dark';
-                homeDispatch({
-                  field: 'lightMode',
-                  value: newMode,
-                });
+                setLightMode(newMode);
               }}
               className="rounded-full flex items-center justify-center bg-none dark:bg-gray-700 transition-colors duration-300 focus:outline-none"
             >

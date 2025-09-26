@@ -11,6 +11,7 @@ import { useCreateReducer } from '@/hooks/useCreateReducer';
 
 import { DataStreamDisplay } from '@/components/DataStreamDisplay/DataStreamDisplay';
 import { ChatHeader } from '@/components/Chat/ChatHeader';
+import { useTheme } from '@/contexts/ThemeContext';
 
 import {
   cleanConversationHistory,
@@ -52,9 +53,11 @@ const Home = (props: any) => {
   let workflow = APPLICATION_NAME;
 
   const {
-    state: { lightMode, folders, conversations, selectedConversation, dataStreams, showDataStreamDisplay },
+    state: { folders, conversations, selectedConversation, dataStreams, showDataStreamDisplay },
     dispatch,
   } = contextValue;
+
+  const { lightMode, setLightMode } = useTheme();
 
   const stopConversationRef = useRef<boolean>(false);
 
@@ -212,10 +215,7 @@ const Home = (props: any) => {
     workflow = getWorkflowName();
     const settings = getSettings();
     if (settings.theme) {
-      dispatch({
-        field: 'lightMode',
-        value: settings.theme,
-      });
+      setLightMode(settings.theme);
     }
 
     const showChatbar = sessionStorage.getItem('showChatbar');
@@ -269,7 +269,7 @@ const Home = (props: any) => {
       saveConversation(homepageConversation);
       saveConversations(updatedConversations);
     }
-  }, [dispatch, t]);
+  }, [dispatch, t, setLightMode]);
 
   // Poll /api/update-data-stream every 2 seconds to discover available streams
   useEffect(() => {
