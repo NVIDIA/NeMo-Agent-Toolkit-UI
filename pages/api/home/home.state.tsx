@@ -29,6 +29,8 @@ export interface HomeInitialState {
   intermediateStepOverride?: boolean;
   autoScroll?: boolean;
   additionalConfig: any;
+  dataStreams: string[];
+  showDataStreamDisplay: boolean;
 }
 
 export const initialState: HomeInitialState = {
@@ -73,4 +75,10 @@ export const initialState: HomeInitialState = {
   intermediateStepOverride: true,
   autoScroll: true,
   additionalConfig: {},
+  dataStreams: [],
+  showDataStreamDisplay:
+    env('NEXT_PUBLIC_SHOW_DATA_STREAM_DEFAULT_ON') === 'true' ||
+    process?.env?.NEXT_PUBLIC_SHOW_DATA_STREAM_DEFAULT_ON === 'true'
+      ? true
+      : false,
 };

@@ -1,7 +1,6 @@
 
 'use client';
 
-import { ChatHeader } from './ChatHeader';
 import { ChatInput } from './ChatInput';
 import { ChatLoader } from './ChatLoader';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
@@ -1344,7 +1343,6 @@ export const Chat = () => {
           ref={chatContainerRef}
           onScroll={handleScroll}
         >
-          <ChatHeader webSocketModeRef={webSocketModeRef} />
           {selectedConversation?.messages.map((message, index) => {
             if (!shouldRenderAssistantMessage(message)) {
               return null; // Hide empty assistant messages

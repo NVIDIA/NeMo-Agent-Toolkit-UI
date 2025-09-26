@@ -24,6 +24,7 @@ export interface Conversation {
   messages: Message[];
   folderId: string | null;
   isHomepageConversation?: boolean; // Flag to track homepage conversations before first message
+  selectedStream?: string;
 }
 
 // WebSocket Message Types
