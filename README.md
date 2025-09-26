@@ -85,9 +85,15 @@ NOTE: Most of the time, you will want to select /chat/stream for intermediate re
   - /generate/stream - Streaming response generation
   - /chat - Single response chat completion
   - /chat/stream - Streaming chat completion
-  - /chat/ca-rag - Single response chat completion with [Context-Aware RAG](https://github.com/NVIDIA/context-aware-rag) backend
+  - /chat/ca-rag - Single response chat completion when using [Context-Aware RAG](https://github.com/NVIDIA/context-aware-rag) backend
 - `WebSocket URL for Completion`: WebSocket URL to connect to running NeMo Agent Toolkit server
 - `WebSocket Schema`: Workflow schema type over WebSocket connection
+
+### Live Data Streaming
+
+The live data streaming feature allows visualization of real-time text updates across multiple streams. This is useful for monitoring ongoing processes or displaying live transcription or streaming data.
+
+For more detail, see the [README for live data streaming](DATA_STREAMING.md).
 
 ## Usage Examples
 
