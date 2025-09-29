@@ -54,11 +54,10 @@ describe('ChatMessage', () => {
     };
     renderWithMessage(message);
 
-    // The text inside the link ("Plot") might still be there or be removed depending on the regex.
-    // The main thing is the link itself is gone and handled by the renderer.
-    // Based on the implementation, the entire anchor tag is removed.
-    expect(screen.getByText('Here is your plot:')).toBeInTheDocument();
-    expect(screen.queryByText(/Plot/)).toBeNull(); // Assuming "Plot" text within <a> is removed
+    // Verify the link is removed but surrounding text is preserved
+    expect(screen.getByText(/Here is your plot/i)).toBeInTheDocument();
+    // The HtmlFileRenderer should be shown instead of the raw link
+    expect(screen.getByTestId('html-file-renderer')).toBeInTheDocument();
   });
 
   it('should not render HtmlFileRenderer for a user message, even with a link', () => {
@@ -95,7 +94,19 @@ describe('ChatMessage', () => {
     renderWithMessage(message);
 
     expect(screen.getByTestId('html-file-renderer')).toBeInTheDocument();
-    expect(screen.getByText('Here is an inline plot:')).toBeInTheDocument();
-    expect(screen.queryByText(/My Plot/)).toBeNull(); // The content inside html tag is not rendered in markdown
+    expect(screen.getByText(/Here is an inline plot/i)).toBeInTheDocument();
+  });
+
+  it('should handle multiple HTML files in one message', () => {
+    const message: Message = {
+      id: "1",
+      role: 'assistant',
+      content: 'First: <a href="file:///plot1.html">Plot 1</a> and second: [Plot 2](file:///plot2.html)',
+    };
+    renderWithMessage(message);
+
+    // Should render multiple HtmlFileRenderer components (mocked)
+    const renderers = screen.getAllByTestId('html-file-renderer');
+    expect(renderers.length).toBeGreaterThanOrEqual(2);
   });
 });

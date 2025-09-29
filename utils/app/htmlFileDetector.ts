@@ -1,229 +1,261 @@
 export interface HtmlFileLink {
-    filePath: string;
-    linkText: string;
-    title?: string;
-    isInlineHtml?: boolean;
-    htmlContent?: string;
-  }
-  
-  /**
-   * Detect HTML file links in message content
-   */
-  export function detectHtmlFileLinks(content: string): HtmlFileLink[] {
-    const htmlFileLinks: HtmlFileLink[] = [];
-    
-    // First, detect inline HTML content blocks
-    const inlineHtmlRegex = /<html[^>]*>[\s\S]*?<\/html>/gi;
-    let inlineMatch;
-    let inlineCount = 1;
-    
-    while ((inlineMatch = inlineHtmlRegex.exec(content)) !== null) {
-      const htmlContent = inlineMatch[0];
-      
-      // Extract title from HTML content if possible
-      const titleMatch = htmlContent.match(/<title[^>]*>([^<]+)<\/title>/i) || 
-                        htmlContent.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-      const title = titleMatch ? titleMatch[1].trim() : `Inline HTML Content ${inlineCount}`;
-      
-      htmlFileLinks.push({
-        filePath: `inline-html-${inlineCount}`,
-        linkText: title,
-        title: title,
-        isInlineHtml: true,
-        htmlContent: htmlContent
-      });
-      
-      inlineCount++;
-    }
-    
-    // Regex patterns to match different types of HTML file references
-    const patterns = [
-      // HTML anchor tags: <a href="file://path/to/file.html">text</a>
-      /<a\s+href=["']?(file:\/\/[^"'\s>]+\.html)["']?[^>]*>([^<]+)<\/a>/gi,
-      // Markdown links: [text](file://path/to/file.html)
-      /\[([^\]]+)\]\((file:\/\/[^)]+\.html)\)/g,
-      // Direct file:// URLs
-      /(file:\/\/[^\s"'<>`]+\.html)/g,
-      // File paths ending in .html (without href attributes) - including those in backticks
-      /(?<!href=["']?)`?([^\s"'<>`]+\.html)`?(?!["'])/g,
-      // File paths in backticks specifically
-      /`([^`]+\.html)`/g,
-      // File paths wrapped in double quotes
-      /"([^"]+\.html)"/g,
-      // File paths wrapped in single quotes
-      /'([^']+\.html)'/g,
-    ];
-  
-    patterns.forEach((pattern, patternIndex) => {
-      let match;
-      while ((match = pattern.exec(content)) !== null) {
-        let filePath: string;
-        let linkText: string;
-        
-        // Handle different pattern types
-        if (patternIndex === 0) {
-          // HTML anchor tag: <a href="file://path">text</a>
-          filePath = match[1];
-          linkText = match[2];
-        } else if (patternIndex === 1) {
-          // Markdown link: [text](file://path)
-          linkText = match[1];
-          filePath = match[2];
-        } else if (patternIndex === 2) {
-          // Direct file:// URL
-          filePath = match[1] || match[0];
-          linkText = extractFilenameFromPath(filePath);
-        } else if (patternIndex === 3) {
-          // File path (possibly in backticks)
-          filePath = match[1] || match[0];
-          linkText = extractFilenameFromPath(filePath);
-          
-          // Ensure file:// prefix
-          if (!filePath.startsWith('file://')) {
-            filePath = `file://${filePath}`;
-          }
-        } else if (patternIndex === 4) {
-          // File path in backticks specifically
-          filePath = match[1];
-          linkText = extractFilenameFromPath(filePath);
-          
-          // Ensure file:// prefix
-          if (!filePath.startsWith('file://')) {
-            filePath = `file://${filePath}`;
-          }
-        } else if (patternIndex === 5) {
-          // File path wrapped in double quotes
-          filePath = match[1];
-          linkText = extractFilenameFromPath(filePath);
-          
-          // Ensure file:// prefix
-          if (!filePath.startsWith('file://')) {
-            filePath = `file://${filePath}`;
-          }
-        } else if (patternIndex === 6) {
-          // File path wrapped in single quotes
-          filePath = match[1];
-          linkText = extractFilenameFromPath(filePath);
-          
-          // Ensure file:// prefix
-          if (!filePath.startsWith('file://')) {
-            filePath = `file://${filePath}`;
-          }
-        } else {
-          // Default case for any additional patterns
-          filePath = match[1] || match[0];
-          linkText = extractFilenameFromPath(filePath);
-          
-          // Skip if it looks like a URL that's not file://
-          if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
-            continue;
-          }
-          
-          // Ensure file:// prefix
-          if (!filePath.startsWith('file://')) {
-            filePath = `file://${filePath}`;
-          }
-        }
-        
-        // Clean up any malformed URLs
-        filePath = cleanFilePath(filePath);
-        
-        htmlFileLinks.push({
-          filePath,
-          linkText: linkText.trim(),
-          title: extractTitleFromPath(filePath),
-          isInlineHtml: false
-        });
-      }
+  filePath: string;
+  linkText: string;
+  title?: string;
+  isInlineHtml?: boolean;
+  htmlContent?: string;
+}
+
+interface ProcessedRange {
+  start: number;
+  end: number;
+}
+
+type PatternHandler = (match: RegExpExecArray) => { filePath: string; linkText: string } | null;
+
+/**
+ * Detect HTML file links in message content
+ * Supports various formats: anchor tags, markdown links, file:// URLs, paths, and inline HTML
+ */
+export function detectHtmlFileLinks(content: string): HtmlFileLink[] {
+  const htmlFileLinks: HtmlFileLink[] = [];
+  const processedRanges: ProcessedRange[] = [];
+
+  // First, detect inline HTML content blocks
+  detectInlineHtml(content, htmlFileLinks, processedRanges);
+
+  // Then detect various file link formats
+  detectFileLinkPatterns(content, htmlFileLinks, processedRanges);
+
+  // Remove duplicates based on filePath
+  return removeDuplicateLinks(htmlFileLinks);
+}
+
+/**
+ * Detect inline HTML content blocks and add them to the results
+ */
+function detectInlineHtml(
+  content: string,
+  htmlFileLinks: HtmlFileLink[],
+  processedRanges: ProcessedRange[]
+): void {
+  const inlineHtmlRegex = /<html[^>]*>[\s\S]*?<\/html>/gi;
+  let match;
+  let count = 1;
+
+  while ((match = inlineHtmlRegex.exec(content)) !== null) {
+    const htmlContent = match[0];
+    processedRanges.push({ start: match.index, end: match.index + htmlContent.length });
+
+    const title = extractHtmlTitle(htmlContent, count);
+
+    htmlFileLinks.push({
+      filePath: `inline-html-${count}`,
+      linkText: title,
+      title: title,
+      isInlineHtml: true,
+      htmlContent: htmlContent,
     });
-  
-    // Remove duplicates
-    const uniqueLinks = htmlFileLinks.filter((link, index, self) => 
-      index === self.findIndex(l => l.filePath === link.filePath)
-    );
-  
-    return uniqueLinks;
+
+    count++;
   }
-  
-  /**
-   * Clean up malformed file paths
-   */
-  function cleanFilePath(filePath: string): string {
-    // Remove any href= prefixes that might have been captured
-    let cleaned = filePath.replace(/^.*?href=["']?/, '');
-    
-    // Remove trailing quotes or HTML characters
-    cleaned = cleaned.replace(/["'>].*$/, '');
-    
-    // Ensure proper file:// prefix
-    if (!cleaned.startsWith('file://')) {
-      // If it starts with a slash, it's an absolute path
-      if (cleaned.startsWith('/')) {
-        cleaned = `file://${cleaned}`;
-      } else {
-        // Relative path, might need current working directory
-        cleaned = `file://${cleaned}`;
+}
+
+/**
+ * Extract title from HTML content
+ */
+function extractHtmlTitle(htmlContent: string, fallbackCount: number): string {
+  const titleMatch =
+    htmlContent.match(/<title[^>]*>([^<]+)<\/title>/i) || htmlContent.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+  return titleMatch ? titleMatch[1].trim() : `Inline HTML Content ${fallbackCount}`;
+}
+
+/**
+ * Detect various file link patterns (anchor tags, markdown, file:// URLs, etc.)
+ */
+function detectFileLinkPatterns(
+  content: string,
+  htmlFileLinks: HtmlFileLink[],
+  processedRanges: ProcessedRange[]
+): void {
+  const patterns = getFileLinkPatterns();
+
+  patterns.forEach(({ regex, handler }) => {
+    let match;
+    while ((match = regex.exec(content)) !== null) {
+      // Skip if this match overlaps with already processed content
+      if (isInProcessedRange(match.index, match[0].length, processedRanges)) {
+        continue;
       }
+
+      const result = handler(match);
+      if (!result) {
+        continue;
+      }
+
+      const { filePath, linkText } = result;
+
+      // Mark this range as processed
+      processedRanges.push({ start: match.index, end: match.index + match[0].length });
+
+      htmlFileLinks.push({
+        filePath: filePath,
+        linkText: linkText.trim(),
+        title: extractTitleFromPath(filePath),
+        isInlineHtml: false,
+      });
     }
-    
-    return cleaned;
+  });
+}
+
+/**
+ * Define regex patterns and handlers for different file link formats
+ */
+function getFileLinkPatterns(): Array<{ regex: RegExp; handler: PatternHandler }> {
+  return [
+    // HTML anchor tags with file:// URLs
+    {
+      regex: /<a\s+href=["']?(file:\/\/[^"'\s>]+\.html)["']?[^>]*>([^<]+)<\/a>/gi,
+      handler: (match) => ({ filePath: match[1], linkText: match[2] }),
+    },
+    // HTML anchor tags with http/https - SKIP these
+    {
+      regex: /<a\s+href=["']?(https?:\/\/[^"'\s>]+\.html)["']?[^>]*>([^<]+)<\/a>/gi,
+      handler: () => null,
+    },
+    // Markdown links: [text](file://path)
+    {
+      regex: /\[([^\]]+)\]\((file:\/\/[^)]+\.html)\)/g,
+      handler: (match) => ({ linkText: match[1], filePath: match[2] }),
+    },
+    // File paths in backticks
+    {
+      regex: /`([^`]+\.html)`/g,
+      handler: (match) => createFilePathResult(match[1]),
+    },
+    // File paths in double quotes
+    {
+      regex: /"([^"]+\.html)"/g,
+      handler: (match) => createFilePathResult(match[1]),
+    },
+    // File paths in single quotes
+    {
+      regex: /'([^']+\.html)'/g,
+      handler: (match) => createFilePathResult(match[1]),
+    },
+    // Direct file:// URLs (not in markdown or HTML tags, not containing http/https)
+    {
+      regex: /(?<!\(|href=["'])(file:\/\/[^\s"'<>`\)]+\.html)(?!["']\s*>|\))/g,
+      handler: (match) => {
+        const path = match[1] || match[0];
+        if (path.includes('http://') || path.includes('https://')) {
+          return null;
+        }
+        return { filePath: path, linkText: extractFilenameFromPath(path) };
+      },
+    },
+    // Plain file paths (absolute paths starting with /)
+    {
+      regex: /\s(\/[\w\/\-\.]+\.html)\b/g,
+      handler: (match) => ({
+        filePath: `file://${match[1]}`,
+        linkText: extractFilenameFromPath(match[1]),
+      }),
+    },
+  ];
+}
+
+/**
+ * Create result for a file path, handling http/https filtering
+ */
+function createFilePathResult(path: string): { filePath: string; linkText: string } | null {
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return null;
   }
-  
-  /**
-   * Extract a readable title from the file path
-   */
-  function extractTitleFromPath(filePath: string): string {
-    const filename = extractFilenameFromPath(filePath);
-    
-    // Convert underscores/hyphens to spaces and capitalize
-    return filename
-      .replace(/\.html$/, '')
-      .replace(/[_-]/g, ' ')
-      .replace(/\b\w/g, char => char.toUpperCase());
-  }
-  
-  /**
-   * Extract filename from file path
-   */
-  function extractFilenameFromPath(filePath: string): string {
-    const cleanPath = filePath.replace('file://', '');
-    return cleanPath.split('/').pop() || cleanPath;
-  }
-  
-  /**
-   * Remove HTML file links from content to avoid duplicate display
-   */
-  export function removeHtmlFileLinksFromContent(content: string): string {
-    // Remove HTML anchor tags to HTML files
-    let cleanContent = content.replace(/<a\s+href=["']?(file:\/\/[^"'\s>]+\.html)["']?[^>]*>([^<]+)<\/a>/gi, '');
-    
-    // Remove HTML img tags that reference HTML files (this causes "Failed to load image" errors)
-    cleanContent = cleanContent.replace(/<img\s+[^>]*src=["']?(file:\/\/[^"'\s>]+\.html)["']?[^>]*\/?>/gi, '');
-    
-    // Remove any complete HTML blocks - we'll display these as separate interactive cards
-    cleanContent = cleanContent.replace(/<html[^>]*>[\s\S]*?<\/html>/gi, '');
-    
-    // Remove markdown links to HTML files
-    cleanContent = cleanContent.replace(/\[([^\]]+)\]\((file:\/\/[^)]+\.html)\)/g, '');
-    
-    // Remove standalone file:// URLs to HTML files
-    cleanContent = cleanContent.replace(/(^|\s)(file:\/\/[^\s"'<>`]+\.html)/g, '$1');
-    
-    // Remove standalone HTML file paths (including those in backticks)
-    cleanContent = cleanContent.replace(/(^|\s)`?([^\s"'<>`]+\.html)`?(\s|$)/g, '$1$3');
-    
-    // Remove HTML file paths wrapped in backticks specifically
-    cleanContent = cleanContent.replace(/`([^`]+\.html)`/g, '');
-    
-    // Remove HTML file paths wrapped in double quotes
-    cleanContent = cleanContent.replace(/"([^"]+\.html)"/g, '');
-    
-    // Remove HTML file paths wrapped in single quotes
-    cleanContent = cleanContent.replace(/'([^']+\.html)'/g, '');
-    
-    // Clean up extra whitespace
-    cleanContent = cleanContent.replace(/\n\s*\n\s*\n/g, '\n\n');
-    cleanContent = cleanContent.trim();
-    
-    return cleanContent;
-  }
+  return {
+    filePath: path.startsWith('file://') ? path : `file://${path}`,
+    linkText: extractFilenameFromPath(path),
+  };
+}
+
+/**
+ * Check if a match overlaps with already processed ranges
+ */
+function isInProcessedRange(index: number, length: number, processedRanges: ProcessedRange[]): boolean {
+  const matchStart = index;
+  const matchEnd = index + length;
+  return processedRanges.some(
+    (range) =>
+      (matchStart >= range.start && matchStart < range.end) ||
+      (matchEnd > range.start && matchEnd <= range.end) ||
+      (matchStart <= range.start && matchEnd >= range.end)
+  );
+}
+
+/**
+ * Remove duplicate links based on filePath
+ */
+function removeDuplicateLinks(links: HtmlFileLink[]): HtmlFileLink[] {
+  return links.filter((link, index, self) => index === self.findIndex((l) => l.filePath === link.filePath));
+}
+
+/**
+ * Extract a readable title from the file path
+ */
+function extractTitleFromPath(filePath: string): string {
+  const filename = extractFilenameFromPath(filePath);
+
+  // Convert underscores/hyphens to spaces and capitalize
+  return filename
+    .replace(/\.html$/, '')
+    .replace(/[_-]/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+/**
+ * Extract filename from file path
+ */
+function extractFilenameFromPath(filePath: string): string {
+  const cleanPath = filePath.replace('file://', '');
+  return cleanPath.split('/').pop() || cleanPath;
+}
+
+/**
+ * Remove HTML file links from content to avoid duplicate display
+ * This is used to clean the message content before displaying it alongside HtmlFileRenderer
+ */
+export function removeHtmlFileLinksFromContent(content: string): string {
+  let cleanContent = content;
+
+  // Remove HTML anchor tags to HTML files
+  cleanContent = cleanContent.replace(
+    /<a\s+href=["']?(file:\/\/[^"'\s>]+\.html)["']?[^>]*>([^<]+)<\/a>/gi,
+    ''
+  );
+
+  // Remove HTML img tags that reference HTML files
+  cleanContent = cleanContent.replace(/<img\s+[^>]*src=["']?(file:\/\/[^"'\s>]+\.html)["']?[^>]*\/?>/gi, '');
+
+  // Remove any complete HTML blocks
+  cleanContent = cleanContent.replace(/<html[^>]*>[\s\S]*?<\/html>/gi, '');
+
+  // Remove markdown links to HTML files
+  cleanContent = cleanContent.replace(/\[([^\]]+)\]\((file:\/\/[^)]+\.html)\)/g, '');
+
+  // Remove standalone file:// URLs
+  cleanContent = cleanContent.replace(/\s(file:\/\/[^\s"'<>`\)]+\.html)\s*(?=[.,!?;:\n]|$)/g, '');
+  cleanContent = cleanContent.replace(/^(file:\/\/[^\s"'<>`\)]+\.html)\s*(?=[.,!?;:\n]|$)/gm, '');
+
+  // Remove file paths in various quote styles
+  cleanContent = cleanContent.replace(/`([^`]+\.html)`/g, '');
+  cleanContent = cleanContent.replace(/"([^"]+\.html)"/g, '');
+  cleanContent = cleanContent.replace(/'([^']+\.html)'/g, '');
+
+  // Remove plain file paths
+  cleanContent = cleanContent.replace(/\s(\/[\w\/\-\.]+\.html)\s*(?=[.,!?;:\n]|$)/g, '');
+
+  // Clean up extra newlines
+  cleanContent = cleanContent.replace(/\n\s*\n\s*\n+/g, '\n\n');
+
+  return cleanContent.trim();
+}
