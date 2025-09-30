@@ -8,13 +8,13 @@ import {
   IconUserFilled,
   IconChevronLeft,
   IconChevronRight,
+  IconDatabase,
 } from '@tabler/icons-react';
 import React, { useContext, useState, useRef, useEffect } from 'react';
-
 import { env } from 'next-runtime-env';
 
 import { getWorkflowName } from '@/utils/app/helper';
-
+import { useTheme } from '@/contexts/ThemeContext';
 import HomeContext from '@/pages/api/home/home.context';
 
 export const ChatHeader = ({ webSocketModeRef = {} }) => {
@@ -34,11 +34,13 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
       chatHistory,
       webSocketMode,
       webSocketConnected,
-      lightMode,
       selectedConversation,
+      showDataStreamDisplay,
     },
     dispatch: homeDispatch,
   } = useContext(HomeContext);
+
+  const { lightMode, setLightMode } = useTheme();
 
   const handleLogin = () => {
     console.log('Login clicked');
@@ -73,7 +75,7 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
       ) : (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 mx-auto flex flex-col space-y-5 md:space-y-10 px-3 pt-5 md:pt-12 sm:max-w-[600px] text-center">
           <div className="text-3xl font-semibold text-gray-800 dark:text-white">
-            Hi, I'm {workflow}
+            Hi, I&apos;m {workflow}
           </div>
           <div className="text-lg text-gray-600 dark:text-gray-400">
             How can I assist you today?
@@ -85,6 +87,10 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
       <div
         className={`fixed right-0 top-0 h-12 flex items-center transition-all duration-300 ${
           isExpanded ? 'mr-2' : 'mr-2'
+        } ${
+          selectedConversation?.messages?.length === 0
+            ? 'bg-none'
+            : 'bg-[#76b900] dark:bg-black bo'
         }`}
       >
         <button
@@ -173,15 +179,50 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
             </label>
           </div>
 
+          {/* Data Stream Display Toggle */}
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            <label className="flex items-center gap-2 cursor-pointer flex-shrink-0">
+              <span className="text-sm font-medium text-black dark:text-white">
+              Data Stream Display
+              </span>
+              <div
+                onClick={() => {
+                  homeDispatch({
+                    field: 'showDataStreamDisplay',
+                    value: !showDataStreamDisplay,
+                  });
+                }}
+                className={`relative inline-flex h-5 w-10 items-center cursor-pointer rounded-full transition-colors duration-300 ease-in-out ${
+                  showDataStreamDisplay ? 'bg-black dark:bg-[#76b900]' : 'bg-gray-200'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ease-in-out ${
+                    showDataStreamDisplay ? 'translate-x-6' : 'translate-x-0'
+                  }`}
+                />
+              </div>
+            </label>
+          </div>
+
+          {/* Database Updates Button */}
+          <div className="flex items-center">
+              <button
+                  onClick={() => window.open('/database-updates', '_blank')}
+                  className="flex items-center gap-2 px-3 py-1 text-sm text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                  title="View Database Updates"
+              >
+                  <IconDatabase size={16} />
+                  <span className="hidden sm:inline">Data Updates</span>
+              </button>
+          </div>
+
           {/* Theme Toggle Button */}
           <div className="flex items-center dark:text-white text-black transition-colors duration-300">
             <button
               onClick={() => {
                 const newMode = lightMode === 'dark' ? 'light' : 'dark';
-                homeDispatch({
-                  field: 'lightMode',
-                  value: newMode,
-                });
+                setLightMode(newMode);
               }}
               className="rounded-full flex items-center justify-center bg-none dark:bg-gray-700 transition-colors duration-300 focus:outline-none"
             >

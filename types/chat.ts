@@ -14,6 +14,7 @@ export type Role = 'assistant' | 'user' | 'agent' | 'system';
 export interface ChatBody {
   chatCompletionURL?: string;
   messages?: Message[];
+  conversationId?: string;
   additionalProps?: any;
 }
 
@@ -23,6 +24,7 @@ export interface Conversation {
   messages: Message[];
   folderId: string | null;
   isHomepageConversation?: boolean; // Flag to track homepage conversations before first message
+  selectedStream?: string;
 }
 
 // WebSocket Message Types

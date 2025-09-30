@@ -1,7 +1,5 @@
 import React from 'react';
 
-import { getInitials } from '@/utils/app/helper';
-
 export const UserAvatar = ({ src = '', height = 30, width = 30 }) => {
   const profilePicUrl = src || ``;
 

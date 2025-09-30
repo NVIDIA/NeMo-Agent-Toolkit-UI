@@ -1,10 +1,8 @@
 'use client';
 
-import { IconChevronCompactDown } from '@tabler/icons-react';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { fetchLastMessage } from '@/utils/app/helper';
-
 import HomeContext from '@/pages/api/home/home.context';
 
 export const CustomDetails = ({ children, id, messageIndex, index }) => {
@@ -100,7 +98,7 @@ export const CustomDetails = ({ children, id, messageIndex, index }) => {
         ref={detailsRef}
         open={isOpen}
         className={`
-                    m-2 bg-neutral-100 dark:bg-zinc-700 shadow border border-neutral-300 dark:border-zinc-600 rounded-lg p-2 
+                    m-2 bg-neutral-100 dark:bg-zinc-700 shadow border border-neutral-300 dark:border-zinc-600 rounded-lg p-2
                     transition-[max-height,opacity,scale] duration-500 ease-in-out overflow-auto
                     ${
                       isOpen

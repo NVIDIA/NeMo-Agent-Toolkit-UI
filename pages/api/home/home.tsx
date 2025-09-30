@@ -1,14 +1,16 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-
 import { GetServerSideProps } from 'next';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
+import { v4 as uuidv4 } from 'uuid';
 
 import { useCreateReducer } from '@/hooks/useCreateReducer';
-
+import { DataStreamDisplay } from '@/components/DataStreamDisplay/DataStreamDisplay';
+import { ChatHeader } from '@/components/Chat/ChatHeader';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   cleanConversationHistory,
   cleanSelectedConversation,
@@ -21,13 +23,10 @@ import {
 import { saveFolders } from '@/utils/app/folders';
 import { getWorkflowName } from '@/utils/app/helper';
 import { getSettings } from '@/utils/app/settings';
-
 import { APPLICATION_NAME } from '@/constants/constants';
-
 import { Conversation } from '@/types/chat';
 import { KeyValuePair } from '@/types/data';
 import { FolderInterface, FolderType } from '@/types/folder';
-
 import { Chat } from '@/components/Chat/Chat';
 import { Chatbar } from '@/components/Chatbar/Chatbar';
 import { Navbar } from '@/components/Mobile/Navbar';
@@ -35,9 +34,9 @@ import { Navbar } from '@/components/Mobile/Navbar';
 import HomeContext from './home.context';
 import { HomeInitialState, initialState } from './home.state';
 
-import { v4 as uuidv4 } from 'uuid';
+const webSocketMode = initialState.webSocketMode;
 
-const Home = (props: any) => {
+const Home = (_props: any) => {
   const { t } = useTranslation('chat');
 
   const contextValue = useCreateReducer<HomeInitialState>({
@@ -47,11 +46,15 @@ const Home = (props: any) => {
   let workflow = APPLICATION_NAME;
 
   const {
-    state: { lightMode, folders, conversations, selectedConversation },
+    state: { folders, conversations, selectedConversation, dataStreams, showDataStreamDisplay },
     dispatch,
   } = contextValue;
 
-  const stopConversationRef = useRef<boolean>(false);
+  const { lightMode, setLightMode } = useTheme();
+
+  const webSocketModeRef = useRef(
+    typeof window !== 'undefined' && sessionStorage.getItem('webSocketMode') === 'false' ? false : webSocketMode
+  );
 
   const handleSelectConversation = (conversation: Conversation) => {
     // Clear any streaming states before switching conversations
@@ -142,8 +145,6 @@ const Home = (props: any) => {
       return;
     }
 
-    const lastConversation = conversations[conversations.length - 1];
-
     const newConversation: Conversation = {
       id: uuidv4(),
       name: t('New Conversation'),
@@ -160,6 +161,17 @@ const Home = (props: any) => {
     saveConversations(updatedConversations);
 
     dispatch({ field: 'loading', value: false });
+  };
+
+  const handleDataStreamChange = (stream: string) => {
+    if (selectedConversation) {
+      const updatedConversation = {
+        ...selectedConversation,
+        selectedStream: stream,
+      };
+      dispatch({ field: 'selectedConversation', value: updatedConversation });
+      saveConversation(updatedConversation);
+    }
   };
 
   const handleUpdateConversation = (
@@ -192,10 +204,7 @@ const Home = (props: any) => {
     workflow = getWorkflowName();
     const settings = getSettings();
     if (settings.theme) {
-      dispatch({
-        field: 'lightMode',
-        value: settings.theme,
-      });
+      setLightMode(settings.theme);
     }
 
     const showChatbar = sessionStorage.getItem('showChatbar');
@@ -249,7 +258,31 @@ const Home = (props: any) => {
       saveConversation(homepageConversation);
       saveConversations(updatedConversations);
     }
-  }, [dispatch, t]);
+  }, [dispatch, t, setLightMode]);
+
+  // Poll /api/update-data-stream every 2 seconds to discover available streams
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        // Get available streams
+        const streamsRes = await fetch('/api/update-data-stream');
+        if (streamsRes.ok) {
+          const streamsData = await streamsRes.json();
+          if (streamsData.streams && Array.isArray(streamsData.streams)) {
+            // Only update if streams actually changed
+            const currentStreams = dataStreams || [];
+            const newStreams = streamsData.streams;
+            if (JSON.stringify(currentStreams.sort()) !== JSON.stringify(newStreams.sort())) {
+              dispatch({ field: 'dataStreams', value: newStreams });
+            }
+          }
+        }
+      } catch (err) {
+        // Optionally handle error
+      }
+    }, 2000); // Less frequent polling for stream discovery
+    return () => clearInterval(interval);
+  }, [dispatch, dataStreams]);
 
   return (
     <HomeContext.Provider
@@ -273,7 +306,7 @@ const Home = (props: any) => {
         <link rel="icon" href="/nvidia.jpg" />
       </Head>
       {selectedConversation && (
-        <main
+        <div
           className={`flex h-screen w-screen flex-col text-sm text-white dark:text-white ${lightMode}`}
         >
           <div className="fixed top-0 w-full sm:hidden">
@@ -286,11 +319,21 @@ const Home = (props: any) => {
           <div className="flex h-full w-full sm:pt-0">
             <Chatbar />
 
-            <div className="flex flex-1">
-              <Chat />
-            </div>
+            <main className="flex flex-col w-full pt-0 relative border-l md:pt-0 dark:border-white/20 transition-width">
+              <div className="flex flex-1 flex-col min-h-screen dark:bg-black">
+                <ChatHeader webSocketModeRef={webSocketModeRef} />
+                {showDataStreamDisplay && (
+                  <DataStreamDisplay
+                    dataStreams={dataStreams || []}
+                    selectedStream={selectedConversation?.selectedStream || (dataStreams && dataStreams.length > 0 ? dataStreams[0] : 'default')}
+                    onStreamChange={handleDataStreamChange}
+                  />
+                )}
+                <Chat />
+              </div>
+            </main>
           </div>
-        </main>
+        </div>
       )}
     </HomeContext.Provider>
   );

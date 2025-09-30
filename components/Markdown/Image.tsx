@@ -1,13 +1,9 @@
-import {
-  IconExclamationCircle,
-  IconMaximize,
-  IconX,
-} from '@tabler/icons-react';
+import { IconExclamationCircle } from '@tabler/icons-react';
 import React, { memo, useMemo, useRef, useState, useCallback } from 'react';
 
 import Loading from './Loading';
 
-export const Image = memo(
+const ImageComponent = memo(
   ({ src, alt, ...props }) => {
     const imgRef = useRef(null);
     const [error, setError] = useState(false);
@@ -77,3 +73,6 @@ export const Image = memo(
   },
   (prevProps, nextProps) => prevProps.src === nextProps.src,
 );
+
+ImageComponent.displayName = 'Image';
+export const Image = ImageComponent;
