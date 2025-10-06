@@ -26,7 +26,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       lightMode,
       httpEndpoint,
       httpEndpoints,
-      additionalJsonBody,
+      optionalGenerationParameters,
       webSocketSchema: schema,
       expandIntermediateSteps,
       intermediateStepOverride,
@@ -41,7 +41,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
     sessionStorage.getItem('httpEndpoint') || httpEndpoint || DEFAULT_HTTP_ENDPOINT,
   );
   const [jsonBodyInput, setJsonBodyInput] = useState(
-    sessionStorage.getItem('additionalJsonBody') || additionalJsonBody || '',
+    sessionStorage.getItem('optionalGenerationParameters') || optionalGenerationParameters || '',
   );
   const [jsonValidationError, setJsonValidationError] = useState<string>('');
   const [webSocketSchema, setWebSocketSchema] = useState(
@@ -147,7 +147,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
 
     homeDispatch({ field: 'lightMode', value: theme });
     homeDispatch({ field: 'httpEndpoint', value: selectedHttpEndpoint || DEFAULT_HTTP_ENDPOINT });
-    homeDispatch({ field: 'additionalJsonBody', value: jsonBodyInput });
+    homeDispatch({ field: 'optionalGenerationParameters', value: jsonBodyInput });
     homeDispatch({ field: 'webSocketSchema', value: webSocketSchema || 'chat_stream' });
     homeDispatch({ field: 'expandIntermediateSteps', value: detailsToggle });
     homeDispatch({
@@ -160,7 +160,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
     });
 
     sessionStorage.setItem('httpEndpoint', selectedHttpEndpoint || DEFAULT_HTTP_ENDPOINT);
-    sessionStorage.setItem('additionalJsonBody', jsonBodyInput);
+    sessionStorage.setItem('optionalGenerationParameters', jsonBodyInput);
     sessionStorage.setItem('webSocketSchema', webSocketSchema || 'chat_stream');
     sessionStorage.setItem('expandIntermediateSteps', String(detailsToggle));
     sessionStorage.setItem(

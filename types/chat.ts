@@ -19,9 +19,9 @@ export interface ChatBody {
 // Internal API request interface (includes system variables)
 export interface ChatApiRequest {
   messages?: Message[];
-  httpEndpoint?: string;        // For routing
-  additionalJsonBody?: string;  // For parsing and merging
-  additionalProps?: any;        // For internal processing
+  httpEndpoint?: string;
+  optionalGenerationParameters?: string;
+  additionalProps?: any;
 }
 
 export interface Conversation {

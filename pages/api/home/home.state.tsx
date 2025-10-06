@@ -20,7 +20,7 @@ export interface HomeInitialState {
   serverURL?: string;
   httpEndpoint?: string;
   httpEndpoints?: Array<{label: string; value: string}>;
-  additionalJsonBody?: string;
+  optionalGenerationParameters?: string;
   webSocketMode?: boolean;
   webSocketConnected?: boolean;
   webSocketURL?: string;
@@ -55,7 +55,7 @@ export const initialState: HomeInitialState = {
     process?.env?.NEXT_PUBLIC_SERVER_URL,
   httpEndpoint: DEFAULT_HTTP_ENDPOINT,
   httpEndpoints: HTTP_ENDPOINT_OPTIONS,
-  additionalJsonBody: '',
+  optionalGenerationParameters: '',
   webSocketMode:
     env('NEXT_PUBLIC_WEB_SOCKET_DEFAULT_ON') === 'true' ||
     process?.env?.NEXT_PUBLIC_WEB_SOCKET_DEFAULT_ON === 'true'

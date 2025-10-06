@@ -55,8 +55,6 @@ import { SESSION_COOKIE_NAME } from '@/constants/constants';
 import { isValidConsentPromptURL } from '@/utils/security/oauth-validation';
 import { isValidWebSocketURL } from '@/utils/security/websocket-validation';
 
-// Export aliases for backward compatibility
-export const isValidOAuthURL = isValidConsentPromptURL;
 export { isValidWebSocketURL };
 
 
@@ -166,7 +164,7 @@ export const Chat = () => {
       webSocketSchema,
       serverURL,
       httpEndpoint,
-      additionalJsonBody,
+      optionalGenerationParameters,
       expandIntermediateSteps,
       intermediateStepOverride,
       enableIntermediateSteps,
@@ -435,7 +433,7 @@ export const Chat = () => {
       const oauthUrl = extractOAuthUrl(message);
       if (oauthUrl) {
         // Validate URL before opening
-        if (!isValidOAuthURL(oauthUrl)) {
+        if (!isValidConsentPromptURL(oauthUrl)) {
           console.error('OAuth URL validation failed in popup handler, refusing to open potentially malicious URL.');
           toast.error('OAuth URL validation failed.');
           return false;
@@ -651,7 +649,7 @@ export const Chat = () => {
           message?.content?.text;
         if (oauthUrl) {
           // Validate URL before opening to prevent Open Redirect attacks
-          if (isValidOAuthURL(oauthUrl)) {
+          if (isValidConsentPromptURL(oauthUrl)) {
             // Open the validated OAuth URL in a new tab
             window.open(oauthUrl, '_blank', 'noopener,noreferrer');
           } else {
@@ -881,7 +879,7 @@ export const Chat = () => {
             ? messagesCleaned
             : [{ role: 'user', content: message?.content }],
           httpEndpoint: sessionStorage.getItem('httpEndpoint') || httpEndpoint,
-          additionalJsonBody: sessionStorage.getItem('additionalJsonBody') || additionalJsonBody,
+          optionalGenerationParameters: sessionStorage.getItem('optionalGenerationParameters') || optionalGenerationParameters,
           additionalProps: {
             enableIntermediateSteps: sessionStorage.getItem(
               'enableIntermediateSteps'
@@ -1216,7 +1214,7 @@ export const Chat = () => {
       webSocketSchema,
       serverURL,
       httpEndpoint,
-      additionalJsonBody,
+      optionalGenerationParameters,
       expandIntermediateSteps,
       intermediateStepOverride,
       enableIntermediateSteps,

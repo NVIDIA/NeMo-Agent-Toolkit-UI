@@ -28,5 +28,3 @@ export function isValidConsentPromptURL(raw: string): boolean {
   return true;
 }
 
-// Alias for backward compatibility
-export const isValidOAuthURL = isValidConsentPromptURL;

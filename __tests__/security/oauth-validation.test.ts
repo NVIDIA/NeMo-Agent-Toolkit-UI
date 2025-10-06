@@ -1,8 +1,5 @@
 import { isValidConsentPromptURL } from '@/utils/security/oauth-validation';
 
-// Use the main function for testing
-const isValidOAuthURL = isValidConsentPromptURL;
-
 describe('OAuth URL Validation Security', () => {
   describe('Positive Tests - Valid URLs should pass', () => {
     test('accepts valid HTTPS OAuth URLs', () => {
@@ -14,12 +11,12 @@ describe('OAuth URL Validation Security', () => {
       ];
 
       validUrls.forEach(url => {
-        expect(isValidOAuthURL(url)).toBe(true);
+        expect(isValidConsentPromptURL(url)).toBe(true);
       });
     });
 
     test('accepts valid HTTP URLs', () => {
-      expect(isValidOAuthURL('http://example.com/oauth')).toBe(true);
+      expect(isValidConsentPromptURL('http://example.com/oauth')).toBe(true);
     });
   });
 
@@ -34,7 +31,7 @@ describe('OAuth URL Validation Security', () => {
       ];
 
       dangerousUrls.forEach(url => {
-        expect(isValidOAuthURL(url)).toBe(false);
+        expect(isValidConsentPromptURL(url)).toBe(false);
       });
     });
 
@@ -46,7 +43,7 @@ describe('OAuth URL Validation Security', () => {
       ];
 
       credentialUrls.forEach(url => {
-        expect(isValidOAuthURL(url)).toBe(false);
+        expect(isValidConsentPromptURL(url)).toBe(false);
       });
     });
 
@@ -61,7 +58,7 @@ describe('OAuth URL Validation Security', () => {
       ];
 
       malformedUrls.forEach(url => {
-        expect(isValidOAuthURL(url as any)).toBe(false);
+        expect(isValidConsentPromptURL(url as any)).toBe(false);
       });
     });
 
@@ -74,7 +71,7 @@ describe('OAuth URL Validation Security', () => {
       ];
 
       controlCharUrls.forEach(url => {
-        expect(isValidOAuthURL(url)).toBe(false);
+        expect(isValidConsentPromptURL(url)).toBe(false);
       });
     });
   });

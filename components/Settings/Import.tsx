@@ -8,10 +8,7 @@ import { SupportedExportFormats } from '@/types/export';
 
 import { SidebarButton } from '../Sidebar/SidebarButton';
 
-import { validateJsonData } from '@/utils/security/import-validation';
-
-// Re-export for use in this component
-export { validateJsonData as validateImportData };
+import { validateImportData } from '@/utils/security/import-validation';
 
 interface Props {
   onImport: (data: SupportedExportFormats) => void;
@@ -37,7 +34,7 @@ export const Import: FC<Props> = ({ onImport }) => {
               const rawContent = e.target?.result as string;
               
               // Validate and sanitize the imported data
-              const validatedData = validateJsonData(rawContent);
+              const validatedData = validateImportData(rawContent);
               
               if (validatedData) {
                 onImport(validatedData);

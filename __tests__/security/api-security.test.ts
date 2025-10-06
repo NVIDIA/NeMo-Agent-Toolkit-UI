@@ -7,18 +7,15 @@ import { isValidConsentPromptURL } from '@/utils/security/oauth-validation';
 import { isValidWebSocketURL } from '@/utils/security/websocket-validation';
 import { isValidMediaURL } from '@/utils/media/validation';
 
-// Aliases for testing
-const isValidOAuthURL = isValidConsentPromptURL;
-
 describe('API Security Integration Tests', () => {
   describe('URL Validation Security', () => {
     test('OAuth URL validation should prevent dangerous redirects', () => {
       // Valid URLs should pass
-      expect(isValidOAuthURL('https://accounts.google.com/oauth/authorize')).toBe(true);
+      expect(isValidConsentPromptURL('https://accounts.google.com/oauth/authorize')).toBe(true);
       
       // Dangerous URLs should be blocked
-      expect(isValidOAuthURL('javascript:alert("xss")')).toBe(false);
-      expect(isValidOAuthURL('https://user:pass@evil.com')).toBe(false);
+      expect(isValidConsentPromptURL('javascript:alert("xss")')).toBe(false);
+      expect(isValidConsentPromptURL('https://user:pass@evil.com')).toBe(false);
     });
 
     test('WebSocket URL validation should prevent malicious connections', () => {

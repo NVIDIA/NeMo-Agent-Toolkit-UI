@@ -6,7 +6,7 @@ import { SupportedExportFormats } from '@/types/export';
  * @param rawJson - Raw JSON string from file
  * @returns Validated export format or null if invalid
  */
-export function validateJsonData(rawJson: string): SupportedExportFormats | null {
+export function validateImportData(rawJson: string): SupportedExportFormats | null {
   // Basic input validation
   if (!rawJson || typeof rawJson !== 'string') {
     return null;

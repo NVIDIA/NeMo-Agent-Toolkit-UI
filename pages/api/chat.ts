@@ -230,7 +230,7 @@ const handler = async (req: Request): Promise<Response> => {
   const {
     messages = [],
     httpEndpoint = DEFAULT_HTTP_ENDPOINT,
-    additionalJsonBody = '',
+    optionalGenerationParameters = '',
     additionalProps = { enableIntermediateSteps: true },
   } = (await req.json()) as ChatApiRequest;
 
@@ -250,9 +250,9 @@ const handler = async (req: Request): Promise<Response> => {
       : buildOpenAIChatPayload(messages, isStreamingEndpoint);
     
     // Merge additional JSON body only for chat/chat stream endpoints
-    if (!isGenerateEndpoint && additionalJsonBody && additionalJsonBody.trim()) {
+    if (!isGenerateEndpoint && optionalGenerationParameters && optionalGenerationParameters.trim()) {
       try {
-        const additionalJson = JSON.parse(additionalJsonBody);
+        const additionalJson = JSON.parse(optionalGenerationParameters);
         if (typeof additionalJson === 'object' && additionalJson !== null && !Array.isArray(additionalJson)) {
           payload = { ...payload, ...additionalJson };
         }
