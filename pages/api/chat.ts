@@ -234,8 +234,20 @@ const handler = async (req: Request): Promise<Response> => {
     additionalProps = { enableIntermediateSteps: true },
   } = (await req.json()) as ChatApiRequest;
 
+  // Validate httpEndpoint against allowed values
+  const validEndpoints = Object.values(HTTP_ENDPOINTS);
+  if (!validEndpoints.includes(httpEndpoint as any)) {
+    return new Response(
+      JSON.stringify({ error: 'Invalid httpEndpoint. Must be one of: ' + validEndpoints.join(', ') }), 
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
   // Construct URL by appending endpoint to server URL
-  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL;
+  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL as string | undefined;
+  if (!serverURL) {
+    return new Response('Server URL not configured', { status: 500 });
+  }
   const chatCompletionURL = `${serverURL}${httpEndpoint}`;
 
   let payload;
@@ -252,9 +264,15 @@ const handler = async (req: Request): Promise<Response> => {
     // Merge additional JSON body only for chat/chat stream endpoints
     if (!isGenerateEndpoint && optionalGenerationParameters && optionalGenerationParameters.trim()) {
       try {
-        const additionalJson = JSON.parse(optionalGenerationParameters);
-        if (typeof additionalJson === 'object' && additionalJson !== null && !Array.isArray(additionalJson)) {
-          payload = { ...payload, ...additionalJson };
+        const parsedOptionalGenerationParameters = JSON.parse(optionalGenerationParameters);
+        if (typeof parsedOptionalGenerationParameters === 'object' && parsedOptionalGenerationParameters !== null && !Array.isArray(parsedOptionalGenerationParameters)) {
+          const reserved = new Set(['messages', 'stream', 'input_message']);
+          for (const k of Object.keys(parsedOptionalGenerationParameters)) {
+            if (reserved.has(k)) {
+              return new Response(`optionalGenerationParameters cannot override reserved field: ${k}`, { status: 400 });
+            }
+          }
+          payload = { ...payload, ...parsedOptionalGenerationParameters };
         }
       } catch (jsonError) {
         return new Response('Invalid additional JSON body format', { status: 400 });

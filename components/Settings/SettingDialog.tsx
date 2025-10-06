@@ -138,11 +138,15 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       return;
     }
 
-    // Validate JSON before saving
-    const validation = validateAdditionalJson(jsonBodyInput);
-    if (!validation.isValid) {
-      toast.error(`JSON Validation Error: ${validation.error}`);
-      return;
+    const isChatEndpoint = selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT || 
+                          selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT_STREAM;
+    
+    if (isChatEndpoint) {
+      const validation = validateAdditionalJson(jsonBodyInput);
+      if (!validation.isValid) {
+        toast.error(`JSON Validation Error: ${validation.error}`);
+        return;
+      }
     }
 
     homeDispatch({ field: 'lightMode', value: theme });
