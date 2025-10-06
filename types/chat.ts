@@ -12,9 +12,16 @@ export interface Message {
 export type Role = 'assistant' | 'user' | 'agent' | 'system';
 
 export interface ChatBody {
-  chatCompletionURL?: string;
   messages?: Message[];
-  additionalProps?: any;
+  // Additional fields from user's JSON will be merged here
+}
+
+// Internal API request interface (includes system variables)
+export interface ChatApiRequest {
+  messages?: Message[];
+  httpEndpoint?: string;        // For routing
+  additionalJsonBody?: string;  // For parsing and merging
+  additionalProps?: any;        // For internal processing
 }
 
 export interface Conversation {

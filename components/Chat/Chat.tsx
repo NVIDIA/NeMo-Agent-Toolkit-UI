@@ -7,7 +7,8 @@ import { ChatLoader } from './ChatLoader';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
 import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
 import HomeContext from '@/pages/api/home/home.context';
-import { ChatBody, Conversation, Message } from '@/types/chat';
+import { DEFAULT_HTTP_ENDPOINT } from '@/constants/endpoints';
+import { ChatApiRequest, Conversation, Message } from '@/types/chat';
 import {
   WebSocketInbound,
   validateWebSocketMessage,
@@ -51,6 +52,12 @@ import toast from 'react-hot-toast';
 import { v4 as uuidv4 } from 'uuid';
 
 import { SESSION_COOKIE_NAME } from '@/constants/constants';
+import { isValidConsentPromptURL } from '@/utils/security/oauth-validation';
+import { isValidWebSocketURL } from '@/utils/security/websocket-validation';
+
+// Export aliases for backward compatibility
+export const isValidOAuthURL = isValidConsentPromptURL;
+export { isValidWebSocketURL };
 
 
 
@@ -157,7 +164,9 @@ export const Chat = () => {
       webSocketMode,
       webSocketURL,
       webSocketSchema,
-      chatCompletionURL,
+      serverURL,
+      httpEndpoint,
+      additionalJsonBody,
       expandIntermediateSteps,
       intermediateStepOverride,
       enableIntermediateSteps,
@@ -300,8 +309,9 @@ export const Chat = () => {
     const maxRetries = 3;
     const retryDelay = 1000; // 1-second delay between retries
 
-    if (!(sessionStorage.getItem('webSocketURL') || webSocketURL)) {
-      toast.error('Please set a valid WebSocket server in settings');
+    if (!webSocketURL) {
+      console.error('WebSocket URL not configured in environment variables');
+      toast.error('WebSocket URL not configured in environment variables.');
       return false;
     }
 
@@ -315,10 +325,17 @@ export const Chat = () => {
       };
 
       const sessionCookie = getCookie(SESSION_COOKIE_NAME);
-      let wsUrl: string =
-        sessionStorage.getItem('webSocketURL') ||
-        webSocketURL ||
-        'ws://127.0.0.1:8000/websocket';
+      
+      // Use only the environment-configured WebSocket URL for security
+      let wsUrl: string = webSocketURL;
+      
+      // Validate WebSocket URL before connecting to prevent malicious connections
+      if (!isValidWebSocketURL(wsUrl)) {
+        console.error('WebSocket URL validation failed, refusing to connect to potentially malicious server:', wsUrl);
+        toast.error('WebSocket URL validation failed.');
+        resolve(false);
+        return;
+      }
 
       // Determine if this is a cross-origin connection
       const wsUrlObj = new URL(wsUrl);
@@ -341,8 +358,7 @@ export const Chat = () => {
 
       ws.onopen = () => {
         toast.success(
-          'Connected to ' +
-            (sessionStorage.getItem('webSocketURL') || webSocketURL),
+          'Connected to ' + webSocketURL,
           {
             id: 'websocketSuccessToastId',
           }
@@ -418,10 +434,17 @@ export const Chat = () => {
     if (message.content?.input_type === 'oauth_consent') {
       const oauthUrl = extractOAuthUrl(message);
       if (oauthUrl) {
+        // Validate URL before opening
+        if (!isValidOAuthURL(oauthUrl)) {
+          console.error('OAuth URL validation failed in popup handler, refusing to open potentially malicious URL.');
+          toast.error('OAuth URL validation failed.');
+          return false;
+        }
+        
         const popup = window.open(
           oauthUrl,
           'oauth-popup',
-          'width=600,height=700,scrollbars=yes,resizable=yes'
+          'width=600,height=700,scrollbars=yes,resizable=yes,noopener,noreferrer'
         );
         const handleOAuthComplete = (event: MessageEvent) => {
           if (popup && !popup.closed) popup.close();
@@ -619,7 +642,7 @@ export const Chat = () => {
 
     // Handle human-in-the-loop interactions using type guard
     if (isSystemInteractionMessage(message)) {
-      // Check for OAuth consent message and automatically open OAuth URL directly
+      // Check for OAuth consent message and securely open OAuth URL
       if (message?.content?.input_type === 'oauth_consent') {
         // Expect the OAuth URL to be directly in the message content
         const oauthUrl =
@@ -627,8 +650,14 @@ export const Chat = () => {
           message?.content?.redirect_url ||
           message?.content?.text;
         if (oauthUrl) {
-          // Open the OAuth URL directly in a new tab
-          window.open(oauthUrl, '_blank');
+          // Validate URL before opening to prevent Open Redirect attacks
+          if (isValidOAuthURL(oauthUrl)) {
+            // Open the validated OAuth URL in a new tab
+            window.open(oauthUrl, '_blank', 'noopener,noreferrer');
+          } else {
+            console.error('OAuth URL validation failed, refusing to open potentially malicious URL:', oauthUrl);
+            toast.error('Invalid OAuth URL received. Please contact support.');
+          }
         } else {
           console.error(
             'OAuth consent message received but no URL found in content:',
@@ -847,12 +876,12 @@ export const Chat = () => {
           };
         });
 
-        const chatBody: ChatBody = {
+        const chatRequest: ChatApiRequest = {
           messages: chatHistory
             ? messagesCleaned
             : [{ role: 'user', content: message?.content }],
-          chatCompletionURL:
-            sessionStorage.getItem('chatCompletionURL') || chatCompletionURL,
+          httpEndpoint: sessionStorage.getItem('httpEndpoint') || httpEndpoint,
+          additionalJsonBody: sessionStorage.getItem('additionalJsonBody') || additionalJsonBody,
           additionalProps: {
             enableIntermediateSteps: sessionStorage.getItem(
               'enableIntermediateSteps'
@@ -863,10 +892,7 @@ export const Chat = () => {
         };
 
         const endpoint = getEndpoint({ service: 'chat' });
-        let body;
-        body = JSON.stringify({
-          ...chatBody,
-        });
+        const body = JSON.stringify(chatRequest);
 
         let response;
         try {
@@ -917,11 +943,8 @@ export const Chat = () => {
             let partialIntermediateStep = ''; // Add this to store partial chunks
 
             // Initialize streaming buffers
-            const currentURL =
-              sessionStorage.getItem('chatCompletionURL') ||
-              chatCompletionURL ||
-              '';
-            const isGenerateStream = currentURL.includes('generate');
+            const selectedEndpoint = sessionStorage.getItem('httpEndpoint') || httpEndpoint || DEFAULT_HTTP_ENDPOINT;
+            const isGenerateStream = selectedEndpoint.includes('generate');
             let sseBuffer = '';
             let ndjsonBuffer = '';
 
@@ -1191,7 +1214,9 @@ export const Chat = () => {
       chatHistory,
       webSocketConnected,
       webSocketSchema,
-      chatCompletionURL,
+      serverURL,
+      httpEndpoint,
+      additionalJsonBody,
       expandIntermediateSteps,
       intermediateStepOverride,
       enableIntermediateSteps,

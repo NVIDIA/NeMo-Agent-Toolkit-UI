@@ -2,8 +2,7 @@ import { env } from 'next-runtime-env';
 
 import { Conversation, Message } from '@/types/chat';
 import { FolderInterface } from '@/types/folder';
-
-import { t } from 'i18next';
+import { DEFAULT_HTTP_ENDPOINT, HTTP_ENDPOINT_OPTIONS } from '@/constants/endpoints';
 
 export interface HomeInitialState {
   loading: boolean;
@@ -18,7 +17,10 @@ export interface HomeInitialState {
   messageError: boolean;
   searchTerm: string;
   chatHistory: boolean;
-  chatCompletionURL?: string;
+  serverURL?: string;
+  httpEndpoint?: string;
+  httpEndpoints?: Array<{label: string; value: string}>;
+  additionalJsonBody?: string;
   webSocketMode?: boolean;
   webSocketConnected?: boolean;
   webSocketURL?: string;
@@ -48,20 +50,23 @@ export const initialState: HomeInitialState = {
     process?.env?.NEXT_PUBLIC_CHAT_HISTORY_DEFAULT_ON === 'true'
       ? true
       : false,
-  chatCompletionURL:
-    env('NEXT_PUBLIC_HTTP_CHAT_COMPLETION_URL') ||
-    process?.env?.NEXT_PUBLIC_HTTP_CHAT_COMPLETION_URL ||
-    'http://127.0.0.1:8000/chat/stream',
+  serverURL:
+    env('NEXT_PUBLIC_SERVER_URL') ||
+    process?.env?.NEXT_PUBLIC_SERVER_URL,
+  httpEndpoint: DEFAULT_HTTP_ENDPOINT,
+  httpEndpoints: HTTP_ENDPOINT_OPTIONS,
+  additionalJsonBody: '',
   webSocketMode:
     env('NEXT_PUBLIC_WEB_SOCKET_DEFAULT_ON') === 'true' ||
     process?.env?.NEXT_PUBLIC_WEB_SOCKET_DEFAULT_ON === 'true'
       ? true
       : false,
   webSocketConnected: false,
-  webSocketURL:
-    env('NEXT_PUBLIC_WEBSOCKET_CHAT_COMPLETION_URL') ||
-    process?.env?.NEXT_PUBLIC_WEBSOCKET_CHAT_COMPLETION_URL ||
-    'ws://127.0.0.1:8000/websocket',
+  webSocketURL: (() => {
+    const wsURL = env('NEXT_PUBLIC_WEBSOCKET_URL') || process?.env?.NEXT_PUBLIC_WEBSOCKET_URL;
+    const wsPath = env('NEXT_PUBLIC_WEBSOCKET_PATH') || process?.env?.NEXT_PUBLIC_WEBSOCKET_PATH;
+    return `${wsURL}/${wsPath}`;
+  })(),
   webSocketSchema: 'chat_stream',
   webSocketSchemas: ['chat_stream', 'chat', 'generate_stream', 'generate'],
   enableIntermediateSteps:

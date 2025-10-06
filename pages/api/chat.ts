@@ -1,4 +1,5 @@
-import { ChatBody } from '@/types/chat';
+import { ChatApiRequest } from '@/types/chat';
+import { HTTP_ENDPOINTS, DEFAULT_HTTP_ENDPOINT } from '@/constants/endpoints';
 
 export const config = {
   runtime: 'edge',
@@ -9,10 +10,9 @@ export const config = {
   },
 };
 
-const generateEndpoint = 'generate';
-const chatEndpoint = 'chat';
-const chatStreamEndpoint = 'chat/stream';
-const generateStreamEndpoint = 'generate/stream';
+const generateEndpoint = HTTP_ENDPOINTS.GENERATE;
+const chatStreamEndpoint = HTTP_ENDPOINTS.CHAT_STREAM;
+const generateStreamEndpoint = HTTP_ENDPOINTS.GENERATE_STREAM;
 
 function buildGeneratePayload(messages: any[]) {
   const userMessage = messages?.at(-1)?.content;
@@ -22,18 +22,10 @@ function buildGeneratePayload(messages: any[]) {
   return { input_message: userMessage };
 }
 
-function buildOpenAIChatPayload(messages: any[]) {
+function buildOpenAIChatPayload(messages: any[], isStreaming: boolean = false) {
   return {
     messages,
-    model: 'string',
-    temperature: 0,
-    max_tokens: 0,
-    top_p: 0,
-    use_knowledge_base: true,
-    top_k: 0,
-    collection_name: 'string',
-    stop: true,
-    additionalProp1: {},
+    stream: isStreaming,
   };
 }
 
@@ -236,16 +228,38 @@ async function processChatStream(response: Response, encoder: TextEncoder, decod
 
 const handler = async (req: Request): Promise<Response> => {
   const {
-    chatCompletionURL = '',
     messages = [],
+    httpEndpoint = DEFAULT_HTTP_ENDPOINT,
+    additionalJsonBody = '',
     additionalProps = { enableIntermediateSteps: true },
-  } = (await req.json()) as ChatBody;
+  } = (await req.json()) as ChatApiRequest;
+
+  // Construct URL by appending endpoint to server URL
+  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL;
+  const chatCompletionURL = `${serverURL}${httpEndpoint}`;
 
   let payload;
   try {
-    payload = chatCompletionURL.includes(generateEndpoint)
+    const isGenerateEndpoint = httpEndpoint.includes('generate');
+    
+    // Determine streaming status based on endpoint path
+    const isStreamingEndpoint = httpEndpoint.includes('/stream');
+    
+    payload = isGenerateEndpoint
       ? buildGeneratePayload(messages)
-      : buildOpenAIChatPayload(messages);
+      : buildOpenAIChatPayload(messages, isStreamingEndpoint);
+    
+    // Merge additional JSON body only for chat/chat stream endpoints
+    if (!isGenerateEndpoint && additionalJsonBody && additionalJsonBody.trim()) {
+      try {
+        const additionalJson = JSON.parse(additionalJsonBody);
+        if (typeof additionalJson === 'object' && additionalJson !== null && !Array.isArray(additionalJson)) {
+          payload = { ...payload, ...additionalJson };
+        }
+      } catch (jsonError) {
+        return new Response('Invalid additional JSON body format', { status: 400 });
+      }
+    }
   } catch (err: any) {
     return new Response(err.message || 'Invalid request.', { status: 400 });
   }
@@ -269,11 +283,11 @@ const handler = async (req: Request): Promise<Response> => {
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
 
-  if (chatCompletionURL.includes(generateStreamEndpoint)) {
+  if (httpEndpoint === generateStreamEndpoint) {
     return new Response(await processGenerateStream(response, encoder, decoder, additionalProps));
-  } else if (chatCompletionURL.includes(chatStreamEndpoint)) {
+  } else if (httpEndpoint === chatStreamEndpoint) {
     return new Response(await processChatStream(response, encoder, decoder, additionalProps));
-  } else if (chatCompletionURL.includes(generateEndpoint)) {
+  } else if (httpEndpoint === generateEndpoint) {
     return await processGenerate(response);
   } else {
     return await processChat(response);
