@@ -1,4 +1,5 @@
 const { configureRuntimeEnv } = require('next-runtime-env/build/configure');
+const { MAX_FILE_SIZE_STRING } = require('./constants/constants.js');
 
 const nextConfig = {
   env: {
@@ -14,7 +15,7 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: '5mb',
+      bodySizeLimit: MAX_FILE_SIZE_STRING,
     },
   },
   webpack(config, { isServer, dev }) {

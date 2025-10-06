@@ -10,6 +10,7 @@ jest.mock('react-hot-toast', () => ({
 import toast from 'react-hot-toast';
 
 import { validateImportData } from '@/utils/security/import-validation';
+import { ONE_MB_IN_BYTES, MAX_FILE_SIZE_BYTES } from '@/constants/constants';
 
 // Get mocked toast functions for assertions
 const mockToast = toast as jest.Mocked<typeof toast>;
@@ -146,9 +147,9 @@ describe('JSON Import Validation Security', () => {
     });
 
     test('blocks oversized JSON (DoS protection)', () => {
-      // Create a JSON string larger than 5MB
+      // Create a JSON string larger than the max file size (6MB > 5MB)
       const largeObject = {
-        data: 'x'.repeat(6 * 1024 * 1024) // 6MB of data
+        data: 'x'.repeat(ONE_MB_IN_BYTES * 6) // 6MB of data (larger than 5MB limit)
       };
       const largeJson = JSON.stringify(largeObject);
 
