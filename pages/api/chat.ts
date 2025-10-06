@@ -22,7 +22,7 @@ function buildGeneratePayload(messages: any[]) {
   return { input_message: userMessage };
 }
 
-function buildOpenAIChatPayload(messages: any[], isStreaming: boolean = false) {
+function buildOpenAIChatPayload(messages: any[], isStreaming: boolean = true) {
   return {
     messages,
     stream: isStreaming,

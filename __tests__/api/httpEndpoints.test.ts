@@ -536,7 +536,7 @@ describe('Chat API Processing Functions', () => {
     });
 
     describe('buildOpenAIChatPayload', () => {
-      function testBuildOpenAIChatPayload(messages: any[], isStreaming: boolean = false) {
+      function testBuildOpenAIChatPayload(messages: any[], isStreaming: boolean = true) {
         return {
           messages,
           stream: isStreaming,
@@ -549,13 +549,13 @@ describe('Chat API Processing Functions', () => {
         ];
         const result = testBuildOpenAIChatPayload(messages);
         expect(result.messages).toBe(messages);
-        expect(result.stream).toBe(false);
+        expect(result.stream).toBe(true);
       });
 
       it('should handle empty messages array', () => {
         const result = testBuildOpenAIChatPayload([]);
         expect(result.messages).toEqual([]);
-        expect(result.stream).toBe(false);
+        expect(result.stream).toBe(true);
       });
 
       it('should set stream to true when isStreaming is true', () => {
@@ -565,6 +565,15 @@ describe('Chat API Processing Functions', () => {
         const result = testBuildOpenAIChatPayload(messages, true);
         expect(result.messages).toBe(messages);
         expect(result.stream).toBe(true);
+      });
+
+      it('should set stream to false when isStreaming is explicitly false', () => {
+        const messages = [
+          { role: 'user', content: 'Test message' }
+        ];
+        const result = testBuildOpenAIChatPayload(messages, false);
+        expect(result.messages).toBe(messages);
+        expect(result.stream).toBe(false);
       });
     });
   });
