@@ -19,6 +19,20 @@ describe('Media URL Validation Security', () => {
       expect(isValidMediaURL('http://example.com/image.jpg')).toBe(true);
       expect(isValidMediaURL('http://media.site.com/video.webm')).toBe(true);
     });
+
+    test('accepts localhost URLs for development environments', () => {
+      const devUrls = [
+        'http://localhost/image.jpg',
+        'https://localhost:3000/video.mp4',
+        'http://127.0.0.1:8080/media.png',
+        'https://127.1.1.1:5000/asset.gif',
+        'http://[::1]:3000/image.jpg'
+      ];
+
+      devUrls.forEach(url => {
+        expect(isValidMediaURL(url)).toBe(true);
+      });
+    });
   });
 
   describe('Negative Tests - Invalid URLs should be blocked', () => {

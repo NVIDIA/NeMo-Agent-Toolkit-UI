@@ -30,7 +30,8 @@ export const Image = memo(
       }
 
       // Validate URL before rendering to prevent SSRF and privacy leaks
-      if (!isValidMediaURL(src)) {
+      // Allow same-origin relative paths (starting with '/') without validation
+      if (!(typeof src === 'string' && src.length > 0 && src.startsWith('/')) && !isValidMediaURL(src)) {
         return (
           <div className="flex items-center justify-center p-4 bg-red-50 rounded-lg border border-red-200">
             <IconExclamationCircle className="w-5 h-5 text-red-500 mr-2" />
