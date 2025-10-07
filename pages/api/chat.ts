@@ -297,7 +297,6 @@ const handler = async (req: Request): Promise<Response> => {
   const {
     chatCompletionURL = '',
     messages = [],
-    conversationId = '',
     additionalProps = { enableIntermediateSteps: true },
   } = (await req.json()) as ChatBody;
 
@@ -306,6 +305,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (chatCompletionURL.includes(generateEndpoint)) {
       payload = buildGeneratePayload(messages);
     } else if (chatCompletionURL.includes(chatCaRagEndpoint)) {
+      const conversationId = req.headers.get('Conversation-Id') || '';
       await initializeContextAwareRAG(conversationId, chatCompletionURL);
       payload = buildContextAwareRAGPayload(messages);
     } else {

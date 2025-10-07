@@ -852,7 +852,6 @@ export const Chat = () => {
             : [{ role: 'user', content: message?.content }],
           chatCompletionURL:
             sessionStorage.getItem('chatCompletionURL') || chatCompletionURL,
-          conversationId: selectedConversation?.id || '',
           additionalProps: {
             enableIntermediateSteps: sessionStorage.getItem(
               'enableIntermediateSteps'
