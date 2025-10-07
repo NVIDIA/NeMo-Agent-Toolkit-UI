@@ -38,62 +38,53 @@ function buildOpenAIChatPayload(messages: any[]) {
   };
 }
 
-// Track initialized conversations to avoid re-initialization
-const initializedConversations = new Set<string>();
+// Context Aware RAG payload builder with initialization tracking
+const buildContextAwareRAGPayload = (() => {
+  // Track initialized conversations to avoid re-initialization
+  const initializedConversations = new Set<string>();
 
-function getBackendURL(frontendURL: string): string {
-  // Map frontend endpoints to their backend equivalents
-  return frontendURL.replace(/\/chat\/ca-rag$/, '/call');
-}
-
-async function initializeContextAwareRAG(conversationId: string, chatCompletionURL: string) {
-  // Initialize the retrieval system only once per conversation
-  // Combine RAG_UUID and conversation.id to create unique identifier
-  const ragUuid = (globalThis as any).process?.env?.RAG_UUID || '123456';
-  const combinedConversationId = `${ragUuid}-${conversationId || 'default'}`;
-
-  if (!initializedConversations.has(combinedConversationId)) {
-    const initUrl = getBackendURL(chatCompletionURL).replace('/call', '/init');
-
-    try {
-      const initResponse = await fetch(initUrl, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ uuid: ragUuid }),
-      });
-
-      if (!initResponse.ok) {
-        console.log('aiq - CA RAG initialization failed', initResponse.status);
-        throw new Error(`CA RAG initialization failed: ${initResponse.statusText}`);
-      }
-
-      const initData = await initResponse.json();
-      console.log('aiq - CA RAG initialization', initData?.status);
-
-      // Mark this conversation as initialized
-      initializedConversations.add(combinedConversationId);
-    } catch (initError) {
-      console.log('aiq - CA RAG initialization error', initError);
-      throw new Error(`CA RAG initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
+  return async (messages: any[], conversationId: string, chatCompletionURL: string) => {
+    if (!messages?.length || messages[messages.length - 1]?.role !== 'user') {
+      throw new Error('User message not found: messages array is empty or invalid.');
     }
-  } else {
-    console.log('aiq - CA RAG conversation already initialized', combinedConversationId);
-  }
-}
 
-function buildContextAwareRAGPayload(messages: any[]) {
-  if (!messages?.length || messages[messages.length - 1]?.role !== 'user') {
-    throw new Error('User message not found: messages array is empty or invalid.');
-  }
+    // Initialize the retrieval system only once per conversation
+    // Combine RAG_UUID and conversation.id to create unique identifier
+    const ragUuid = (globalThis as any).process?.env?.RAG_UUID || '123456';
+    const combinedConversationId = `${ragUuid}-${conversationId || 'default'}`;
 
-  return {
-    state: {
-      chat: {
-        question: messages[messages.length - 1]?.content ?? ''
+    if (!initializedConversations.has(combinedConversationId)) {
+      const initUrl = chatCompletionURL.replace(/\/chat\/ca-rag$/, '/init');
+
+      try {
+        const initResponse = await fetch(initUrl, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ uuid: ragUuid }),
+        });
+
+        if (!initResponse.ok) {
+          throw new Error(`CA RAG initialization failed: ${initResponse.statusText}`);
+        }
+
+        // Mark this conversation as initialized
+        initializedConversations.add(combinedConversationId);
+      } catch (initError) {
+        throw new Error(`CA RAG initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
       }
+    } else {
+      console.log('aiq - CA RAG conversation already initialized', combinedConversationId);
     }
+
+    return {
+      state: {
+        chat: {
+          question: messages[messages.length - 1]?.content ?? ''
+        }
+      }
+    };
   };
-}
+})();
 
 async function processGenerate(response: Response): Promise<Response> {
   const data = await response.text();
@@ -117,10 +108,26 @@ async function processChat(response: Response): Promise<Response> {
   try {
     const parsed = JSON.parse(data);
     const content =
-      parsed?.result ||
       parsed?.output ||
       parsed?.answer ||
       parsed?.value ||
+      (Array.isArray(parsed?.choices)
+        ? parsed.choices[0]?.message?.content
+        : null) ||
+      parsed ||
+      data;
+    return new Response(typeof content === 'string' ? content : JSON.stringify(content));
+  } catch {
+    return new Response(data);
+  }
+}
+
+async function processContextAwareRAG(response: Response): Promise<Response> {
+  const data = await response.text();
+  try {
+    const parsed = JSON.parse(data);
+    const content =
+      parsed?.result ||
       (Array.isArray(parsed?.choices)
         ? parsed.choices[0]?.message?.content
         : null) ||
@@ -306,8 +313,7 @@ const handler = async (req: Request): Promise<Response> => {
       payload = buildGeneratePayload(messages);
     } else if (chatCompletionURL.includes(chatCaRagEndpoint)) {
       const conversationId = req.headers.get('Conversation-Id') || '';
-      await initializeContextAwareRAG(conversationId, chatCompletionURL);
-      payload = buildContextAwareRAGPayload(messages);
+      payload = await buildContextAwareRAGPayload(messages, conversationId, chatCompletionURL);
     } else {
       payload = buildOpenAIChatPayload(messages);
     }
@@ -315,7 +321,14 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(err.message || 'Invalid request.', { status: 400 });
   }
 
-  const response = await fetch(getBackendURL(chatCompletionURL), {
+  let backendURL = chatCompletionURL;
+  if (chatCompletionURL.includes(chatCaRagEndpoint)) {
+    // Replace '/chat/ca-rag' with '/call' to get the backend URL. The Context Aware RAG backend
+    // uses '/call' as its endpoint, which is too generic to use as the frontend endpoint here.
+    backendURL = chatCompletionURL.replace(/\/chat\/ca-rag$/, '/call');
+  }
+
+  const response = await fetch(backendURL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -338,6 +351,8 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(await processGenerateStream(response, encoder, decoder, additionalProps));
   } else if (chatCompletionURL.includes(chatStreamEndpoint)) {
     return new Response(await processChatStream(response, encoder, decoder, additionalProps));
+  } else if (chatCompletionURL.includes(chatCaRagEndpoint)) {
+    return await processContextAwareRAG(response);
   } else if (chatCompletionURL.includes(generateEndpoint)) {
     return await processGenerate(response);
   } else {
