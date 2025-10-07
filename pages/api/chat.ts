@@ -1,12 +1,11 @@
 import { ChatApiRequest } from '@/types/chat';
 import { HTTP_ENDPOINTS, DEFAULT_HTTP_ENDPOINT } from '@/constants/endpoints';
-import { MAX_FILE_SIZE_STRING } from '@/constants/constants';
 
 export const config = {
   runtime: 'edge',
   api: {
     bodyParser: {
-      sizeLimit: MAX_FILE_SIZE_STRING,
+      sizeLimit: '5mb',
     },
   },
 };

@@ -1,4 +1,5 @@
 import toast from 'react-hot-toast';
+
 import { SupportedExportFormats } from '@/types/export';
 import { MAX_FILE_SIZE_BYTES } from '@/constants/constants';
 
@@ -13,9 +14,10 @@ export function validateImportData(rawJson: string): SupportedExportFormats | nu
     return null;
   }
 
-  // Limit file size to prevent DoS (5MB limit)
+  // Simple DoS protection - limit JSON string length
   if (rawJson.length > MAX_FILE_SIZE_BYTES) {
-    toast.error('Import file too large (max 5MB)');
+    const maxSizeMB = Math.round(MAX_FILE_SIZE_BYTES / (1024 * 1024));
+    toast.error(`Import file too large (max ${maxSizeMB}MB)`);
     return null;
   }
 

@@ -69,6 +69,28 @@ docker run --env-file .env -p 3000:3000 nemo-agent-toolkit-ui
 
 ## Configuration
 
+### Environment Variables
+
+The application supports configuration via environment variables in a `.env` file:
+
+**Application Configuration:**
+- `NEXT_PUBLIC_WORKFLOW` - Application workflow name displayed in the UI
+- `NEXT_PUBLIC_SERVER_URL` - Backend server URL for HTTP API requests
+- `NEXT_PUBLIC_WEBSOCKET_URL` - WebSocket server URL for real-time connections
+- `NEXT_PUBLIC_WEBSOCKET_PATH` - WebSocket endpoint path
+
+**Feature Toggles:**
+- `NEXT_PUBLIC_WEB_SOCKET_DEFAULT_ON` - Enable WebSocket mode by default (true/false)
+- `NEXT_PUBLIC_CHAT_HISTORY_DEFAULT_ON` - Enable chat history persistence by default (true/false)
+- `NEXT_PUBLIC_RIGHT_MENU_OPEN` - Show right menu panel by default (true/false)
+- `NEXT_PUBLIC_ENABLE_INTERMEDIATE_STEPS` - Show AI reasoning steps by default (true/false)
+
+**Optional Configuration:**
+- `DEFAULT_MODEL` - Default AI model identifier for server-side rendering
+- `MAX_FILE_SIZE_STRING` - Maximum file upload size for all operations (e.g., '5mb', '10mb', '1gb')
+- `NODE_ENV` - Environment mode (development/production) affects security settings
+- `NEXT_TELEMETRY_DISABLED` - Disable Next.js telemetry data collection (1 to disable)
+
 ### HTTP API Connection
 
 Settings can be configured by selecting the `Settings` icon located on the bottom left corner of the home page.
@@ -77,16 +99,25 @@ Settings can be configured by selecting the `Settings` icon located on the botto
 
 ### Settings Options
 
-NOTE: Most of the time, you will want to select /chat/stream for intermediate results streaming.
+**Appearance:**
+- `Theme`: Switch between Light and Dark mode
 
-- `Theme`: Light or Dark Theme
-- `HTTP URL for Chat Completion`: REST API endpoint
-  - /generate - Single response generation
-  - /generate/stream - Streaming response generation
-  - /chat - Single response chat completion
-  - /chat/stream - Streaming chat completion
-- `WebSocket URL for Completion`: WebSocket URL to connect to running NeMo Agent Toolkit server
-- `WebSocket Schema`: Workflow schema type over WebSocket connection
+**API Configuration:**
+- `HTTP Endpoint`: Select API endpoint type:
+  - **Chat Completions — Streaming** - Real-time OpenAI Chat Completions compatible API endpoint with streaming responses
+  - **Chat Completions — Non-Streaming** - Standard OpenAI Chat Completions compatible API endpoint
+  - **Generate — Streaming** - Text generation with streaming
+  - **Generate — Non-Streaming** - Standard text generation
+- `Optional Generation Parameters`: OpenAI Chat Completions compatible JSON parameters that can be added to the request body (available for chat endpoints)
+
+**WebSocket Configuration:**
+- `WebSocket Schema`: Select schema for real-time connections:
+  - **Chat Completions — Streaming** - Streaming chat over WebSocket
+  - **Chat Completions — Non-Streaming** - Non-streaming chat over WebSocket  
+  - **Generate — Streaming** - Streaming generation over WebSocket
+  - **Generate — Non-Streaming** - Non-streaming generation over WebSocket
+
+**Note:** For intermediate results streaming, use **Chat Completions — Streaming** (`/chat/stream`) or **Generate — Streaming** (`/generate/stream`).
 
 ## Usage Examples
 

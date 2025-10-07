@@ -1,7 +1,5 @@
 const { configureRuntimeEnv } = require('next-runtime-env/build/configure');
 
-const MAX_FILE_SIZE_STRING = '5mb';
-
 const nextConfig = {
   env: {
     ...configureRuntimeEnv(),
@@ -23,7 +21,7 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: MAX_FILE_SIZE_STRING,
+      bodySizeLimit: process.env.MAX_FILE_SIZE_STRING || '5mb',
     },
   },
   webpack(config, { isServer, dev }) {
