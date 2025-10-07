@@ -8,8 +8,7 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
 
 import { useCreateReducer } from '@/hooks/useCreateReducer';
-
-import { DataStreamDisplay } from '@/components/DataStreamDisplay/DataStreamDisplay';
+import { DataStreamManager } from '@/components/DataStreamDisplay/DataStreamManager';
 import { ChatHeader } from '@/components/Chat/ChatHeader';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -53,7 +52,7 @@ const Home = (props: any) => {
   let workflow = APPLICATION_NAME;
 
   const {
-    state: { folders, conversations, selectedConversation, dataStreams, showDataStreamDisplay },
+    state: { folders, conversations, selectedConversation },
     dispatch,
   } = contextValue;
 
@@ -174,17 +173,6 @@ const Home = (props: any) => {
     dispatch({ field: 'loading', value: false });
   };
 
-  const handleDataStreamChange = (stream: string) => {
-    if (selectedConversation) {
-      const updatedConversation = {
-        ...selectedConversation,
-        selectedStream: stream,
-      };
-      dispatch({ field: 'selectedConversation', value: updatedConversation });
-      saveConversation(updatedConversation);
-    }
-  };
-
   const handleUpdateConversation = (
     conversation: Conversation,
     data: KeyValuePair,
@@ -271,30 +259,6 @@ const Home = (props: any) => {
     }
   }, [dispatch, t, setLightMode]);
 
-  // Poll /api/update-data-stream every 2 seconds to discover available streams
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        // Get available streams
-        const streamsRes = await fetch('/api/update-data-stream');
-        if (streamsRes.ok) {
-          const streamsData = await streamsRes.json();
-          if (streamsData.streams && Array.isArray(streamsData.streams)) {
-            // Only update if streams actually changed
-            const currentStreams = dataStreams || [];
-            const newStreams = streamsData.streams;
-            if (JSON.stringify(currentStreams.sort()) !== JSON.stringify(newStreams.sort())) {
-              dispatch({ field: 'dataStreams', value: newStreams });
-            }
-          }
-        }
-      } catch (err) {
-        // Optionally handle error
-      }
-    }, 2000); // Less frequent polling for stream discovery
-    return () => clearInterval(interval);
-  }, [dispatch, dataStreams]);
-
   return (
     <HomeContext.Provider
       value={{
@@ -333,13 +297,10 @@ const Home = (props: any) => {
             <main className="flex flex-col w-full pt-0 relative border-l md:pt-0 dark:border-white/20 transition-width">
               <div className="flex flex-1 flex-col min-h-screen dark:bg-black">
                 <ChatHeader webSocketModeRef={webSocketModeRef} />
-                {showDataStreamDisplay && (
-                  <DataStreamDisplay
-                    dataStreams={dataStreams || []}
-                    selectedStream={selectedConversation?.selectedStream || (dataStreams && dataStreams.length > 0 ? dataStreams[0] : 'default')}
-                    onStreamChange={handleDataStreamChange}
-                  />
-                )}
+                <DataStreamManager
+                  selectedConversation={selectedConversation}
+                  dispatch={dispatch}
+                />
                 <Chat />
               </div>
             </main>
