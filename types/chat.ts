@@ -14,7 +14,6 @@ export type Role = 'assistant' | 'user' | 'agent' | 'system';
 export interface ChatBody {
   chatCompletionURL?: string;
   messages?: Message[];
-  conversationId?: string;
   additionalProps?: any;
 }
 
