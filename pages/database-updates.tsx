@@ -4,6 +4,8 @@ import { IconRefresh, IconFilter, IconHistory, IconSortAscending, IconSortDescen
 import { useTheme } from '@/contexts/ThemeContext';
 import Head from 'next/head';
 
+/* This file is typically used for context-aware RAG integrations, see DATA_STREAMING.md */
+
 interface FinalizedDataEntry {
   text: string;
   stream_id: string;

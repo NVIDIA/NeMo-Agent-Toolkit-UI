@@ -6,7 +6,7 @@ export const HTTP_ENDPOINTS = {
   CHAT: '/chat',
   GENERATE_STREAM: '/generate/stream',
   GENERATE: '/generate',
-  CHAT_CA_RAG: '/call',
+  CHAT_CA_RAG: '/call',  /* This endpoint is used for context-aware RAG integrations, see DATA_STREAMING.md */
 } as const;
 
 // Type for HTTP endpoints

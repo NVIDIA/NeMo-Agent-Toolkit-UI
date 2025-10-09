@@ -1,6 +1,8 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+/* This file is typically used for context-aware RAG integrations, see DATA_STREAMING.md */
+
 // Module-level variable to store text for multiple streams
 interface TextData {
   text: string;

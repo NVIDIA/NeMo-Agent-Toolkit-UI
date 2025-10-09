@@ -181,7 +181,15 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
             </label>
           </div>
 
-          {/* Data Stream Controls - Manages data stream display toggle and database updates button */}
+          {/* Data Stream Controls - Allows toggling the display of streaming text data (from any
+              source). This feature is most commonly used when streaming in text that will be
+              ingested by context-aware RAG (https://github.com/NVIDIA/context-aware-rag), but is
+              not limited to that use case.
+
+              The database updates button provides a visual indicator for users to follow along as
+              entries from different data streams are added to a database. Note: this frontend
+              component does not track database updates directly; it simply offers a UI element for
+              users to observe the process. */}
           <DataStreamControls />
 
           {/* Theme Toggle Button */}
