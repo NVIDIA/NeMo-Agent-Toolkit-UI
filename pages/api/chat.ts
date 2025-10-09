@@ -13,6 +13,7 @@ export const config = {
 const generateEndpoint = HTTP_ENDPOINTS.GENERATE;
 const chatStreamEndpoint = HTTP_ENDPOINTS.CHAT_STREAM;
 const generateStreamEndpoint = HTTP_ENDPOINTS.GENERATE_STREAM;
+const chatCaRagEndpoint = HTTP_ENDPOINTS.CHAT_CA_RAG;
 
 function buildGeneratePayload(messages: any[]) {
   const userMessage = messages?.at(-1)?.content;
@@ -34,7 +35,7 @@ const buildContextAwareRAGPayload = (() => {
   // Track initialized conversations to avoid re-initialization
   const initializedConversations = new Set<string>();
 
-  return async (messages: any[], conversationId: string, chatCompletionURL: string) => {
+  return async (messages: any[], conversationId: string, serverURL: string) => {
     if (!messages?.length || messages[messages.length - 1]?.role !== 'user') {
       throw new Error('User message not found: messages array is empty or invalid.');
     }
@@ -45,10 +46,8 @@ const buildContextAwareRAGPayload = (() => {
     const combinedConversationId = `${ragUuid}-${conversationId || 'default'}`;
 
     if (!initializedConversations.has(combinedConversationId)) {
-      const initUrl = chatCompletionURL.replace(/\/chat\/ca-rag$/, '/init');
-
       try {
-        const initResponse = await fetch(initUrl, {
+        const initResponse = await fetch(`${serverURL}/init`, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({ uuid: ragUuid }),
@@ -318,16 +317,21 @@ const handler = async (req: Request): Promise<Response> => {
   let payload;
   try {
     const isGenerateEndpoint = httpEndpoint.includes('generate');
+    const isCaRagEndpoint = httpEndpoint === HTTP_ENDPOINTS.CHAT_CA_RAG;
 
     // Determine streaming status based on endpoint path
     const isStreamingEndpoint = httpEndpoint.includes('/stream');
 
-    payload = isGenerateEndpoint
-      ? buildGeneratePayload(messages)
-      : buildOpenAIChatPayload(messages, isStreamingEndpoint);
+    if (isCaRagEndpoint) {
+      payload = await buildContextAwareRAGPayload(messages, req.headers.get('Conversation-Id') || '', serverURL);
+    } else if (isGenerateEndpoint) {
+      payload = buildGeneratePayload(messages);
+    } else {
+      payload = buildOpenAIChatPayload(messages, isStreamingEndpoint);
+    }
 
     // Merge additional JSON body only for chat/chat stream endpoints
-    if (!isGenerateEndpoint && optionalGenerationParameters && optionalGenerationParameters.trim()) {
+    if (!isGenerateEndpoint && optionalGenerationParameters && optionalGenerationParameters.trim() && !isCaRagEndpoint) {
       try {
         const parsedOptionalGenerationParameters = JSON.parse(optionalGenerationParameters);
         if (typeof parsedOptionalGenerationParameters === 'object' && parsedOptionalGenerationParameters !== null && !Array.isArray(parsedOptionalGenerationParameters)) {
@@ -347,14 +351,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(err.message || 'Invalid request.', { status: 400 });
   }
 
-  let backendURL = chatCompletionURL;
-  if (chatCompletionURL.includes(chatCaRagEndpoint)) {
-    // Replace '/chat/ca-rag' with '/call' to get the backend URL. The Context Aware RAG backend
-    // uses '/call' as its endpoint, which is too generic to use as the frontend endpoint here.
-    backendURL = chatCompletionURL.replace(/\/chat\/ca-rag$/, '/call');
-  }
-
-  const response = await fetch(backendURL, {
+  const response = await fetch(chatCompletionURL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -379,6 +376,8 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(await processChatStream(response, encoder, decoder, additionalProps));
   } else if (httpEndpoint === generateEndpoint) {
     return await processGenerate(response);
+  } else if (httpEndpoint === chatCaRagEndpoint) {
+    return await processContextAwareRAG(response);
   } else {
     return await processChat(response);
   }

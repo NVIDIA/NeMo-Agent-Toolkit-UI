@@ -140,7 +140,8 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
     }
 
     const isChatEndpoint = selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT ||
-                          selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT_STREAM;
+                           selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT_STREAM ||
+                           selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT_CA_RAG;
 
     if (isChatEndpoint) {
       const validation = validateAdditionalJson(jsonBodyInput);
