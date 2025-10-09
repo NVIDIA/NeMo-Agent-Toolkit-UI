@@ -32,6 +32,19 @@ export const getReactMarkDownCustomComponents = (
           //   children[0] = children.length > 0 ? (children[0] as string)?.replace("`▍`", "▍") : '';
           // }
 
+          // Handle inline code (single backticks)
+          if (inline) {
+            return (
+              <code
+                className="bg-gray-200 dark:bg-gray-800 text-[#76b900] px-1 py-0.5 rounded before:content-none after:content-none"
+                {...props}
+              >
+                {children}
+              </code>
+            );
+          }
+
+          // Handle code blocks (triple backticks)
           const match = /language-(\w+)/.exec(className || '');
 
           return (
