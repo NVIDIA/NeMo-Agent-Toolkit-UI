@@ -8,6 +8,7 @@ import { saveConversation } from '@/utils/app/conversation';
 
 import { DataStreamDisplay } from './DataStreamDisplay';
 
+/* This file is typically used for context-aware RAG integrations, see DATA_STREAMING.md */
 interface DataStreamManagerProps {
   selectedConversation: Conversation | undefined;
   dispatch: any;

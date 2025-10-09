@@ -1,5 +1,7 @@
 'use client';
 
+/* This file is typically used for context-aware RAG integrations, see DATA_STREAMING.md */
+
 import { IconDatabase } from '@tabler/icons-react';
 import React, { useContext } from 'react';
 

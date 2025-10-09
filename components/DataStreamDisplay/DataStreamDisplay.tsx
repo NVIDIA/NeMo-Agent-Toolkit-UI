@@ -1,6 +1,8 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
+/* This file is typically used for context-aware RAG integrations, see DATA_STREAMING.md */
+
 interface DataStreamDisplayProps {
   dataStreams: string[];
   selectedStream: string;
