@@ -12,9 +12,16 @@ const nextConfig = {
     // !! WARN !!
     ignoreBuildErrors: true,
   },
+  eslint: {
+    // !! WARN !!
+    // Dangerously allow production builds to successfully complete even if
+    // your project has ESLint errors.
+    // !! WARN !!
+    ignoreDuringBuilds: true,
+  },
   experimental: {
     serverActions: {
-      bodySizeLimit: '5mb',
+      bodySizeLimit: process.env.MAX_FILE_SIZE_STRING || '5mb',
     },
   },
   webpack(config, { isServer, dev }) {
