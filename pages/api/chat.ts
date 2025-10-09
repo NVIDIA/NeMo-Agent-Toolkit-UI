@@ -1,4 +1,5 @@
-import { ChatBody } from '@/types/chat';
+import { ChatApiRequest } from '@/types/chat';
+import { HTTP_ENDPOINTS, DEFAULT_HTTP_ENDPOINT } from '@/constants/endpoints';
 
 export const config = {
   runtime: 'edge',
@@ -9,11 +10,9 @@ export const config = {
   },
 };
 
-const generateEndpoint = 'generate';
-const chatEndpoint = 'chat';
-const chatStreamEndpoint = 'chat/stream';
-const generateStreamEndpoint = 'generate/stream';
-const chatCaRagEndpoint = 'chat/ca-rag';
+const generateEndpoint = HTTP_ENDPOINTS.GENERATE;
+const chatStreamEndpoint = HTTP_ENDPOINTS.CHAT_STREAM;
+const generateStreamEndpoint = HTTP_ENDPOINTS.GENERATE_STREAM;
 
 function buildGeneratePayload(messages: any[]) {
   const userMessage = messages?.at(-1)?.content;
@@ -23,18 +22,10 @@ function buildGeneratePayload(messages: any[]) {
   return { input_message: userMessage };
 }
 
-function buildOpenAIChatPayload(messages: any[]) {
+function buildOpenAIChatPayload(messages: any[], isStreaming: boolean = true) {
   return {
     messages,
-    model: 'string',
-    temperature: 0,
-    max_tokens: 0,
-    top_p: 0,
-    use_knowledge_base: true,
-    top_k: 0,
-    collection_name: 'string',
-    stop: true,
-    additionalProp1: {},
+    stream: isStreaming,
   };
 }
 
@@ -302,20 +293,55 @@ async function processChatStream(response: Response, encoder: TextEncoder, decod
 
 const handler = async (req: Request): Promise<Response> => {
   const {
-    chatCompletionURL = '',
     messages = [],
+    httpEndpoint = DEFAULT_HTTP_ENDPOINT,
+    optionalGenerationParameters = '',
     additionalProps = { enableIntermediateSteps: true },
-  } = (await req.json()) as ChatBody;
+  } = (await req.json()) as ChatApiRequest;
+
+  // Validate httpEndpoint against allowed values
+  const validEndpoints = Object.values(HTTP_ENDPOINTS);
+  if (!validEndpoints.includes(httpEndpoint as any)) {
+    return new Response(
+      JSON.stringify({ error: 'Invalid httpEndpoint. Must be one of: ' + validEndpoints.join(', ') }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Construct URL by appending endpoint to server URL
+  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL as string | undefined;
+  if (!serverURL) {
+    return new Response('Server URL not configured', { status: 500 });
+  }
+  const chatCompletionURL = `${serverURL}${httpEndpoint}`;
 
   let payload;
   try {
-    if (chatCompletionURL.includes(generateEndpoint)) {
-      payload = buildGeneratePayload(messages);
-    } else if (chatCompletionURL.includes(chatCaRagEndpoint)) {
-      const conversationId = req.headers.get('Conversation-Id') || '';
-      payload = await buildContextAwareRAGPayload(messages, conversationId, chatCompletionURL);
-    } else {
-      payload = buildOpenAIChatPayload(messages);
+    const isGenerateEndpoint = httpEndpoint.includes('generate');
+
+    // Determine streaming status based on endpoint path
+    const isStreamingEndpoint = httpEndpoint.includes('/stream');
+
+    payload = isGenerateEndpoint
+      ? buildGeneratePayload(messages)
+      : buildOpenAIChatPayload(messages, isStreamingEndpoint);
+
+    // Merge additional JSON body only for chat/chat stream endpoints
+    if (!isGenerateEndpoint && optionalGenerationParameters && optionalGenerationParameters.trim()) {
+      try {
+        const parsedOptionalGenerationParameters = JSON.parse(optionalGenerationParameters);
+        if (typeof parsedOptionalGenerationParameters === 'object' && parsedOptionalGenerationParameters !== null && !Array.isArray(parsedOptionalGenerationParameters)) {
+          const reserved = new Set(['messages', 'stream', 'input_message']);
+          for (const k of Object.keys(parsedOptionalGenerationParameters)) {
+            if (reserved.has(k)) {
+              return new Response(`optionalGenerationParameters cannot override reserved field: ${k}`, { status: 400 });
+            }
+          }
+          payload = { ...payload, ...parsedOptionalGenerationParameters };
+        }
+      } catch (jsonError) {
+        return new Response('Invalid additional JSON body format', { status: 400 });
+      }
     }
   } catch (err: any) {
     return new Response(err.message || 'Invalid request.', { status: 400 });
@@ -347,13 +373,11 @@ const handler = async (req: Request): Promise<Response> => {
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
 
-  if (chatCompletionURL.includes(generateStreamEndpoint)) {
+  if (httpEndpoint === generateStreamEndpoint) {
     return new Response(await processGenerateStream(response, encoder, decoder, additionalProps));
-  } else if (chatCompletionURL.includes(chatStreamEndpoint)) {
+  } else if (httpEndpoint === chatStreamEndpoint) {
     return new Response(await processChatStream(response, encoder, decoder, additionalProps));
-  } else if (chatCompletionURL.includes(chatCaRagEndpoint)) {
-    return await processContextAwareRAG(response);
-  } else if (chatCompletionURL.includes(generateEndpoint)) {
+  } else if (httpEndpoint === generateEndpoint) {
     return await processGenerate(response);
   } else {
     return await processChat(response);

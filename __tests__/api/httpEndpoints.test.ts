@@ -536,18 +536,10 @@ describe('Chat API Processing Functions', () => {
     });
 
     describe('buildOpenAIChatPayload', () => {
-      function testBuildOpenAIChatPayload(messages: any[]) {
+      function testBuildOpenAIChatPayload(messages: any[], isStreaming: boolean = true) {
         return {
           messages,
-          model: 'string',
-          temperature: 0,
-          max_tokens: 0,
-          top_p: 0,
-          use_knowledge_base: true,
-          top_k: 0,
-          collection_name: 'string',
-          stop: true,
-          additionalProp1: {},
+          stream: isStreaming,
         };
       }
 
@@ -557,15 +549,31 @@ describe('Chat API Processing Functions', () => {
         ];
         const result = testBuildOpenAIChatPayload(messages);
         expect(result.messages).toBe(messages);
-        expect(result.model).toBe('string');
-        expect(result.temperature).toBe(0);
-        expect(result.use_knowledge_base).toBe(true);
+        expect(result.stream).toBe(true);
       });
 
       it('should handle empty messages array', () => {
         const result = testBuildOpenAIChatPayload([]);
         expect(result.messages).toEqual([]);
-        expect(result.model).toBe('string');
+        expect(result.stream).toBe(true);
+      });
+
+      it('should set stream to true when isStreaming is true', () => {
+        const messages = [
+          { role: 'user', content: 'Test message' }
+        ];
+        const result = testBuildOpenAIChatPayload(messages, true);
+        expect(result.messages).toBe(messages);
+        expect(result.stream).toBe(true);
+      });
+
+      it('should set stream to false when isStreaming is explicitly false', () => {
+        const messages = [
+          { role: 'user', content: 'Test message' }
+        ];
+        const result = testBuildOpenAIChatPayload(messages, false);
+        expect(result.messages).toBe(messages);
+        expect(result.stream).toBe(false);
       });
     });
   });

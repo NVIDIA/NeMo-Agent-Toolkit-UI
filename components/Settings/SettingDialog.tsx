@@ -1,10 +1,18 @@
 import { FC, useContext, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-
 import { useTranslation } from 'next-i18next';
 
 import { useTheme } from '@/contexts/ThemeContext';
 import HomeContext from '@/pages/api/home/home.context';
+import { HTTP_ENDPOINTS, DEFAULT_HTTP_ENDPOINT } from '@/constants/endpoints';
+
+// WebSocket schema display names to match HTTP endpoint naming
+const WEBSOCKET_SCHEMA_LABELS: Record<string, string> = {
+  'chat_stream': 'Chat Completions — Streaming',
+  'chat': 'Chat Completions — Non-Streaming',
+  'generate_stream': 'Generate — Streaming',
+  'generate': 'Generate — Non-Streaming',
+};
 
 interface Props {
   open: boolean;
@@ -16,8 +24,10 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const {
     state: {
-      chatCompletionURL,
-      webSocketURL,
+      lightMode,
+      httpEndpoint,
+      httpEndpoints,
+      optionalGenerationParameters,
       webSocketSchema: schema,
       expandIntermediateSteps,
       intermediateStepOverride,
@@ -27,21 +37,16 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
     dispatch: homeDispatch,
   } = useContext(HomeContext);
 
-  const { lightMode, setLightMode } = useTheme();
-  const [theme, setTheme] = useState(lightMode);
-
-  // Sync local theme state with global lightMode
-  useEffect(() => {
-    setTheme(lightMode);
-  }, [lightMode]);
-  const [chatCompletionEndPoint, setChatCompletionEndPoint] = useState(
-    sessionStorage.getItem('chatCompletionURL') || chatCompletionURL,
+  const [theme, setTheme] = useState<'light' | 'dark'>(lightMode);
+  const [selectedHttpEndpoint, setSelectedHttpEndpoint] = useState(
+    sessionStorage.getItem('httpEndpoint') || httpEndpoint || DEFAULT_HTTP_ENDPOINT,
   );
-  const [webSocketEndPoint, setWebSocketEndPoint] = useState(
-    sessionStorage.getItem('webSocketURL') || webSocketURL,
+  const [jsonBodyInput, setJsonBodyInput] = useState(
+    sessionStorage.getItem('optionalGenerationParameters') || optionalGenerationParameters || '',
   );
+  const [jsonValidationError, setJsonValidationError] = useState<string>('');
   const [webSocketSchema, setWebSocketSchema] = useState(
-    sessionStorage.getItem('webSocketSchema') || schema,
+    sessionStorage.getItem('webSocketSchema') || schema || 'chat_stream',
   );
   const [isIntermediateStepsEnabled, setIsIntermediateStepsEnabled] = useState(
     sessionStorage.getItem('enableIntermediateSteps')
@@ -74,16 +79,81 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
     };
   }, [open, onClose]);
 
+  // Validation function for additional JSON body
+  const validateAdditionalJson = (jsonString: string): { isValid: boolean; error: string } => {
+    if (!jsonString.trim()) {
+      return { isValid: true, error: '' }; // Empty is valid
+    }
+
+    try {
+      const parsed = JSON.parse(jsonString);
+
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        return { isValid: false, error: 'JSON must be a valid object (not array or null)' };
+      }
+
+      // Reserved fields that cannot be overridden (only for chat/chat stream endpoints)
+      const reservedFields = [
+        // Core system fields that will be in the final payload
+        'messages', 'stream'
+      ];
+
+      const conflictingFields = Object.keys(parsed).filter(key =>
+        reservedFields.includes(key)
+      );
+
+      if (conflictingFields.length > 0) {
+        return {
+          isValid: false,
+          error: `Cannot override reserved fields: ${conflictingFields.join(', ')}`
+        };
+      }
+
+      return { isValid: true, error: '' };
+    } catch (error) {
+      return { isValid: false, error: 'Invalid JSON format' };
+    }
+  };
+
+  // Handle JSON input change with validation
+  const handleJsonInputChange = (value: string) => {
+    setJsonBodyInput(value);
+    const validation = validateAdditionalJson(value);
+    setJsonValidationError(validation.error);
+  };
+
+  // Handle HTTP endpoint change
+  const handleHttpEndpointChange = (endpoint: string) => {
+    setSelectedHttpEndpoint(endpoint);
+
+    // Clear JSON validation error when switching to generate endpoints
+    // since the additional JSON field won't be visible/used
+    if (endpoint === HTTP_ENDPOINTS.GENERATE || endpoint === HTTP_ENDPOINTS.GENERATE_STREAM) {
+      setJsonValidationError('');
+    }
+  };
+
   const handleSave = () => {
-    if (!chatCompletionEndPoint || !webSocketEndPoint) {
-      toast.error('Please fill all the fields to save settings');
+    if (!selectedHttpEndpoint) {
+      toast.error('Please select an HTTP endpoint to save settings');
       return;
     }
 
-    setLightMode(theme);
-    homeDispatch({ field: 'chatCompletionURL', value: chatCompletionEndPoint });
-    homeDispatch({ field: 'webSocketURL', value: webSocketEndPoint });
-    homeDispatch({ field: 'webSocketSchema', value: webSocketSchema });
+    const isChatEndpoint = selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT ||
+                          selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT_STREAM;
+
+    if (isChatEndpoint) {
+      const validation = validateAdditionalJson(jsonBodyInput);
+      if (!validation.isValid) {
+        toast.error(`JSON Validation Error: ${validation.error}`);
+        return;
+      }
+    }
+
+    homeDispatch({ field: 'lightMode', value: theme });
+    homeDispatch({ field: 'httpEndpoint', value: selectedHttpEndpoint || DEFAULT_HTTP_ENDPOINT });
+    homeDispatch({ field: 'optionalGenerationParameters', value: jsonBodyInput });
+    homeDispatch({ field: 'webSocketSchema', value: webSocketSchema || 'chat_stream' });
     homeDispatch({ field: 'expandIntermediateSteps', value: detailsToggle });
     homeDispatch({
       field: 'intermediateStepOverride',
@@ -94,9 +164,9 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       value: isIntermediateStepsEnabled,
     });
 
-    sessionStorage.setItem('chatCompletionURL', chatCompletionEndPoint);
-    sessionStorage.setItem('webSocketURL', webSocketEndPoint);
-    sessionStorage.setItem('webSocketSchema', webSocketSchema);
+    sessionStorage.setItem('httpEndpoint', selectedHttpEndpoint || DEFAULT_HTTP_ENDPOINT);
+    sessionStorage.setItem('optionalGenerationParameters', jsonBodyInput);
+    sessionStorage.setItem('webSocketSchema', webSocketSchema || 'chat_stream');
     sessionStorage.setItem('expandIntermediateSteps', String(detailsToggle));
     sessionStorage.setItem(
       'intermediateStepOverride',
@@ -129,31 +199,53 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
         <select
           className="w-full mt-1 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none"
           value={theme}
-          onChange={(e) => setTheme(e.target.value)}
+          onChange={(e) => setTheme(e.target.value as 'light' | 'dark')}
         >
           <option value="dark">{t('Dark mode')}</option>
           <option value="light">{t('Light mode')}</option>
         </select>
 
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">
-          {t('HTTP URL for Chat Completion')}
+          {t('HTTP Endpoint')}
         </label>
-        <input
-          type="text"
-          value={chatCompletionEndPoint}
-          onChange={(e) => setChatCompletionEndPoint(e.target.value)}
+        <select
           className="w-full mt-1 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none"
-        />
+          value={selectedHttpEndpoint}
+          onChange={(e) => handleHttpEndpointChange(e.target.value)}
+        >
+          {httpEndpoints?.map((endpoint) => (
+            <option key={endpoint.value} value={endpoint.value}>
+              {endpoint.label}
+            </option>
+          ))}
+        </select>
 
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">
-          {t('WebSocket URL for Chat Completion')}
-        </label>
-        <input
-          type="text"
-          value={webSocketEndPoint}
-          onChange={(e) => setWebSocketEndPoint(e.target.value)}
-          className="w-full mt-1 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none"
-        />
+        {/* Show optional generation parameters for chat endpoints */}
+        {(selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT || selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT_STREAM) && (
+          <>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">
+              {t('Optional generation parameters')}
+            </label>
+            <textarea
+              placeholder='{"custom_param": "value", "another_param": 123}'
+              value={jsonBodyInput}
+              onChange={(e) => handleJsonInputChange(e.target.value)}
+              className={`w-full mt-1 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none resize-none ${
+                jsonValidationError ? 'border-2 border-red-500' : ''
+              }`}
+              rows={4}
+            />
+            {jsonValidationError && (
+              <div className="mt-1 text-sm text-red-500 dark:text-red-400">
+                {jsonValidationError}
+              </div>
+            )}
+            <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Optional: Add custom JSON parameters for chat/chat stream endpoints only.
+              Cannot override: messages, stream.
+            </div>
+          </>
+        )}
 
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">
           {t('WebSocket Schema')}
@@ -167,7 +259,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
         >
           {webSocketSchemas?.map((schema) => (
             <option key={schema} value={schema}>
-              {schema}
+              {WEBSOCKET_SCHEMA_LABELS[schema]}
             </option>
           ))}
         </select>
