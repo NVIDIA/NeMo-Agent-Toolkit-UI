@@ -4,7 +4,35 @@ import { IconRefresh, IconFilter, IconHistory, IconSortAscending, IconSortDescen
 import { useTheme } from '@/contexts/ThemeContext';
 import Head from 'next/head';
 
-/* This file is typically used for context-aware RAG integrations, see DATA_STREAMING.md */
+/**
+ * Database Updates History Page (/database-updates)
+ *
+ * Purpose: Monitoring dashboard for finalized text entries marked for database storage in the streaming
+ * RAG pipeline. Shows which chunks have been sent to the database and their ingestion status.
+ *
+ * Key Features:
+ * - Lists finalized entries with status: "Database Pending" (yellow) or "Database Ingested" (green)
+ * - Filter by stream ID and processing status (pending/ingested/all)
+ * - Auto-refresh every 5 seconds
+ * - Sort by newest/oldest (persists to localStorage)
+ *
+ * Data Flow:
+ * 1. Backend marks chunk as finalized → Entry appears with "Database Pending" status
+ * 2. Backend ingests chunk → Updates entry to "Database Ingested" status
+ *
+ * API Integration:
+ * - GET /api/update-data-stream?type=finalized (polls every 5s)
+ * - Reads entry.pending field for status
+ * - Uses entry.uuid for backend correlation
+ *
+ * Access: Opened via "Data Updates" button in DataStreamControls (opens in new tab)
+ *
+ * Use Cases: Monitor ASR transcript ingestion, verify successful database storage, debug pipeline issues
+ *
+ * Related: DataStreamControls.tsx (opens page), DataStreamDisplay.tsx (shows live text), /api/update-data-stream
+ *
+ * For detailed architecture and API documentation, see DATA_STREAMING.md
+ */
 
 interface FinalizedDataEntry {
   text: string;

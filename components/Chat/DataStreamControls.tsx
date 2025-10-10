@@ -1,6 +1,47 @@
 'use client';
 
-/* This file is typically used for context-aware RAG integrations, see DATA_STREAMING.md */
+/**
+ * DataStreamControls Component
+ *
+ * Purpose: Provides UI controls for managing the live data streaming visualization in the chat
+ * interface. This component is part of a streaming RAG architecture and offers users the ability
+ * to toggle the live stream display and access the database history page.
+ *
+ * Key Features:
+ * - Toggle switch to show/hide the DataStreamDisplay component in the chat interface
+ * - Button to open the Database Updates page (/database-updates) in a new tab
+ * - Responsive design with icon-only view on small screens
+ * - Visual feedback with color transitions (green/black for enabled state)
+ *
+ * Controls Provided:
+ * 1. "Data Stream Display" Toggle:
+ *    - Enables/disables the live stream visualization component
+ *    - When ON: Shows DataStreamDisplay component below the chat header
+ *    - When OFF: Hides the live stream display to maximize chat space
+ *    - State managed via HomeContext (showDataStreamDisplay field)
+ *
+ * 2. "Data Updates" Button:
+ *    - Opens the Database Updates page (/database-updates) in a new tab
+ *    - Provides access to finalized entries and their ingestion status
+ *    - Shows which chunks have been sent to the database and their processing state
+ *    - Icon: Database icon (IconDatabase from Tabler Icons)
+ *
+ * Location: Displayed in the chat interface header, typically alongside other chat controls
+ *
+ * Use Cases:
+ * - Enable live stream display when monitoring real-time ASR transcripts
+ * - Access database history to verify which chunks have been ingested
+ * - Toggle off display when focusing solely on chat interaction
+ * - Quick access to view processing status of finalized stream entries
+ *
+ * Related Components:
+ * - DataStreamDisplay.tsx - The live stream visualization component this controls
+ * - DataStreamManager.tsx - Manages stream state and lifecycle
+ * - /database-updates page - Database history page opened by the button
+ * - HomeContext - Provides state management for toggle visibility
+ *
+ * For detailed architecture and API documentation, see DATA_STREAMING.md
+ */
 
 import { IconDatabase } from '@tabler/icons-react';
 import React, { useContext } from 'react';

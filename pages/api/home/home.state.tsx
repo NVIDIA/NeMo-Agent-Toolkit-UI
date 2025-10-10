@@ -31,7 +31,7 @@ export interface HomeInitialState {
   intermediateStepOverride?: boolean;
   autoScroll?: boolean;
   additionalConfig: any;
-  dataStreams: string[];  /* For context-aware RAG integrations, see DATA_STREAMING.md */
+  dataStreams: string[];  /* Used for holding the associated label of live data streams (see `stream_id` in DATA_STREAMING.md) */
   showDataStreamDisplay: boolean;
 }
 
@@ -80,7 +80,7 @@ export const initialState: HomeInitialState = {
   intermediateStepOverride: true,
   autoScroll: true,
   additionalConfig: {},
-  dataStreams: [],  /* For context-aware RAG integrations, see DATA_STREAMING.md */
+  dataStreams: [],  /* Used for holding the associated label of live data streams (see `stream_id` in DATA_STREAMING.md) */
   showDataStreamDisplay:
     env('NEXT_PUBLIC_SHOW_DATA_STREAM_DEFAULT_ON') === 'true' ||
     process?.env?.NEXT_PUBLIC_SHOW_DATA_STREAM_DEFAULT_ON === 'true'

@@ -1,7 +1,36 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
-/* This file is typically used for context-aware RAG integrations, see DATA_STREAMING.md */
+/**
+ * DataStreamDisplay Component
+ *
+ * Purpose: Visualizes live, continuously updating text streams BEFORE they're finalized
+ * and committed to the RAG database. This component is part of a streaming RAG architecture
+ * where continuous streams of text (e.g., live ASR transcripts, sensor data) are being
+ * processed in real-time and eventually stored in a vector database.
+ *
+ * Key Features:
+ * - Polls and displays live stream text every 100ms for real-time updates
+ * - Shows the last database update timestamp for the selected stream
+ * - Supports multiple concurrent streams with a stream selector dropdown
+ * - Auto-scrolls to display the latest streaming content
+ *
+ * API Integration:
+ * - GET /api/update-data-stream?stream={id} - Fetches live stream text (polled every 100ms)
+ * - GET /api/update-data-stream?type=finalized&stream={id} - Fetches last DB update time
+ *
+ * Use Cases:
+ * - Monitoring live ASR transcripts as they're being generated
+ * - Viewing real-time sensor data feeds
+ * - Tracking any streaming text content before database ingestion
+ *
+ * Related Components:
+ * - DataStreamControls.tsx - Toggle visibility of this display in chat interface
+ * - DataStreamManager.tsx - Manages stream state and lifecycle
+ * - /database-updates page - Shows finalized entries and their ingestion status
+ *
+ * For detailed architecture and API documentation, see DATA_STREAMING.md
+ */
 
 interface DataStreamDisplayProps {
   dataStreams: string[];
