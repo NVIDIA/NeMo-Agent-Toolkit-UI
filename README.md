@@ -76,6 +76,7 @@ The application supports configuration via environment variables in a `.env` fil
 **Application Configuration:**
 - `NEXT_PUBLIC_WORKFLOW` - Application workflow name displayed in the UI
 - `NEXT_PUBLIC_SERVER_URL` - Backend server URL for HTTP API requests
+- `NEXT_PUBLIC_DEFAULT_ENDPOINT` - Default endpoint selection
 - `NEXT_PUBLIC_WEBSOCKET_URL` - WebSocket server URL for real-time connections
 - `NEXT_PUBLIC_WEBSOCKET_PATH` - WebSocket endpoint path
 
@@ -84,6 +85,7 @@ The application supports configuration via environment variables in a `.env` fil
 - `NEXT_PUBLIC_CHAT_HISTORY_DEFAULT_ON` - Enable chat history persistence by default (true/false)
 - `NEXT_PUBLIC_RIGHT_MENU_OPEN` - Show right menu panel by default (true/false)
 - `NEXT_PUBLIC_ENABLE_INTERMEDIATE_STEPS` - Show AI reasoning steps by default (true/false)
+- `NEXT_PUBLIC_ADDITIONAL_VIZ_DEFAULT` - View settings and toggles not part of the core functionality (true/false)
 
 **Optional Configuration:**
 - `DEFAULT_MODEL` - Default AI model identifier for server-side rendering
