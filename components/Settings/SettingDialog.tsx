@@ -2,13 +2,14 @@ import { FC, useContext, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'next-i18next';
 
+import { useTheme } from '@/contexts/ThemeContext';
 import HomeContext from '@/pages/api/home/home.context';
 import { HTTP_ENDPOINTS, DEFAULT_HTTP_ENDPOINT } from '@/constants/endpoints';
 
 // WebSocket schema display names to match HTTP endpoint naming
 const WEBSOCKET_SCHEMA_LABELS: Record<string, string> = {
   'chat_stream': 'Chat Completions — Streaming',
-  'chat': 'Chat Completions — Non-Streaming', 
+  'chat': 'Chat Completions — Non-Streaming',
   'generate_stream': 'Generate — Streaming',
   'generate': 'Generate — Non-Streaming',
 };
@@ -31,6 +32,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       expandIntermediateSteps,
       intermediateStepOverride,
       enableIntermediateSteps,
+      enableAdditionalVisualization,
       webSocketSchemas,
     },
     dispatch: homeDispatch,
@@ -63,6 +65,12 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
         ? false
         : intermediateStepOverride,
     );
+  const [enableAdditionalVisualizationToggle, setEnableAdditionalVisualizationToggle] =
+    useState(
+      sessionStorage.getItem('enableAdditionalVisualization')
+        ? sessionStorage.getItem('enableAdditionalVisualization') === 'true'
+        : enableAdditionalVisualization,
+    );
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -86,7 +94,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
 
     try {
       const parsed = JSON.parse(jsonString);
-      
+
       if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
         return { isValid: false, error: 'JSON must be a valid object (not array or null)' };
       }
@@ -97,14 +105,14 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
         'messages', 'stream'
       ];
 
-      const conflictingFields = Object.keys(parsed).filter(key => 
+      const conflictingFields = Object.keys(parsed).filter(key =>
         reservedFields.includes(key)
       );
 
       if (conflictingFields.length > 0) {
-        return { 
-          isValid: false, 
-          error: `Cannot override reserved fields: ${conflictingFields.join(', ')}` 
+        return {
+          isValid: false,
+          error: `Cannot override reserved fields: ${conflictingFields.join(', ')}`
         };
       }
 
@@ -124,7 +132,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
   // Handle HTTP endpoint change
   const handleHttpEndpointChange = (endpoint: string) => {
     setSelectedHttpEndpoint(endpoint);
-    
+
     // Clear JSON validation error when switching to generate endpoints
     // since the additional JSON field won't be visible/used
     if (endpoint === HTTP_ENDPOINTS.GENERATE || endpoint === HTTP_ENDPOINTS.GENERATE_STREAM) {
@@ -138,9 +146,10 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       return;
     }
 
-    const isChatEndpoint = selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT || 
-                          selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT_STREAM;
-    
+    const isChatEndpoint = selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT ||
+                           selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT_STREAM ||
+                           selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT_CA_RAG;
+
     if (isChatEndpoint) {
       const validation = validateAdditionalJson(jsonBodyInput);
       if (!validation.isValid) {
@@ -162,6 +171,10 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       field: 'enableIntermediateSteps',
       value: isIntermediateStepsEnabled,
     });
+    homeDispatch({
+      field: 'enableAdditionalVisualization',
+      value: enableAdditionalVisualizationToggle,
+    });
 
     sessionStorage.setItem('httpEndpoint', selectedHttpEndpoint || DEFAULT_HTTP_ENDPOINT);
     sessionStorage.setItem('optionalGenerationParameters', jsonBodyInput);
@@ -174,6 +187,10 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
     sessionStorage.setItem(
       'enableIntermediateSteps',
       String(isIntermediateStepsEnabled),
+    );
+    sessionStorage.setItem(
+      'enableAdditionalVisualization',
+      String(enableAdditionalVisualizationToggle),
     );
 
     toast.success('Settings saved successfully');
@@ -240,7 +257,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
               </div>
             )}
             <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Optional: Add custom JSON parameters for chat/chat stream endpoints only. 
+              Optional: Add custom JSON parameters for chat/chat stream endpoints only.
               Cannot override: messages, stream.
             </div>
           </>
@@ -318,6 +335,27 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
             className="text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             Override intermediate Steps with same Id
+          </label>
+        </div>
+
+        <div className="flex align-middle text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">
+          <input
+            type="checkbox"
+            id="enableAdditionalVisualization"
+            checked={enableAdditionalVisualizationToggle}
+            onChange={() => {
+              setEnableAdditionalVisualizationToggle(
+                !enableAdditionalVisualizationToggle,
+              );
+            }}
+            disabled={!isIntermediateStepsEnabled}
+            className="mr-2"
+          />
+          <label
+            htmlFor="enableAdditionalVisualization"
+            className="text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
+            Enable Additional Visualization Options
           </label>
         </div>
 

@@ -76,6 +76,7 @@ The application supports configuration via environment variables in a `.env` fil
 **Application Configuration:**
 - `NEXT_PUBLIC_WORKFLOW` - Application workflow name displayed in the UI
 - `NEXT_PUBLIC_SERVER_URL` - Backend server URL for HTTP API requests
+- `NEXT_PUBLIC_DEFAULT_ENDPOINT` - Default endpoint selection
 - `NEXT_PUBLIC_WEBSOCKET_URL` - WebSocket server URL for real-time connections
 - `NEXT_PUBLIC_WEBSOCKET_PATH` - WebSocket endpoint path
 
@@ -84,6 +85,7 @@ The application supports configuration via environment variables in a `.env` fil
 - `NEXT_PUBLIC_CHAT_HISTORY_DEFAULT_ON` - Enable chat history persistence by default (true/false)
 - `NEXT_PUBLIC_RIGHT_MENU_OPEN` - Show right menu panel by default (true/false)
 - `NEXT_PUBLIC_ENABLE_INTERMEDIATE_STEPS` - Show AI reasoning steps by default (true/false)
+- `NEXT_PUBLIC_ADDITIONAL_VIZ_DEFAULT` - View settings and toggles not part of the core functionality (true/false)
 
 **Optional Configuration:**
 - `DEFAULT_MODEL` - Default AI model identifier for server-side rendering
@@ -113,11 +115,17 @@ Settings can be configured by selecting the `Settings` icon located on the botto
 **WebSocket Configuration:**
 - `WebSocket Schema`: Select schema for real-time connections:
   - **Chat Completions — Streaming** - Streaming chat over WebSocket
-  - **Chat Completions — Non-Streaming** - Non-streaming chat over WebSocket  
+  - **Chat Completions — Non-Streaming** - Non-streaming chat over WebSocket
   - **Generate — Streaming** - Streaming generation over WebSocket
   - **Generate — Non-Streaming** - Non-streaming generation over WebSocket
 
 **Note:** For intermediate results streaming, use **Chat Completions — Streaming** (`/chat/stream`) or **Generate — Streaming** (`/generate/stream`).
+
+### Live Data Streaming
+
+The live data streaming feature allows visualization of real-time text updates across multiple streams. This is useful for monitoring ongoing processes or displaying live transcription or streaming data.
+
+For more detail, see the [README for live data streaming](DATA_STREAMING.md).
 
 ## Usage Examples
 

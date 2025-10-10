@@ -30,7 +30,10 @@ export interface HomeInitialState {
   expandIntermediateSteps?: boolean;
   intermediateStepOverride?: boolean;
   autoScroll?: boolean;
+  enableAdditionalVisualization?: boolean;  /* This toggle displays settings that are hidden during with default / core functionality */
   additionalConfig: any;
+  dataStreams: string[];  /* Used for holding the associated label of live data streams (see `stream_id` in DATA_STREAMING.md) */
+  showDataStreamDisplay: boolean;
 }
 
 export const initialState: HomeInitialState = {
@@ -77,5 +80,16 @@ export const initialState: HomeInitialState = {
   expandIntermediateSteps: false,
   intermediateStepOverride: true,
   autoScroll: true,
+  enableAdditionalVisualization:
+    env('NEXT_PUBLIC_ADDITIONAL_VIZ_DEFAULT') === 'true' ||
+    process?.env?.NEXT_PUBLIC_ADDITIONAL_VIZ_DEFAULT === 'true'
+      ? true
+      : false,
   additionalConfig: {},
+  dataStreams: [],  /* Used for holding the associated label of live data streams (see `stream_id` in DATA_STREAMING.md) */
+  showDataStreamDisplay:
+    env('NEXT_PUBLIC_SHOW_DATA_STREAM_DEFAULT_ON') === 'true' ||
+    process?.env?.NEXT_PUBLIC_SHOW_DATA_STREAM_DEFAULT_ON === 'true'
+      ? true
+      : false,
 };

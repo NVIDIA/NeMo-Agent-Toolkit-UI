@@ -8,6 +8,9 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
 
 import { useCreateReducer } from '@/hooks/useCreateReducer';
+import { DataStreamManager } from '@/components/DataStreamDisplay/DataStreamManager';
+import { ChatHeader } from '@/components/Chat/ChatHeader';
+import { useTheme } from '@/contexts/ThemeContext';
 
 import {
   cleanConversationHistory,
@@ -37,6 +40,8 @@ import { HomeInitialState, initialState } from './home.state';
 
 import { v4 as uuidv4 } from 'uuid';
 
+const webSocketMode = initialState.webSocketMode;
+
 const Home = (props: any) => {
   const { t } = useTranslation('chat');
 
@@ -47,11 +52,17 @@ const Home = (props: any) => {
   let workflow = APPLICATION_NAME;
 
   const {
-    state: { lightMode, folders, conversations, selectedConversation },
+    state: { folders, conversations, selectedConversation, enableAdditionalVisualization },
     dispatch,
   } = contextValue;
 
+  const { lightMode, setLightMode } = useTheme();
+
   const stopConversationRef = useRef<boolean>(false);
+
+  const webSocketModeRef = useRef(
+    typeof window !== 'undefined' && sessionStorage.getItem('webSocketMode') === 'false' ? false : webSocketMode
+  );
 
   const handleSelectConversation = (conversation: Conversation) => {
     // Clear any streaming states before switching conversations
@@ -192,10 +203,7 @@ const Home = (props: any) => {
     workflow = getWorkflowName();
     const settings = getSettings();
     if (settings.theme) {
-      dispatch({
-        field: 'lightMode',
-        value: settings.theme,
-      });
+      setLightMode(settings.theme);
     }
 
     const showChatbar = sessionStorage.getItem('showChatbar');
@@ -249,7 +257,7 @@ const Home = (props: any) => {
       saveConversation(homepageConversation);
       saveConversations(updatedConversations);
     }
-  }, [dispatch, t]);
+  }, [dispatch, t, setLightMode]);
 
   return (
     <HomeContext.Provider
@@ -273,7 +281,7 @@ const Home = (props: any) => {
         <link rel="icon" href="/nvidia.jpg" />
       </Head>
       {selectedConversation && (
-        <main
+        <div
           className={`flex h-screen w-screen flex-col text-sm text-white dark:text-white ${lightMode}`}
         >
           <div className="fixed top-0 w-full sm:hidden">
@@ -286,11 +294,20 @@ const Home = (props: any) => {
           <div className="flex h-full w-full sm:pt-0">
             <Chatbar />
 
-            <div className="flex flex-1">
-              <Chat />
-            </div>
+            <main className="flex flex-col w-full pt-0 relative border-l md:pt-0 dark:border-white/20 transition-width">
+              <div className="flex flex-1 flex-col min-h-screen dark:bg-black">
+                <ChatHeader webSocketModeRef={webSocketModeRef} />
+                {enableAdditionalVisualization && (
+                  <DataStreamManager
+                    selectedConversation={selectedConversation}
+                    dispatch={dispatch}
+                  />
+                )}
+                <Chat />
+              </div>
+            </main>
           </div>
-        </main>
+        </div>
       )}
     </HomeContext.Provider>
   );

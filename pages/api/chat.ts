@@ -13,6 +13,7 @@ export const config = {
 const generateEndpoint = HTTP_ENDPOINTS.GENERATE;
 const chatStreamEndpoint = HTTP_ENDPOINTS.CHAT_STREAM;
 const generateStreamEndpoint = HTTP_ENDPOINTS.GENERATE_STREAM;
+const chatCaRagEndpoint = HTTP_ENDPOINTS.CHAT_CA_RAG;
 
 function buildGeneratePayload(messages: any[]) {
   const userMessage = messages?.at(-1)?.content;
@@ -28,6 +29,52 @@ function buildOpenAIChatPayload(messages: any[], isStreaming: boolean = true) {
     stream: isStreaming,
   };
 }
+
+// Context Aware RAG payload builder with initialization tracking
+const buildContextAwareRAGPayload = (() => {
+  // Track initialized conversations to avoid re-initialization
+  const initializedConversations = new Set<string>();
+
+  return async (messages: any[], conversationId: string, serverURL: string) => {
+    if (!messages?.length || messages[messages.length - 1]?.role !== 'user') {
+      throw new Error('User message not found: messages array is empty or invalid.');
+    }
+
+    // Initialize the retrieval system only once per conversation
+    // Combine RAG_UUID and conversation.id to create unique identifier
+    const ragUuid = (globalThis as any).process?.env?.RAG_UUID || '123456';
+    const combinedConversationId = `${ragUuid}-${conversationId || 'default'}`;
+
+    if (!initializedConversations.has(combinedConversationId)) {
+      try {
+        const initResponse = await fetch(`${serverURL}/init`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ uuid: ragUuid }),
+        });
+
+        if (!initResponse.ok) {
+          throw new Error(`CA RAG initialization failed: ${initResponse.statusText}`);
+        }
+
+        // Mark this conversation as initialized
+        initializedConversations.add(combinedConversationId);
+      } catch (initError) {
+        throw new Error(`CA RAG initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
+      }
+    } else {
+      console.log('aiq - CA RAG conversation already initialized', combinedConversationId);
+    }
+
+    return {
+      state: {
+        chat: {
+          question: messages[messages.length - 1]?.content ?? ''
+        }
+      }
+    };
+  };
+})();
 
 async function processGenerate(response: Response): Promise<Response> {
   const data = await response.text();
@@ -54,6 +101,23 @@ async function processChat(response: Response): Promise<Response> {
       parsed?.output ||
       parsed?.answer ||
       parsed?.value ||
+      (Array.isArray(parsed?.choices)
+        ? parsed.choices[0]?.message?.content
+        : null) ||
+      parsed ||
+      data;
+    return new Response(typeof content === 'string' ? content : JSON.stringify(content));
+  } catch {
+    return new Response(data);
+  }
+}
+
+async function processContextAwareRAG(response: Response): Promise<Response> {
+  const data = await response.text();
+  try {
+    const parsed = JSON.parse(data);
+    const content =
+      parsed?.result ||
       (Array.isArray(parsed?.choices)
         ? parsed.choices[0]?.message?.content
         : null) ||
@@ -238,7 +302,7 @@ const handler = async (req: Request): Promise<Response> => {
   const validEndpoints = Object.values(HTTP_ENDPOINTS);
   if (!validEndpoints.includes(httpEndpoint as any)) {
     return new Response(
-      JSON.stringify({ error: 'Invalid httpEndpoint. Must be one of: ' + validEndpoints.join(', ') }), 
+      JSON.stringify({ error: 'Invalid httpEndpoint. Must be one of: ' + validEndpoints.join(', ') }),
       { status: 400, headers: { 'Content-Type': 'application/json' } }
     );
   }
@@ -253,16 +317,21 @@ const handler = async (req: Request): Promise<Response> => {
   let payload;
   try {
     const isGenerateEndpoint = httpEndpoint.includes('generate');
-    
+    const isCaRagEndpoint = httpEndpoint === HTTP_ENDPOINTS.CHAT_CA_RAG;
+
     // Determine streaming status based on endpoint path
     const isStreamingEndpoint = httpEndpoint.includes('/stream');
-    
-    payload = isGenerateEndpoint
-      ? buildGeneratePayload(messages)
-      : buildOpenAIChatPayload(messages, isStreamingEndpoint);
-    
+
+    if (isCaRagEndpoint) {
+      payload = await buildContextAwareRAGPayload(messages, req.headers.get('Conversation-Id') || '', serverURL);
+    } else if (isGenerateEndpoint) {
+      payload = buildGeneratePayload(messages);
+    } else {
+      payload = buildOpenAIChatPayload(messages, isStreamingEndpoint);
+    }
+
     // Merge additional JSON body only for chat/chat stream endpoints
-    if (!isGenerateEndpoint && optionalGenerationParameters && optionalGenerationParameters.trim()) {
+    if (!isGenerateEndpoint && optionalGenerationParameters && optionalGenerationParameters.trim() && !isCaRagEndpoint) {
       try {
         const parsedOptionalGenerationParameters = JSON.parse(optionalGenerationParameters);
         if (typeof parsedOptionalGenerationParameters === 'object' && parsedOptionalGenerationParameters !== null && !Array.isArray(parsedOptionalGenerationParameters)) {
@@ -307,6 +376,8 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(await processChatStream(response, encoder, decoder, additionalProps));
   } else if (httpEndpoint === generateEndpoint) {
     return await processGenerate(response);
+  } else if (httpEndpoint === chatCaRagEndpoint) {
+    return await processContextAwareRAG(response);
   } else {
     return await processChat(response);
   }

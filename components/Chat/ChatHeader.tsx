@@ -14,8 +14,11 @@ import React, { useContext, useState, useRef, useEffect } from 'react';
 import { env } from 'next-runtime-env';
 
 import { getWorkflowName } from '@/utils/app/helper';
+import { useTheme } from '@/contexts/ThemeContext';
 
 import HomeContext from '@/pages/api/home/home.context';
+
+import { DataStreamControls } from './DataStreamControls';
 
 export const ChatHeader = ({ webSocketModeRef = {} }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -34,11 +37,13 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
       chatHistory,
       webSocketMode,
       webSocketConnected,
-      lightMode,
       selectedConversation,
+      enableAdditionalVisualization,
     },
     dispatch: homeDispatch,
   } = useContext(HomeContext);
+
+  const { lightMode, setLightMode } = useTheme();
 
   const handleLogin = () => {
     console.log('Login clicked');
@@ -85,6 +90,10 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
       <div
         className={`fixed right-0 top-0 h-12 flex items-center transition-all duration-300 ${
           isExpanded ? 'mr-2' : 'mr-2'
+        } ${
+          selectedConversation?.messages?.length === 0
+            ? 'bg-none'
+            : 'bg-[#76b900] dark:bg-black bo'
         }`}
       >
         <button
@@ -173,15 +182,25 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
             </label>
           </div>
 
+          {/* Data Stream Controls - Allows toggling the display of streaming text data (from any
+              source). This feature is most commonly used when streaming in text that will be
+              ingested by context-aware RAG (https://github.com/NVIDIA/context-aware-rag), but is
+              not limited to that use case.
+
+              The database updates button provides a visual indicator for users to follow along as
+              entries from different data streams are added to a database. Note: this frontend
+              component does not track database updates directly; it simply offers a UI element for
+              users to observe the process. */}
+          {enableAdditionalVisualization && (
+            <DataStreamControls />
+          )}
+
           {/* Theme Toggle Button */}
           <div className="flex items-center dark:text-white text-black transition-colors duration-300">
             <button
               onClick={() => {
                 const newMode = lightMode === 'dark' ? 'light' : 'dark';
-                homeDispatch({
-                  field: 'lightMode',
-                  value: newMode,
-                });
+                setLightMode(newMode);
               }}
               className="rounded-full flex items-center justify-center bg-none dark:bg-gray-700 transition-colors duration-300 focus:outline-none"
             >
