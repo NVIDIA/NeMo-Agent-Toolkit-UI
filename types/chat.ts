@@ -30,7 +30,7 @@ export interface Conversation {
   messages: Message[];
   folderId: string | null;
   isHomepageConversation?: boolean; // Flag to track homepage conversations before first message
-  selectedStream?: string;  // For context-aware RAG integrations, see DATA_STREAMING.md
+  selectedStream?: string;  // Determines which live data stream is being displayed (by `stream_id`) see "Data Stream Display" in DATA_STREAMING.md
 }
 
 // WebSocket Message Types
