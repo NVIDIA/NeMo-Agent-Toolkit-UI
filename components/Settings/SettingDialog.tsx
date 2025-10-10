@@ -32,6 +32,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       expandIntermediateSteps,
       intermediateStepOverride,
       enableIntermediateSteps,
+      enableAdditionalVisualization,
       webSocketSchemas,
     },
     dispatch: homeDispatch,
@@ -63,6 +64,12 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       sessionStorage.getItem('intermediateStepOverride') === 'false'
         ? false
         : intermediateStepOverride,
+    );
+  const [enableAdditionalVisualizationToggle, setEnableAdditionalVisualizationToggle] =
+    useState(
+      sessionStorage.getItem('enableAdditionalVisualization')
+        ? sessionStorage.getItem('enableAdditionalVisualization') === 'true'
+        : enableAdditionalVisualization,
     );
 
   useEffect(() => {
@@ -164,6 +171,10 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       field: 'enableIntermediateSteps',
       value: isIntermediateStepsEnabled,
     });
+    homeDispatch({
+      field: 'enableAdditionalVisualization',
+      value: enableAdditionalVisualizationToggle,
+    });
 
     sessionStorage.setItem('httpEndpoint', selectedHttpEndpoint || DEFAULT_HTTP_ENDPOINT);
     sessionStorage.setItem('optionalGenerationParameters', jsonBodyInput);
@@ -176,6 +187,10 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
     sessionStorage.setItem(
       'enableIntermediateSteps',
       String(isIntermediateStepsEnabled),
+    );
+    sessionStorage.setItem(
+      'enableAdditionalVisualization',
+      String(enableAdditionalVisualizationToggle),
     );
 
     toast.success('Settings saved successfully');
@@ -320,6 +335,27 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
             className="text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             Override intermediate Steps with same Id
+          </label>
+        </div>
+
+        <div className="flex align-middle text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">
+          <input
+            type="checkbox"
+            id="enableAdditionalVisualization"
+            checked={enableAdditionalVisualizationToggle}
+            onChange={() => {
+              setEnableAdditionalVisualizationToggle(
+                !enableAdditionalVisualizationToggle,
+              );
+            }}
+            disabled={!isIntermediateStepsEnabled}
+            className="mr-2"
+          />
+          <label
+            htmlFor="enableAdditionalVisualization"
+            className="text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
+            Enable Additional Visualization Options
           </label>
         </div>
 

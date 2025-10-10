@@ -38,6 +38,7 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
       webSocketMode,
       webSocketConnected,
       selectedConversation,
+      enableAdditionalVisualization,
     },
     dispatch: homeDispatch,
   } = useContext(HomeContext);
@@ -190,7 +191,9 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
               entries from different data streams are added to a database. Note: this frontend
               component does not track database updates directly; it simply offers a UI element for
               users to observe the process. */}
-          <DataStreamControls />
+          {enableAdditionalVisualization && (
+            <DataStreamControls />
+          )}
 
           {/* Theme Toggle Button */}
           <div className="flex items-center dark:text-white text-black transition-colors duration-300">
