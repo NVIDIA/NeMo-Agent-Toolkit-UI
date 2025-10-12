@@ -1,5 +1,3 @@
-import { MCP_API_URL } from '@/utils/app/const';
-
 export interface MCPTool {
   name: string;
   description: string;
