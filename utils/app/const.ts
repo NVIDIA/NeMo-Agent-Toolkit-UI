@@ -14,3 +14,16 @@ export const webSocketMessageTypes = {
 export const appConfig = {
   fileUploadEnabled: false,
 };
+
+// MCP API configuration following WebSocket pattern
+export const MCP_API_URL = (() => {
+  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL;
+  const mcpPath = process.env.NEXT_PUBLIC_MCP_PATH || '/mcp/client/tool/list';
+
+  if (!serverURL) {
+    // Fallback to localhost if no server URL is configured
+    return `http://localhost:8080${mcpPath}`;
+  }
+
+  return `${serverURL}${mcpPath}`;
+})();

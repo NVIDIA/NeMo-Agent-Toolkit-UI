@@ -79,6 +79,9 @@ The application supports configuration via environment variables in a `.env` fil
 - `NEXT_PUBLIC_WEBSOCKET_URL` - WebSocket server URL for real-time connections
 - `NEXT_PUBLIC_WEBSOCKET_PATH` - WebSocket endpoint path
 
+**MCP Configuration:**
+- `NEXT_PUBLIC_MCP_PATH` - MCP client API path (defaults to `/mcp/client/tool/list`)
+  - **Note**: Uses the same server as `NEXT_PUBLIC_SERVER_URL`.
 **Feature Toggles:**
 - `NEXT_PUBLIC_WEB_SOCKET_DEFAULT_ON` - Enable WebSocket mode by default (true/false)
 - `NEXT_PUBLIC_CHAT_HISTORY_DEFAULT_ON` - Enable chat history persistence by default (true/false)
@@ -113,7 +116,7 @@ Settings can be configured by selecting the `Settings` icon located on the botto
 **WebSocket Configuration:**
 - `WebSocket Schema`: Select schema for real-time connections:
   - **Chat Completions — Streaming** - Streaming chat over WebSocket
-  - **Chat Completions — Non-Streaming** - Non-streaming chat over WebSocket  
+  - **Chat Completions — Non-Streaming** - Non-streaming chat over WebSocket
   - **Generate — Streaming** - Streaming generation over WebSocket
   - **Generate — Non-Streaming** - Non-streaming generation over WebSocket
 
