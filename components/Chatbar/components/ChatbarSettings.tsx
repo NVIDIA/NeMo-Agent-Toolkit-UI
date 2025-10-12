@@ -31,6 +31,12 @@ export const ChatbarSettings = () => {
 
   return (
     <div className="flex flex-col items-center space-y-1 border-t border-white/20 pt-1 text-sm">
+      <SidebarButton
+        text="MCP"
+        icon={<IconPlug size={18} />}
+        onClick={() => setIsMCPModalOpen(true)}
+      />
+
       {conversations.length > 0 ? (
         <ClearConversations onClearConversations={handleClearConversations} />
       ) : null}
@@ -41,12 +47,6 @@ export const ChatbarSettings = () => {
         text={t('Export data')}
         icon={<IconFileExport size={18} />}
         onClick={() => handleExportData()}
-      />
-
-      <SidebarButton
-        text="MCP"
-        icon={<IconPlug size={18} />}
-        onClick={() => setIsMCPModalOpen(true)}
       />
 
       <SidebarButton
