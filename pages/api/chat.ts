@@ -1,5 +1,7 @@
 import { ChatApiRequest } from '@/types/chat';
 import { HTTP_ENDPOINTS, DEFAULT_HTTP_ENDPOINT } from '@/constants/endpoints';
+import { secureFetchStream } from '@/utils/security/secure-fetch';
+import { logRequest, validateRequestURL } from '@/utils/security/url-validation';
 
 export const config = {
   runtime: 'edge',
@@ -234,21 +236,49 @@ const handler = async (req: Request): Promise<Response> => {
     additionalProps = { enableIntermediateSteps: true },
   } = (await req.json()) as ChatApiRequest;
 
-  // Validate httpEndpoint against allowed values
-  const validEndpoints = Object.values(HTTP_ENDPOINTS);
-  if (!validEndpoints.includes(httpEndpoint as any)) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid httpEndpoint. Must be one of: ' + validEndpoints.join(', ') }), 
-      { status: 400, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
-  // Construct URL by appending endpoint to server URL
+  // Construct the request URL
   const serverURL = process.env.NEXT_PUBLIC_SERVER_URL as string | undefined;
   if (!serverURL) {
     return new Response('Server URL not configured', { status: 500 });
   }
-  const chatCompletionURL = `${serverURL}${httpEndpoint}`;
+
+  // Build the final URL
+  let requestURL: string;
+  let finalURL: URL;
+  try {
+    requestURL = `${serverURL}${httpEndpoint}`;
+    finalURL = new URL(requestURL);
+  } catch {
+    return new Response(
+      JSON.stringify({ error: 'Invalid URL construction' }), 
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Validate the final URL against allowed servers and endpoints
+  const validEndpoints = Object.values(HTTP_ENDPOINTS);
+  const validationResult = await validateRequestURL(finalURL.href);
+  
+  if (!validationResult.isValid) {
+    return new Response(
+      JSON.stringify({ 
+        error: `URL validation failed: ${validationResult.error}`,
+        attemptedURL: finalURL.href,
+        serverURL: serverURL,
+        httpEndpoint: httpEndpoint
+      }), 
+      { status: 403, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Verify the normalized path matches one of the allowed endpoints
+  const normalizedPath = finalURL.pathname;
+  if (!validEndpoints.some(endpoint => normalizedPath === endpoint)) {
+    return new Response(
+      JSON.stringify({ error: `Invalid endpoint path: ${normalizedPath}. Must be one of: ${validEndpoints.join(', ')}` }), 
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
 
   let payload;
   try {
@@ -282,16 +312,34 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(err.message || 'Invalid request.', { status: 400 });
   }
 
-  const response = await fetch(chatCompletionURL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Conversation-Id': req.headers.get('Conversation-Id') || '',
-      'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone || 'Etc/UTC',
-      'User-Message-ID': req.headers.get('User-Message-ID') || '',
-    },
-    body: JSON.stringify(payload),
-  });
+  // Use secure fetch with SSRF protection, timeout, and size limits
+  let response: Response;
+  try {
+    response = await secureFetchStream(requestURL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Conversation-Id': req.headers.get('Conversation-Id') || '',
+        'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone || 'Etc/UTC',
+        'User-Message-ID': req.headers.get('User-Message-ID') || '',
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error: any) {
+    // Log the security error
+    logRequest(requestURL, 'error', error.message);
+    
+    // Return appropriate error message
+    if (error.name === 'FetchTimeoutError') {
+      return new Response('Request timeout', { status: 504 });
+    } else if (error.name === 'ResponseTooLargeError') {
+      return new Response('Response too large', { status: 413 });
+    } else if (error.message.includes('URL validation failed')) {
+      return new Response('Invalid server URL', { status: 403 });
+    }
+    
+    return new Response(`Request failed: ${error.message}`, { status: 500 });
+  }
 
   if (!response.ok) {
     const error = await response.text();
