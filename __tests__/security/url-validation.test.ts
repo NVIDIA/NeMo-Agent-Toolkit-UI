@@ -3,8 +3,6 @@
  * 
  * Tests for HTTP request URL, WebSocket URL, Media URL, and OAuth URL validation
  */
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-
 import { validateRequestURL, validateWebSocketURL } from '@/utils/security/url-validation';
 import { HTTP_ENDPOINTS } from '@/constants/endpoints';
 import { isValidMediaURL } from '@/utils/media/validation';
