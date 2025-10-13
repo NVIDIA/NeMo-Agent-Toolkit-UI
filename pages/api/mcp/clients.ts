@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const message = error instanceof Error ? error.message : 'Unknown error';
-    const isConfigError = message.startsWith('MCP server URL is not configured');
+    const isConfigError = message.startsWith('Server URL is not configured');
     res.status(isConfigError ? 400 : 500).json({
       error: isConfigError ? 'MCP is not configured' : 'Failed to fetch MCP clients',
     });
