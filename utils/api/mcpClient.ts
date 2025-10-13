@@ -29,12 +29,20 @@ export const fetchMCPClients = async (): Promise<MCPClientResponse> => {
       },
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const text = await response.text();
+    let body: any = undefined;
+    try {
+      body = text ? JSON.parse(text) : undefined;
+    } catch {
+      // ignore JSON parse error; fall back to text
     }
 
-    const data: MCPClientResponse = await response.json();
-    return data;
+    if (!response.ok) {
+      const serverMessage = body?.error || body?.details || text || `HTTP ${response.status}`;
+      throw new Error(serverMessage);
+    }
+
+    return body as MCPClientResponse;
   } catch (error) {
     console.error('Error fetching MCP clients:', error);
     throw error;

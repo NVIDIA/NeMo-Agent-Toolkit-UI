@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { MCP_API_URL } from '@/utils/app/const';
+import { getMcpApiUrl } from '@/utils/app/const';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -7,7 +7,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const response = await fetch(MCP_API_URL, {
+    const url = getMcpApiUrl();
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -22,9 +23,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(200).json(data);
   } catch (error) {
     console.error('Error fetching MCP clients:', error);
-    res.status(500).json({
-      error: 'Failed to fetch MCP clients',
-      details: error instanceof Error ? error.message : 'Unknown error'
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    const isConfigError = message.includes('Server URL is not configured');
+    res.status(isConfigError ? 400 : 500).json({
+      error: isConfigError ? 'Server URL is not configured' : 'Failed to fetch MCP clients',
+      details: message,
     });
   }
 }
