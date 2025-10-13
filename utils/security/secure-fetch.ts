@@ -64,8 +64,6 @@ async function validateResponseSize(
       throw new ResponseTooLargeError(size, maxSize);
     }
   }
-
-  // If no content-length header, we'll check during streaming
 }
 
 /**
@@ -101,7 +99,6 @@ async function createSizeValidatedResponse(
   }
 
   // Reconstruct response with validated body
-  // Combine all chunks into a single Uint8Array
   const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
   const combined = new Uint8Array(totalLength);
   let offset = 0;

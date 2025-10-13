@@ -1,6 +1,5 @@
 /**
  * Get allowed hosts from environment variables
- * This is computed dynamically to support testing
  */
 const getAllowedHosts = (): string[] => {
   const allowedServerUrls = (process.env.ALLOWED_SERVER_URLS || '')
@@ -205,8 +204,7 @@ export function logRequest(url: string, status: 'success' | 'blocked' | 'error',
     environment: process.env.NODE_ENV,
   };
 
-  // In production, you would send this to your logging service
-  // For now, we use console logging
+
   if (status === 'blocked') {
     // eslint-disable-next-line no-console
     console.warn('[SECURITY] Blocked request:', JSON.stringify(logEntry));

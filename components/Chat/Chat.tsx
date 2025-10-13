@@ -239,8 +239,6 @@ export const Chat = () => {
     interactionMessage = {},
     userResponse = '',
   }: any) => {
-    // todo send user input to websocket server as user response to interaction message
-    // console.log("User response:", userResponse);
     const wsMessage = {
       type: webSocketMessageTypes.userInteractionMessage,
       id: uuidv4(), //new id for every new message
