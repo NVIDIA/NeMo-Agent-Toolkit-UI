@@ -170,11 +170,16 @@ export const MCPModal: FC<Props> = ({ open, onClose }) => {
                         {groupKey}
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {client.transport} • {client.server}
+                        {client.server}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
+                    {client.protected === true && (
+                      <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
+                        🔒 {t('mcp.protected', 'Protected')}
+                      </span>
+                    )}
                     <span
                       className={`px-2 py-1 rounded-full text-xs ${
                         client.session_healthy
