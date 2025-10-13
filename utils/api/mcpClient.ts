@@ -10,6 +10,7 @@ export interface MCPClient {
   server: string;
   transport: string;
   session_healthy: boolean;
+  protected?: boolean;
   tools: MCPTool[];
   total_tools: number;
   available_tools: number;
