@@ -53,9 +53,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { SESSION_COOKIE_NAME } from '@/constants/constants';
 import { isValidConsentPromptURL } from '@/utils/security/oauth-validation';
-import { isValidWebSocketURL } from '@/utils/security/websocket-validation';
+import { validateWebSocketURL } from '@/utils/security/url-validation';
 
-export { isValidWebSocketURL };
+export { validateWebSocketURL };
 
 
 
@@ -326,7 +326,7 @@ export const Chat = () => {
       let wsUrl: string = webSocketURL;
       
       // Validate WebSocket URL before connecting to prevent malicious connections
-      if (!isValidWebSocketURL(wsUrl)) {
+      if (!validateWebSocketURL(wsUrl)) {
         console.error('WebSocket URL validation failed, refusing to connect to potentially malicious server:', wsUrl);
         toast.error('WebSocket URL validation failed.');
         resolve(false);
@@ -876,6 +876,7 @@ export const Chat = () => {
           messages: chatHistory
             ? messagesCleaned
             : [{ role: 'user', content: message?.content }],
+          serverURL: serverURL,
           httpEndpoint: sessionStorage.getItem('httpEndpoint') || httpEndpoint,
           optionalGenerationParameters: sessionStorage.getItem('optionalGenerationParameters') || optionalGenerationParameters,
           additionalProps: {

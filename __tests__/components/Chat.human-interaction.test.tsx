@@ -373,7 +373,7 @@ describe('Human-in-the-Loop Functionality', () => {
     });
 
     /**
-     * Description: Verifies that user interaction responses include proper conversation context for server processing
+     * Description: Verifies that user interaction responses include proper conversation context for backend processing
      * Success: Response messages contain conversation ID, user input, and necessary context data
      */
     test('user interaction response includes conversation context', () => {

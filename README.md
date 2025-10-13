@@ -74,22 +74,19 @@ docker run --env-file .env -p 3000:3000 nemo-agent-toolkit-ui
 The application supports configuration via environment variables in a `.env` file:
 
 **Application Configuration:**
-- `NEXT_PUBLIC_WORKFLOW` - Application workflow name displayed in the UI
-- `NEXT_PUBLIC_SERVER_URL` - Server URL for HTTP API requests
-- `ALLOWED_SERVER_URLS` - Comma-separated list of allowed server hostnames. (e.g., '127.0.0.1,localhost' or 'api.example.com,backup.example.com'). In development mode, if not set, all URLs are allowed with a warning. In production mode, this must be set or requests will be blocked.
-- `NEXT_PUBLIC_WEBSOCKET_URL` - WebSocket server URL for real-time connections
-- `NEXT_PUBLIC_WEBSOCKET_PATH` - WebSocket endpoint path
+- `NEXT_PUBLIC_NAT_WORKFLOW` - Application workflow name displayed in the UI
+- `NEXT_PUBLIC_NAT_BACKEND_ADDRESS` - Backend server address (e.g., 'localhost:8000' or 'api.example.com'). Protocols are automatically added: http/ws in development, https/wss in production
 
 **Feature Toggles:**
-- `NEXT_PUBLIC_WEB_SOCKET_DEFAULT_ON` - Enable WebSocket mode by default (true/false)
-- `NEXT_PUBLIC_CHAT_HISTORY_DEFAULT_ON` - Enable chat history persistence by default (true/false)
-- `NEXT_PUBLIC_RIGHT_MENU_OPEN` - Show right menu panel by default (true/false)
-- `NEXT_PUBLIC_ENABLE_INTERMEDIATE_STEPS` - Show AI reasoning steps by default (true/false)
+- `NEXT_PUBLIC_NAT_WEB_SOCKET_DEFAULT_ON` - Enable WebSocket mode by default (true/false)
+- `NEXT_PUBLIC_NAT_CHAT_HISTORY_DEFAULT_ON` - Enable chat history persistence by default (true/false)
+- `NEXT_PUBLIC_NAT_RIGHT_MENU_OPEN` - Show right menu panel by default (true/false)
+- `NEXT_PUBLIC_NAT_ENABLE_INTERMEDIATE_STEPS` - Show AI reasoning steps by default (true/false)
 
 
 **Optional Configuration:**
-- `DEFAULT_MODEL` - Default AI model identifier for server-side rendering
-- `MAX_FILE_SIZE_STRING` - Maximum file upload size for all operations (e.g., '5mb', '10mb', '1gb')
+- `NAT_DEFAULT_MODEL` - Default AI model identifier for server-side rendering
+- `NAT_MAX_FILE_SIZE_STRING` - Maximum file upload size for all operations (e.g., '5mb', '10mb', '1gb')
 - `NODE_ENV` - Environment mode (development/production) affects security settings
 - `NEXT_TELEMETRY_DISABLED` - Disable Next.js telemetry data collection (1 to disable)
 
@@ -112,7 +109,7 @@ Settings can be configured by selecting the `Settings` icon located on the botto
   - **Generate — Non-Streaming** - Standard text generation
 - `Optional Generation Parameters`: OpenAI Chat Completions compatible JSON parameters that can be added to the request body (available for chat endpoints)
 
-**WebSocket Configuration:**
+**WebSocket Configuration:** The WebSocket path defaults to `websocket`.
 - `WebSocket Schema`: Select schema for real-time connections:
   - **Chat Completions — Streaming** - Streaming chat over WebSocket
   - **Chat Completions — Non-Streaming** - Non-streaming chat over WebSocket  

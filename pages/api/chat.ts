@@ -1,7 +1,6 @@
 import { ChatApiRequest } from '@/types/chat';
 import { HTTP_ENDPOINTS, DEFAULT_HTTP_ENDPOINT } from '@/constants/endpoints';
-import { secureFetchStream } from '@/utils/security/secure-fetch';
-import { logRequest, validateRequestURL } from '@/utils/security/url-validation';
+import { validateRequestURL } from '@/utils/security/url-validation';
 
 export const config = {
   runtime: 'edge',
@@ -231,18 +230,18 @@ async function processChatStream(response: Response, encoder: TextEncoder, decod
 const handler = async (req: Request): Promise<Response> => {
   const {
     messages = [],
+    serverURL,
     httpEndpoint = DEFAULT_HTTP_ENDPOINT,
     optionalGenerationParameters = '',
     additionalProps = { enableIntermediateSteps: true },
   } = (await req.json()) as ChatApiRequest;
 
-  // Construct the request URL
-  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL as string | undefined;
+  // Validate serverURL is provided
   if (!serverURL) {
-    return new Response('Server URL not configured', { status: 500 });
+    return new Response('Server URL not provided', { status: 400 });
   }
 
-  // Build the final URL
+  // Build the final URL with base URL passed from frontend
   let requestURL: string;
   let finalURL: URL;
   try {
@@ -255,9 +254,8 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 
-  // Validate the final URL against allowed servers and endpoints
-  const validEndpoints = Object.values(HTTP_ENDPOINTS);
-  const validationResult = await validateRequestURL(finalURL.href);
+  // Validate the URL before making request
+  const validationResult = validateRequestURL(finalURL.href);
   
   if (!validationResult.isValid) {
     return new Response(
@@ -268,15 +266,6 @@ const handler = async (req: Request): Promise<Response> => {
         httpEndpoint: httpEndpoint
       }), 
       { status: 403, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
-  // Verify the normalized path matches one of the allowed endpoints
-  const normalizedPath = finalURL.pathname;
-  if (!validEndpoints.some(endpoint => normalizedPath === endpoint)) {
-    return new Response(
-      JSON.stringify({ error: `Invalid endpoint path: ${normalizedPath}. Must be one of: ${validEndpoints.join(', ')}` }), 
-      { status: 400, headers: { 'Content-Type': 'application/json' } }
     );
   }
 
@@ -312,10 +301,10 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(err.message || 'Invalid request.', { status: 400 });
   }
 
-  // Use secure fetch with SSRF protection, timeout, and size limits
+  // Make the request
   let response: Response;
   try {
-    response = await secureFetchStream(requestURL, {
+    response = await fetch(requestURL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -326,18 +315,6 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify(payload),
     });
   } catch (error: any) {
-    // Log the security error
-    logRequest(requestURL, 'error', error.message);
-    
-    // Return appropriate error message
-    if (error.name === 'FetchTimeoutError') {
-      return new Response('Request timeout', { status: 504 });
-    } else if (error.name === 'ResponseTooLargeError') {
-      return new Response('Response too large', { status: 413 });
-    } else if (error.message.includes('URL validation failed')) {
-      return new Response('Invalid server URL', { status: 403 });
-    }
-    
     return new Response(`Request failed: ${error.message}`, { status: 500 });
   }
 

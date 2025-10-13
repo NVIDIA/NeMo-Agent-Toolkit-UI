@@ -298,7 +298,7 @@ const Home = (props: any) => {
 export default Home;
 
 export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
-  const defaultModelId = process.env.DEFAULT_MODEL || '';
+  const defaultModelId = process.env.NAT_DEFAULT_MODEL || '';
 
   return {
     props: {

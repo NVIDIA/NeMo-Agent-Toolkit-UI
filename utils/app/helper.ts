@@ -94,7 +94,7 @@ export const getURLQueryParam = ({ param = '' }) => {
 
 
 export const getWorkflowName = () => {
-    const workflow = getURLQueryParam({ param: 'workflow' }) || env('NEXT_PUBLIC_WORKFLOW') || process?.env?.NEXT_PUBLIC_WORKFLOW || APPLICATION_NAME;
+    const workflow = getURLQueryParam({ param: 'workflow' }) || env('NEXT_PUBLIC_NAT_WORKFLOW') || process?.env?.NEXT_PUBLIC_NAT_WORKFLOW || APPLICATION_NAME;
     return workflow
 }
 
