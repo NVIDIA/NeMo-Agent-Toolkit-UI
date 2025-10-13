@@ -8,12 +8,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const url = getMcpApiUrl();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -23,11 +25,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(200).json(data);
   } catch (error) {
     console.error('Error fetching MCP clients:', error);
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      return res.status(504).json({
+        error: 'Request timeout',
+      });
+    }
+
     const message = error instanceof Error ? error.message : 'Unknown error';
-    const isConfigError = message.includes('Server URL is not configured');
+    const isConfigError = message.startsWith('MCP server URL is not configured');
     res.status(isConfigError ? 400 : 500).json({
-      error: isConfigError ? 'Server URL is not configured' : 'Failed to fetch MCP clients',
-      details: message,
+      error: isConfigError ? 'MCP is not configured' : 'Failed to fetch MCP clients',
     });
   }
 }
