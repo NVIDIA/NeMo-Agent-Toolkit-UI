@@ -162,7 +162,6 @@ export const Chat = () => {
       webSocketMode,
       webSocketURL,
       webSocketSchema,
-      serverURL,
       httpEndpoint,
       optionalGenerationParameters,
       expandIntermediateSteps,
@@ -876,7 +875,6 @@ export const Chat = () => {
           messages: chatHistory
             ? messagesCleaned
             : [{ role: 'user', content: message?.content }],
-          serverURL: serverURL,
           httpEndpoint: sessionStorage.getItem('httpEndpoint') || httpEndpoint,
           optionalGenerationParameters: sessionStorage.getItem('optionalGenerationParameters') || optionalGenerationParameters,
           additionalProps: {
@@ -1211,7 +1209,6 @@ export const Chat = () => {
       chatHistory,
       webSocketConnected,
       webSocketSchema,
-      serverURL,
       httpEndpoint,
       optionalGenerationParameters,
       expandIntermediateSteps,

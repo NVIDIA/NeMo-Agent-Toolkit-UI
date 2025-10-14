@@ -3,7 +3,7 @@ import { env } from 'next-runtime-env';
 import { Conversation, Message } from '@/types/chat';
 import { FolderInterface } from '@/types/folder';
 import { DEFAULT_HTTP_ENDPOINT, HTTP_ENDPOINT_OPTIONS } from '@/constants/endpoints';
-import { buildHTTPBaseURL, buildWebSocketBaseURL } from '@/utils/backend-url';
+import { buildWebSocketBaseURL } from '@/utils/backend-url';
 
 export interface HomeInitialState {
   loading: boolean;
@@ -18,7 +18,6 @@ export interface HomeInitialState {
   messageError: boolean;
   searchTerm: string;
   chatHistory: boolean;
-  serverURL?: string;
   httpEndpoint?: string;
   httpEndpoints?: Array<{label: string; value: string}>;
   optionalGenerationParameters?: string;
@@ -51,13 +50,6 @@ export const initialState: HomeInitialState = {
     process?.env?.NEXT_PUBLIC_NAT_CHAT_HISTORY_DEFAULT_ON === 'true'
       ? true
       : false,
-  serverURL: (() => {
-    const backendAddress = env('NEXT_PUBLIC_NAT_BACKEND_ADDRESS') || process?.env?.NEXT_PUBLIC_NAT_BACKEND_ADDRESS;
-    if (backendAddress) {
-      return buildHTTPBaseURL(backendAddress);
-    }
-    return undefined;
-  })(),
   httpEndpoint: DEFAULT_HTTP_ENDPOINT,
   httpEndpoints: HTTP_ENDPOINT_OPTIONS,
   optionalGenerationParameters: '',

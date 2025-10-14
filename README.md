@@ -75,7 +75,9 @@ The application supports configuration via environment variables in a `.env` fil
 
 **Application Configuration:**
 - `NEXT_PUBLIC_NAT_WORKFLOW` - Application workflow name displayed in the UI
-- `NEXT_PUBLIC_NAT_BACKEND_ADDRESS` - Backend server address (e.g., 'localhost:8000' or 'api.example.com'). Protocols are automatically added: http/ws in development, https/wss in production
+- `NEXT_PUBLIC_NAT_BACKEND_ADDRESS` - **Required** - Backend server address without protocol (e.g., '127.0.0.1:8000' or 'api.example.com')
+  - Used for both HTTP API and WebSocket connections
+  - Protocols are automatically added: `http`/`ws` in development, `https`/`wss` in production
 
 **Feature Toggles:**
 - `NEXT_PUBLIC_NAT_WEB_SOCKET_DEFAULT_ON` - Enable WebSocket mode by default (true/false)
@@ -85,6 +87,10 @@ The application supports configuration via environment variables in a `.env` fil
 
 
 **Optional Configuration:**
+- `NAT_BACKEND_URL` - **Advanced** - Override HTTP API backend URL for production (e.g., 'http://nat-backend-internal:8000')
+  - Only set this if your internal API routing differs from the public WebSocket address
+  - If not set, automatically derived from `NEXT_PUBLIC_NAT_BACKEND_ADDRESS`
+  - Example use case: Internal Docker network for API, public domain for WebSocket
 - `NAT_DEFAULT_MODEL` - Default AI model identifier for server-side rendering
 - `NAT_MAX_FILE_SIZE_STRING` - Maximum file upload size for all operations (e.g., '5mb', '10mb', '1gb')
 - `NODE_ENV` - Environment mode (development/production) affects security settings

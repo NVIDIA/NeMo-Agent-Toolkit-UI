@@ -1,6 +1,7 @@
 import { ChatApiRequest } from '@/types/chat';
 import { HTTP_ENDPOINTS, DEFAULT_HTTP_ENDPOINT } from '@/constants/endpoints';
 import { validateRequestURL } from '@/utils/security/url-validation';
+import { buildHTTPBaseURL } from '@/utils/backend-url';
 
 export const config = {
   runtime: 'edge',
@@ -230,18 +231,20 @@ async function processChatStream(response: Response, encoder: TextEncoder, decod
 const handler = async (req: Request): Promise<Response> => {
   const {
     messages = [],
-    serverURL,
     httpEndpoint = DEFAULT_HTTP_ENDPOINT,
     optionalGenerationParameters = '',
     additionalProps = { enableIntermediateSteps: true },
   } = (await req.json()) as ChatApiRequest;
 
-  // Validate serverURL is provided
+  const serverURL = process.env.NAT_BACKEND_URL ||
+                    (process.env.NEXT_PUBLIC_NAT_BACKEND_ADDRESS
+                      ? buildHTTPBaseURL(process.env.NEXT_PUBLIC_NAT_BACKEND_ADDRESS)
+                      : undefined);
   if (!serverURL) {
-    return new Response('Server URL not provided', { status: 400 });
+    return new Response('Backend URL not configured on server', { status: 500 });
   }
 
-  // Build the final URL with base URL passed from frontend
+  // Build the final URL with base URL from environment variable
   let requestURL: string;
   let finalURL: URL;
   try {
