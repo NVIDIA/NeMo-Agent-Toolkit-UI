@@ -122,7 +122,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         text,
         stream_id: streamId,
         timestamp: currentTimestamp,
-        id: `${streamId}-${currentTimestamp}-${Math.random().toString(36).substr(2, 9)}`,
+        id: `${streamId}-${currentTimestamp}-${Math.random().toString(36).substring(2, 11)}`,
         uuid: uuid, // Store the UUID from the backend
         pending: true // Initially mark as pending database processing
       };
@@ -133,7 +133,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         if (a.stream_id !== b.stream_id) {
           return a.stream_id.localeCompare(b.stream_id);
         }
-        return a.timestamp - b.timestamp;
+        const timestampA = typeof a.timestamp === 'string' ? new Date(a.timestamp).getTime() : a.timestamp;
+        const timestampB = typeof b.timestamp === 'string' ? new Date(b.timestamp).getTime() : b.timestamp;
+        return timestampA - timestampB;
       });
 
       // Clear the live text for this stream since it's now finalized
@@ -199,6 +201,10 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     if (!uuid) {
       return res.status(400).json({ error: 'UUID is required.' });
+    }
+
+    if (typeof pending !== 'boolean') {
+      return res.status(400).json({ error: 'Pending must be a boolean.' });
     }
 
     // Find the entry by UUID and update its pending status
