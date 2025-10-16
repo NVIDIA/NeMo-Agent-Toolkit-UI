@@ -61,7 +61,12 @@ const Home = (props: any) => {
   const stopConversationRef = useRef<boolean>(false);
 
   const webSocketModeRef = useRef(
-    typeof window !== 'undefined' && sessionStorage.getItem('webSocketMode') === 'false' ? false : webSocketMode
+    typeof window !== 'undefined'
+      ? (() => {
+          const stored = sessionStorage.getItem('webSocketMode');
+          return stored !== null ? stored === 'true' : webSocketMode;
+        })()
+      : webSocketMode
   );
 
   const handleSelectConversation = (conversation: Conversation) => {
