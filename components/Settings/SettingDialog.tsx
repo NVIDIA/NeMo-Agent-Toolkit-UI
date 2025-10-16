@@ -22,9 +22,9 @@ interface Props {
 export const SettingDialog: FC<Props> = ({ open, onClose }) => {
   const { t } = useTranslation('settings');
   const modalRef = useRef<HTMLDivElement>(null);
+  const { lightMode: themeLightMode, setLightMode } = useTheme();
   const {
     state: {
-      lightMode,
       httpEndpoint,
       httpEndpoints,
       optionalGenerationParameters,
@@ -38,7 +38,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
     dispatch: homeDispatch,
   } = useContext(HomeContext);
 
-  const [theme, setTheme] = useState<'light' | 'dark'>(lightMode);
+  const [theme, setTheme] = useState<'light' | 'dark'>(themeLightMode);
   const [selectedHttpEndpoint, setSelectedHttpEndpoint] = useState(
     sessionStorage.getItem('httpEndpoint') || httpEndpoint || DEFAULT_HTTP_ENDPOINT,
   );
@@ -71,6 +71,11 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
         ? sessionStorage.getItem('enableAdditionalVisualization') === 'true'
         : enableAdditionalVisualization,
     );
+
+  // Sync local theme state when the actual theme changes
+  useEffect(() => {
+    setTheme(themeLightMode);
+  }, [themeLightMode]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -158,7 +163,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       }
     }
 
-    homeDispatch({ field: 'lightMode', value: theme });
+    setLightMode(theme);
     homeDispatch({ field: 'httpEndpoint', value: selectedHttpEndpoint || DEFAULT_HTTP_ENDPOINT });
     homeDispatch({ field: 'optionalGenerationParameters', value: jsonBodyInput });
     homeDispatch({ field: 'webSocketSchema', value: webSocketSchema || 'chat_stream' });
