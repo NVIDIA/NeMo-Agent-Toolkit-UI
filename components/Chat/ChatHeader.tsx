@@ -20,7 +20,11 @@ import HomeContext from '@/pages/api/home/home.context';
 
 import { DataStreamControls } from './DataStreamControls';
 
-export const ChatHeader = ({ webSocketModeRef = {} }) => {
+interface Props {
+  webSocketModeRef?: React.MutableRefObject<boolean>;
+}
+
+export const ChatHeader = ({ webSocketModeRef }: Props) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(
     env('NEXT_PUBLIC_NAT_RIGHT_MENU_OPEN') === 'true' ||
@@ -147,7 +151,7 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
                 className={`flex items-center gap-1 justify-evenly text-sm font-medium text-black dark:text-white`}
               >
                 WebSocket{' '}
-                {webSocketModeRef?.current &&
+                {webSocketMode &&
                   (webSocketConnected ? (
                     <IconArrowsSort size={18} color="black" />
                   ) : (
@@ -156,7 +160,7 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
               </span>
               <div
                 onClick={() => {
-                  const newWebSocketMode = !webSocketModeRef.current;
+                  const newWebSocketMode = !webSocketMode;
                   sessionStorage.setItem(
                     'webSocketMode',
                     String(newWebSocketMode),
@@ -164,18 +168,18 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
                   webSocketModeRef.current = newWebSocketMode;
                   homeDispatch({
                     field: 'webSocketMode',
-                    value: !webSocketMode,
+                    value: newWebSocketMode,
                   });
                 }}
                 className={`relative inline-flex h-5 w-10 items-center cursor-pointer rounded-full transition-colors duration-300 ease-in-out ${
-                  webSocketModeRef.current
+                  webSocketMode
                     ? 'bg-black dark:bg-[#76b900]'
                     : 'bg-gray-200'
                 }`}
               >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ease-in-out ${
-                    webSocketModeRef.current ? 'translate-x-6' : 'translate-x-0'
+                    webSocketMode ? 'translate-x-6' : 'translate-x-0'
                   }`}
                 />
               </div>
