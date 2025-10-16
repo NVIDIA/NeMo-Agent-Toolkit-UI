@@ -49,7 +49,9 @@ const buildContextAwareRAGPayload = (() => {
 
     if (!initializedConversations.has(combinedConversationId)) {
       try {
-        const initResponse = await fetch(`${serverURL}/init`, {
+        // Use URL constructor to properly handle trailing slashes and normalization
+        const initURL = new URL('/init', serverURL).toString();
+        const initResponse = await fetch(initURL, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({ uuid: ragUuid }),

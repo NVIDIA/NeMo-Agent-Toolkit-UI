@@ -98,7 +98,7 @@ interface TextData {
 interface FinalizedDataEntry {
   text: string;
   stream_id: string;
-  timestamp: number;
+  timestamp: number | string;
   id: string; // unique identifier for each finalized entry
   uuid?: string; // UUID from the backend for database tracking
   pending?: boolean; // indicates if entry is pending database processing

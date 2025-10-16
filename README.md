@@ -88,7 +88,7 @@ The application supports configuration via environment variables in a `.env` fil
 - `NEXT_PUBLIC_NAT_CHAT_HISTORY_DEFAULT_ON` - Enable chat history persistence by default (true/false)
 - `NEXT_PUBLIC_NAT_RIGHT_MENU_OPEN` - Show right menu panel by default (true/false)
 - `NEXT_PUBLIC_NAT_ENABLE_INTERMEDIATE_STEPS` - Show AI reasoning steps by default (true/false)
-- `NEXT_PUBLIC_NAT_ADDITIONAL_VIZ_DEFAULT` - View settings and toggles not part of the core functionality (true/false)
+- `NEXT_PUBLIC_NAT_ADDITIONAL_VIZ_DEFAULT_ON` - View settings and toggles not part of the core functionality (true/false)
 
 
 **Optional Configuration:**

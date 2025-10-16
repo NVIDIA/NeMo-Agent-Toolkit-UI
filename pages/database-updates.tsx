@@ -364,10 +364,3 @@ const DataStreamHistory = () => {
 };
 
 export default DataStreamHistory;
-
-// Disable server-side rendering for this page since it needs client-side context
-export const getServerSideProps = async () => {
-  return {
-    props: {}
-  };
-};
