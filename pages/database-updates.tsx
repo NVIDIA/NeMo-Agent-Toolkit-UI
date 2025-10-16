@@ -66,7 +66,6 @@ const DataStreamHistory = () => {
   });
 
   const { lightMode } = useTheme();
-  console.log('lightMode', lightMode);
 
   // Save sort order to localStorage when it changes
   useEffect(() => {
@@ -91,10 +90,13 @@ const DataStreamHistory = () => {
         throw new Error('Failed to fetch entries');
       }
       const data = await response.json();
-      setEntries(data.entries || []);
 
-      // Extract unique stream IDs
-      const streamIds = data.entries.map((t: FinalizedDataEntry) => t.stream_id);
+      // Guard against missing entries
+      const entries = Array.isArray(data?.entries) ? data.entries : [];
+      setEntries(entries);
+
+      // Extract unique stream IDs from entries
+      const streamIds = entries.map((t: FinalizedDataEntry) => t.stream_id);
       const streams = Array.from(new Set<string>(streamIds)).sort((a: string, b: string) => a.localeCompare(b));
       setAvailableStreams(streams);
 

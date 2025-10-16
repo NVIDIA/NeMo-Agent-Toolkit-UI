@@ -33,7 +33,7 @@ export interface HomeInitialState {
   enableAdditionalVisualization?: boolean;  /* This toggle displays settings that are hidden during with default / core functionality */
   additionalConfig: any;
   dataStreams: string[];  /* Used for holding the associated label of live data streams (see `stream_id` in DATA_STREAMING.md) */
-  showDataStreamDisplay: boolean;
+  showDataStreamDisplay: boolean;  /* This toggle displays the data stream display in the chat interface (see DATA_STREAMING.md) */
 }
 
 export const initialState: HomeInitialState = {

@@ -44,7 +44,7 @@ const buildContextAwareRAGPayload = (() => {
 
     // Initialize the retrieval system only once per conversation
     // Combine RAG_UUID and conversation.id to create unique identifier
-    const ragUuid = (globalThis as any).process?.env?.RAG_UUID || '123456';
+    const ragUuid = process.env.RAG_UUID || '123456';
     const combinedConversationId = `${ragUuid}-${conversationId || 'default'}`;
 
     if (!initializedConversations.has(combinedConversationId)) {
@@ -64,8 +64,6 @@ const buildContextAwareRAGPayload = (() => {
       } catch (initError) {
         throw new Error(`CA RAG initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
       }
-    } else {
-      console.log('aiq - CA RAG conversation already initialized', combinedConversationId);
     }
 
     return {

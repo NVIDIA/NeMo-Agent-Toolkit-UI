@@ -93,7 +93,7 @@ export const ChatHeader = ({ webSocketModeRef = {} }) => {
         } ${
           selectedConversation?.messages?.length === 0
             ? 'bg-none'
-            : 'bg-[#76b900] dark:bg-black bo'
+            : 'bg-[#76b900] dark:bg-black'
         }`}
       >
         <button
