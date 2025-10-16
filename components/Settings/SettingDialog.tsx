@@ -32,7 +32,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       expandIntermediateSteps,
       intermediateStepOverride,
       enableIntermediateSteps,
-      enableAdditionalVisualization,
+      enableStreamingRagVizOptions,
       webSocketSchemas,
     },
     dispatch: homeDispatch,
@@ -65,11 +65,11 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
         ? false
         : intermediateStepOverride,
     );
-  const [enableAdditionalVisualizationToggle, setEnableAdditionalVisualizationToggle] =
+  const [enableStreamingRagVizOptionsToggle, setenableStreamingRagVizOptionsToggle] =
     useState(
-      sessionStorage.getItem('enableAdditionalVisualization')
-        ? sessionStorage.getItem('enableAdditionalVisualization') === 'true'
-        : enableAdditionalVisualization,
+      sessionStorage.getItem('enableStreamingRagVizOptions')
+        ? sessionStorage.getItem('enableStreamingRagVizOptions') === 'true'
+        : enableStreamingRagVizOptions,
     );
 
   // Sync local theme state when the actual theme changes
@@ -177,8 +177,8 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       value: isIntermediateStepsEnabled,
     });
     homeDispatch({
-      field: 'enableAdditionalVisualization',
-      value: enableAdditionalVisualizationToggle,
+      field: 'enableStreamingRagVizOptions',
+      value: enableStreamingRagVizOptionsToggle,
     });
 
     sessionStorage.setItem('httpEndpoint', selectedHttpEndpoint || DEFAULT_HTTP_ENDPOINT);
@@ -194,8 +194,8 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       String(isIntermediateStepsEnabled),
     );
     sessionStorage.setItem(
-      'enableAdditionalVisualization',
-      String(enableAdditionalVisualizationToggle),
+      'enableStreamingRagVizOptions',
+      String(enableStreamingRagVizOptionsToggle),
     );
 
     toast.success('Settings saved successfully');
@@ -346,21 +346,21 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
         <div className="flex align-middle text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">
           <input
             type="checkbox"
-            id="enableAdditionalVisualization"
-            checked={enableAdditionalVisualizationToggle}
+            id="enableStreamingRagVizOptions"
+            checked={enableStreamingRagVizOptionsToggle}
             onChange={() => {
-              setEnableAdditionalVisualizationToggle(
-                !enableAdditionalVisualizationToggle,
+              setenableStreamingRagVizOptionsToggle(
+                !enableStreamingRagVizOptionsToggle,
               );
             }}
             disabled={!isIntermediateStepsEnabled}
             className="mr-2"
           />
           <label
-            htmlFor="enableAdditionalVisualization"
+            htmlFor="enableStreamingRagVizOptions"
             className="text-sm font-medium text-gray-700 dark:text-gray-300"
           >
-            Enable Additional Visualization Options
+            Enable Context-Aware RAG Visualization (Experimental)
           </label>
         </div>
 

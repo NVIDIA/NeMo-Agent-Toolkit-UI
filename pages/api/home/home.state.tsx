@@ -30,7 +30,7 @@ export interface HomeInitialState {
   expandIntermediateSteps?: boolean;
   intermediateStepOverride?: boolean;
   autoScroll?: boolean;
-  enableAdditionalVisualization: boolean;  /* This toggle displays settings that are hidden during with default / core functionality */
+  enableStreamingRagVizOptions: boolean;  /* This toggle displays settings that are hidden during with default / core functionality */
   additionalConfig: any;
   dataStreams: string[];  /* Used for holding the associated label of live data streams (see `stream_id` in DATA_STREAMING.md) */
   showDataStreamDisplay: boolean;  /* This toggle displays the data stream display in the chat interface (see DATA_STREAMING.md) */
@@ -79,7 +79,7 @@ export const initialState: HomeInitialState = {
   expandIntermediateSteps: false,
   intermediateStepOverride: true,
   autoScroll: true,
-  enableAdditionalVisualization:
+  enableStreamingRagVizOptions:
     env('NEXT_PUBLIC_NAT_ADDITIONAL_VIZ_DEFAULT_ON') === 'true' ||
     process?.env?.NEXT_PUBLIC_NAT_ADDITIONAL_VIZ_DEFAULT_ON === 'true'
       ? true

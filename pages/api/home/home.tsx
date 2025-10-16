@@ -52,7 +52,7 @@ const Home = (props: any) => {
   let workflow = APPLICATION_NAME;
 
   const {
-    state: { folders, conversations, selectedConversation, enableAdditionalVisualization },
+    state: { folders, conversations, selectedConversation, enableStreamingRagVizOptions },
     dispatch,
   } = contextValue;
 
@@ -302,7 +302,7 @@ const Home = (props: any) => {
             <main className="flex flex-col w-full pt-0 relative border-l md:pt-0 dark:border-white/20 transition-width">
               <div className="flex flex-1 flex-col min-h-screen dark:bg-black">
                 <ChatHeader webSocketModeRef={webSocketModeRef} />
-                {enableAdditionalVisualization && (
+                {enableStreamingRagVizOptions && (
                   <DataStreamManager
                     selectedConversation={selectedConversation}
                     dispatch={dispatch}

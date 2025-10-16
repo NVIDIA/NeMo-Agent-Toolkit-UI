@@ -42,7 +42,7 @@ export const ChatHeader = ({ webSocketModeRef }: Props) => {
       webSocketMode,
       webSocketConnected,
       selectedConversation,
-      enableAdditionalVisualization,
+      enableStreamingRagVizOptions,
     },
     dispatch: homeDispatch,
   } = useContext(HomeContext);
@@ -195,7 +195,7 @@ export const ChatHeader = ({ webSocketModeRef }: Props) => {
               entries from different data streams are added to a database. Note: this frontend
               component does not track database updates directly; it simply offers a UI element for
               users to observe the process. */}
-          {enableAdditionalVisualization && (
+          {enableStreamingRagVizOptions && (
             <DataStreamControls />
           )}
 
