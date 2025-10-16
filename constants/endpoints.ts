@@ -22,8 +22,6 @@ export const HTTP_ENDPOINT_OPTIONS = [
 ];
 
 // Default endpoint
-const envEndpoint = env('NEXT_PUBLIC_NAT_DEFAULT_ENDPOINT') as keyof typeof HTTP_ENDPOINTS | undefined;
-export const DEFAULT_HTTP_ENDPOINT =
-  envEndpoint && envEndpoint in HTTP_ENDPOINTS
-    ? HTTP_ENDPOINTS[envEndpoint]
-    : HTTP_ENDPOINTS.CHAT_STREAM;
+const envEndpoint = env('NEXT_PUBLIC_NAT_DEFAULT_ENDPOINT') as string | undefined;
+const endpointOption = HTTP_ENDPOINT_OPTIONS.find(opt => opt.label === envEndpoint);
+export const DEFAULT_HTTP_ENDPOINT = endpointOption?.value ?? HTTP_ENDPOINTS.CHAT_STREAM;
