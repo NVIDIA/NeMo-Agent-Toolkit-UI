@@ -41,7 +41,7 @@ describe('Chat API Processing Functions', () => {
       const mockResponse = {
         text: jest.fn().mockResolvedValue(responseData),
       };
-      
+
       // Since processGenerate is not exported, we'll recreate its logic
       const data = await mockResponse.text();
       try {
@@ -119,7 +119,7 @@ describe('Chat API Processing Functions', () => {
       const mockResponse = {
         text: jest.fn().mockResolvedValue(responseData),
       };
-      
+
       // Recreate processChat logic
       const data = await mockResponse.text();
       try {
@@ -211,7 +211,7 @@ describe('Chat API Processing Functions', () => {
     async function processStreamChunks(chunks: string[], additionalProps = { enableIntermediateSteps: true }): Promise<string[]> {
       const mockResponse = createMockStreamResponse(chunks);
       const results: string[] = [];
-      
+
       // Recreate processGenerateStream logic
       const reader = mockResponse.body.getReader();
       let buffer = '';
@@ -296,7 +296,7 @@ describe('Chat API Processing Functions', () => {
         }
         reader.releaseLock();
       }
-      
+
       return results;
     }
 
@@ -334,7 +334,7 @@ describe('Chat API Processing Functions', () => {
       const results = await processStreamChunks(chunks);
       const intermediateMsg = results.find(r => r.includes('<intermediatestep>'));
       expect(intermediateMsg).toBeDefined();
-      
+
       const parsed = JSON.parse(intermediateMsg!.replace('<intermediatestep>', '').replace('</intermediatestep>', ''));
       expect(parsed.type).toBe('system_intermediate');
       expect(parsed.content.name).toBe('Test Step');
@@ -381,7 +381,7 @@ describe('Chat API Processing Functions', () => {
     async function processChatStreamChunks(chunks: string[], additionalProps = { enableIntermediateSteps: true }): Promise<string[]> {
       const mockResponse = createMockStreamResponse(chunks);
       const results: string[] = [];
-      
+
       // Recreate processChatStream logic
       const reader = mockResponse.body.getReader();
       let buffer = '';
@@ -443,7 +443,7 @@ describe('Chat API Processing Functions', () => {
       } finally {
         reader.releaseLock();
       }
-      
+
       return results;
     }
 
@@ -472,7 +472,7 @@ describe('Chat API Processing Functions', () => {
       const results = await processChatStreamChunks(chunks, { enableIntermediateSteps: true });
       const intermediateMsg = results.find(r => r.includes('<intermediatestep>'));
       expect(intermediateMsg).toBeDefined();
-      
+
       const parsed = JSON.parse(intermediateMsg!.replace('<intermediatestep>', '').replace('</intermediatestep>', ''));
       expect(parsed.content.name).toBe('Chat Step');
     });
@@ -502,6 +502,77 @@ describe('Chat API Processing Functions', () => {
       const results = await processChatStreamChunks(chunks);
       expect(results).not.toContain('should be ignored');
       expect(results).toContain('should be included');
+    });
+  });
+
+  describe('processContextAwareRAG', () => {
+    async function testProcessContextAwareRAG(responseData: string): Promise<string> {
+      const mockResponse = {
+        text: jest.fn().mockResolvedValue(responseData),
+      };
+
+      // Recreate processContextAwareRAG logic
+      const data = await mockResponse.text();
+      try {
+        const parsed = JSON.parse(data);
+        const content =
+          parsed?.result ||
+          (Array.isArray(parsed?.choices)
+            ? parsed.choices[0]?.message?.content
+            : null) ||
+          parsed ||
+          data;
+        return typeof content === 'string' ? content : JSON.stringify(content);
+      } catch {
+        return data;
+      }
+    }
+
+    it('should parse result field from JSON response', async () => {
+      const responseData = JSON.stringify({ result: 'Context-aware response' });
+      const result = await testProcessContextAwareRAG(responseData);
+      expect(result).toBe('Context-aware response');
+    });
+
+    it('should parse choices array content', async () => {
+      const responseData = JSON.stringify({
+        choices: [{ message: { content: 'RAG choice content' } }],
+      });
+      const result = await testProcessContextAwareRAG(responseData);
+      expect(result).toBe('RAG choice content');
+    });
+
+    it('should prefer result over choices', async () => {
+      const responseData = JSON.stringify({
+        result: 'Primary result',
+        choices: [{ message: { content: 'Secondary choice' } }],
+      });
+      const result = await testProcessContextAwareRAG(responseData);
+      expect(result).toBe('Primary result');
+    });
+
+    it('should fallback to parsed object when no specific fields found', async () => {
+      const responseData = JSON.stringify({ custom: 'data', other: 'field' });
+      const result = await testProcessContextAwareRAG(responseData);
+      expect(result).toBe('{"custom":"data","other":"field"}');
+    });
+
+    it('should handle non-JSON response as plain text', async () => {
+      const responseData = 'Plain RAG response';
+      const result = await testProcessContextAwareRAG(responseData);
+      expect(result).toBe('Plain RAG response');
+    });
+
+    it('should stringify non-string result values', async () => {
+      const responseData = JSON.stringify({ result: { complex: 'object', nested: true } });
+      const result = await testProcessContextAwareRAG(responseData);
+      expect(result).toBe('{"complex":"object","nested":true}');
+    });
+
+    it('should handle null choices array', async () => {
+      const responseData = JSON.stringify({ choices: null });
+      const result = await testProcessContextAwareRAG(responseData);
+      expect(result).toBe('{"choices":null}');
     });
   });
 
@@ -574,6 +645,206 @@ describe('Chat API Processing Functions', () => {
         const result = testBuildOpenAIChatPayload(messages, false);
         expect(result.messages).toBe(messages);
         expect(result.stream).toBe(false);
+      });
+    });
+
+    describe('buildContextAwareRAGPayload', () => {
+      let mockFetch: jest.Mock;
+
+      beforeEach(() => {
+        mockFetch = global.fetch as jest.Mock;
+        mockFetch.mockClear();
+      });
+
+      function createBuildContextAwareRAGPayload() {
+        // Track initialized conversations to avoid re-initialization
+        const initializedConversations = new Set<string>();
+
+        return async (messages: any[], conversationId: string, serverURL: string) => {
+          if (!messages?.length || messages[messages.length - 1]?.role !== 'user') {
+            throw new Error('User message not found: messages array is empty or invalid.');
+          }
+
+          // Initialize the retrieval system only once per conversation
+          const ragUuid = '123456'; // Use a fixed value for testing
+          const combinedConversationId = `${ragUuid}-${conversationId || 'default'}`;
+
+          if (!initializedConversations.has(combinedConversationId)) {
+            try {
+              const initResponse = await fetch(`${serverURL}/init`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uuid: ragUuid }),
+              });
+
+              if (!initResponse.ok) {
+                throw new Error(`CA RAG initialization failed: ${initResponse.statusText}`);
+              }
+
+              initializedConversations.add(combinedConversationId);
+            } catch (initError) {
+              throw new Error(`CA RAG initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
+            }
+          }
+
+          return {
+            state: {
+              chat: {
+                question: messages[messages.length - 1]?.content ?? ''
+              }
+            }
+          };
+        };
+      }
+
+      it('should build payload with question from last message', async () => {
+        const buildPayload = createBuildContextAwareRAGPayload();
+        mockFetch.mockResolvedValueOnce({ ok: true });
+
+        const messages = [
+          { role: 'user', content: 'First question' },
+          { role: 'assistant', content: 'Answer' },
+          { role: 'user', content: 'Second question' }
+        ];
+
+        const result = await buildPayload(messages, 'conv-123', 'http://localhost:8080');
+
+        expect(result).toEqual({
+          state: {
+            chat: {
+              question: 'Second question'
+            }
+          }
+        });
+      });
+
+      it('should call init endpoint on first use for a conversation', async () => {
+        const buildPayload = createBuildContextAwareRAGPayload();
+        mockFetch.mockResolvedValueOnce({ ok: true });
+
+        const messages = [{ role: 'user', content: 'Test question' }];
+
+        await buildPayload(messages, 'conv-123', 'http://localhost:8080');
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:8080/init',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uuid: '123456' })
+          }
+        );
+      });
+
+      it('should not call init endpoint on subsequent uses for same conversation', async () => {
+        const buildPayload = createBuildContextAwareRAGPayload();
+        mockFetch.mockResolvedValue({ ok: true });
+
+        const messages = [{ role: 'user', content: 'Test question' }];
+
+        // First call - should initialize
+        await buildPayload(messages, 'conv-123', 'http://localhost:8080');
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+
+        mockFetch.mockClear();
+
+        // Second call - should NOT initialize again
+        await buildPayload(messages, 'conv-123', 'http://localhost:8080');
+        expect(mockFetch).not.toHaveBeenCalled();
+      });
+
+      it('should call init endpoint for different conversations', async () => {
+        const buildPayload = createBuildContextAwareRAGPayload();
+        mockFetch.mockResolvedValue({ ok: true });
+
+        const messages = [{ role: 'user', content: 'Test question' }];
+
+        // First conversation
+        await buildPayload(messages, 'conv-123', 'http://localhost:8080');
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+
+        mockFetch.mockClear();
+
+        // Different conversation - should initialize
+        await buildPayload(messages, 'conv-456', 'http://localhost:8080');
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+      });
+
+      it('should throw error when messages array is empty', async () => {
+        const buildPayload = createBuildContextAwareRAGPayload();
+
+        await expect(
+          buildPayload([], 'conv-123', 'http://localhost:8080')
+        ).rejects.toThrow('User message not found: messages array is empty or invalid.');
+      });
+
+      it('should throw error when last message is not from user', async () => {
+        const buildPayload = createBuildContextAwareRAGPayload();
+
+        const messages = [
+          { role: 'user', content: 'Question' },
+          { role: 'assistant', content: 'Answer' }
+        ];
+
+        await expect(
+          buildPayload(messages, 'conv-123', 'http://localhost:8080')
+        ).rejects.toThrow('User message not found: messages array is empty or invalid.');
+      });
+
+      it('should throw error when init endpoint fails', async () => {
+        const buildPayload = createBuildContextAwareRAGPayload();
+        mockFetch.mockResolvedValueOnce({ ok: false, statusText: 'Internal Server Error' });
+
+        const messages = [{ role: 'user', content: 'Test question' }];
+
+        await expect(
+          buildPayload(messages, 'conv-123', 'http://localhost:8080')
+        ).rejects.toThrow('CA RAG initialization failed: Internal Server Error');
+      });
+
+      it('should throw error when init endpoint network fails', async () => {
+        const buildPayload = createBuildContextAwareRAGPayload();
+        mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+        const messages = [{ role: 'user', content: 'Test question' }];
+
+        await expect(
+          buildPayload(messages, 'conv-123', 'http://localhost:8080')
+        ).rejects.toThrow('CA RAG initialization failed: Network error');
+      });
+
+      it('should use default conversation ID when not provided', async () => {
+        const buildPayload = createBuildContextAwareRAGPayload();
+        mockFetch.mockResolvedValue({ ok: true });
+
+        const messages = [{ role: 'user', content: 'Test question' }];
+
+        // Call with empty string
+        await buildPayload(messages, '', 'http://localhost:8080');
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+
+        mockFetch.mockClear();
+
+        // Call again with empty string - should NOT initialize (same as default)
+        await buildPayload(messages, '', 'http://localhost:8080');
+        expect(mockFetch).not.toHaveBeenCalled();
+      });
+
+      it('should handle empty content in last message', async () => {
+        const buildPayload = createBuildContextAwareRAGPayload();
+        mockFetch.mockResolvedValueOnce({ ok: true });
+
+        const messages = [{ role: 'user', content: '' }];
+
+        const result = await buildPayload(messages, 'conv-123', 'http://localhost:8080');
+
+        expect(result).toEqual({
+          state: {
+            chat: {
+              question: ''
+            }
+          }
+        });
       });
     });
   });
