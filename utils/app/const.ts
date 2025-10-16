@@ -14,3 +14,15 @@ export const webSocketMessageTypes = {
 export const appConfig = {
   fileUploadEnabled: false,
 };
+
+// MCP API configuration helper
+export const getMcpApiUrl = () => {
+  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL;
+  const mcpPath = process.env.NEXT_PUBLIC_MCP_PATH || '/mcp/client/tool/list';
+
+  if (!serverURL) {
+    throw new Error('Server URL is not configured. Set NEXT_PUBLIC_SERVER_URL.');
+  }
+
+  return `${serverURL}${mcpPath}`;
+};

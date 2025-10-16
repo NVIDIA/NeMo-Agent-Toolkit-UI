@@ -23,8 +23,8 @@ import { DataStreamControls } from './DataStreamControls';
 export const ChatHeader = ({ webSocketModeRef = {} }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(
-    env('NEXT_PUBLIC_RIGHT_MENU_OPEN') === 'true' ||
-      process?.env?.NEXT_PUBLIC_RIGHT_MENU_OPEN === 'true'
+    env('NEXT_PUBLIC_NAT_RIGHT_MENU_OPEN') === 'true' ||
+      process?.env?.NEXT_PUBLIC_NAT_RIGHT_MENU_OPEN === 'true'
       ? true
       : false,
   );

@@ -53,6 +53,7 @@ This document provides a comprehensive reference for all interactive buttons use
 
 | Button | Icon | Location | Purpose | Visibility Conditions |
 |--------|------|----------|---------|----------------------|
+| **MCP** | `IconPlug` | Sidebar footer | View MCP client function groups and tools | Always visible in sidebar footer |
 | **Import Data** | `IconDownload` | Sidebar footer | Import conversation data from JSON | Always visible in sidebar footer |
 | **Export Data** | `IconFileExport` | Sidebar footer | Export all conversations to JSON | Always visible in sidebar footer |
 | **Clear Conversations** | `IconTrash` | Sidebar footer | Delete all conversations | Only visible when conversations exist |

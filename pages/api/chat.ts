@@ -1,5 +1,7 @@
 import { ChatApiRequest } from '@/types/chat';
 import { HTTP_ENDPOINTS, DEFAULT_HTTP_ENDPOINT } from '@/constants/endpoints';
+import { validateRequestURL } from '@/utils/security/url-validation';
+import { buildHTTPBaseURL } from '@/utils/backend-url';
 
 export const config = {
   runtime: 'edge',
@@ -298,21 +300,41 @@ const handler = async (req: Request): Promise<Response> => {
     additionalProps = { enableIntermediateSteps: true },
   } = (await req.json()) as ChatApiRequest;
 
-  // Validate httpEndpoint against allowed values
-  const validEndpoints = Object.values(HTTP_ENDPOINTS);
-  if (!validEndpoints.includes(httpEndpoint as any)) {
+  const serverURL = process.env.NAT_BACKEND_URL ||
+                    (process.env.NEXT_PUBLIC_NAT_BACKEND_ADDRESS
+                      ? buildHTTPBaseURL(process.env.NEXT_PUBLIC_NAT_BACKEND_ADDRESS)
+                      : undefined);
+  if (!serverURL) {
+    return new Response('Backend URL not configured on server', { status: 500 });
+  }
+
+  // Build the final URL with base URL from environment variable
+  let requestURL: string;
+  let finalURL: URL;
+  try {
+    requestURL = `${serverURL}${httpEndpoint}`;
+    finalURL = new URL(requestURL);
+  } catch {
     return new Response(
-      JSON.stringify({ error: 'Invalid httpEndpoint. Must be one of: ' + validEndpoints.join(', ') }),
+      JSON.stringify({ error: 'Invalid URL construction' }),
       { status: 400, headers: { 'Content-Type': 'application/json' } }
     );
   }
 
-  // Construct URL by appending endpoint to server URL
-  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL as string | undefined;
-  if (!serverURL) {
-    return new Response('Server URL not configured', { status: 500 });
+  // Validate the URL before making request
+  const validationResult = validateRequestURL(finalURL.href);
+
+  if (!validationResult.isValid) {
+    return new Response(
+      JSON.stringify({
+        error: `URL validation failed: ${validationResult.error}`,
+        attemptedURL: finalURL.href,
+        serverURL: serverURL,
+        httpEndpoint: httpEndpoint
+      }),
+      { status: 403, headers: { 'Content-Type': 'application/json' } }
+    );
   }
-  const chatCompletionURL = `${serverURL}${httpEndpoint}`;
 
   let payload;
   try {
@@ -351,16 +373,22 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(err.message || 'Invalid request.', { status: 400 });
   }
 
-  const response = await fetch(chatCompletionURL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Conversation-Id': req.headers.get('Conversation-Id') || '',
-      'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone || 'Etc/UTC',
-      'User-Message-ID': req.headers.get('User-Message-ID') || '',
-    },
-    body: JSON.stringify(payload),
-  });
+  // Make the request
+  let response: Response;
+  try {
+    response = await fetch(requestURL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Conversation-Id': req.headers.get('Conversation-Id') || '',
+        'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone || 'Etc/UTC',
+        'User-Message-ID': req.headers.get('User-Message-ID') || '',
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error: any) {
+    return new Response(`Request failed: ${error.message}`, { status: 500 });
+  }
 
   if (!response.ok) {
     const error = await response.text();

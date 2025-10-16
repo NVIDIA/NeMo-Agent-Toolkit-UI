@@ -1,4 +1,4 @@
-import { IconFileExport, IconSettings } from '@tabler/icons-react';
+import { IconFileExport, IconSettings, IconPlug } from '@tabler/icons-react';
 import { useContext, useState } from 'react';
 
 import { useTranslation } from 'next-i18next';
@@ -6,6 +6,7 @@ import { useTranslation } from 'next-i18next';
 import HomeContext from '@/pages/api/home/home.context';
 
 import { SettingDialog } from '@/components/Settings/SettingDialog';
+import { MCPModal } from '@/components/MCP/MCPModal';
 
 import { Import } from '../../Settings/Import';
 import { SidebarButton } from '../../Sidebar/SidebarButton';
@@ -15,6 +16,7 @@ import { ClearConversations } from './ClearConversations';
 export const ChatbarSettings = () => {
   const { t } = useTranslation('sidebar');
   const [isSettingDialogOpen, setIsSettingDialog] = useState<boolean>(false);
+  const [isMCPModalOpen, setIsMCPModalOpen] = useState<boolean>(false);
 
   const {
     state: { lightMode, conversations },
@@ -29,6 +31,12 @@ export const ChatbarSettings = () => {
 
   return (
     <div className="flex flex-col items-center space-y-1 border-t border-white/20 pt-1 text-sm">
+      <SidebarButton
+        text="MCP"
+        icon={<IconPlug size={18} />}
+        onClick={() => setIsMCPModalOpen(true)}
+      />
+
       {conversations.length > 0 ? (
         <ClearConversations onClearConversations={handleClearConversations} />
       ) : null}
@@ -51,6 +59,13 @@ export const ChatbarSettings = () => {
         open={isSettingDialogOpen}
         onClose={() => {
           setIsSettingDialog(false);
+        }}
+      />
+
+      <MCPModal
+        open={isMCPModalOpen}
+        onClose={() => {
+          setIsMCPModalOpen(false);
         }}
       />
     </div>

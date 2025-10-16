@@ -21,7 +21,7 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: process.env.MAX_FILE_SIZE_STRING || '5mb',
+      bodySizeLimit: process.env.NAT_MAX_FILE_SIZE_STRING || '5mb',
     },
   },
   webpack(config, { isServer, dev }) {
