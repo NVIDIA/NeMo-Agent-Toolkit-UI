@@ -80,15 +80,15 @@ export const initialState: HomeInitialState = {
   intermediateStepOverride: true,
   autoScroll: true,
   enableAdditionalVisualization:
-    env('NEXT_PUBLIC_ADDITIONAL_VIZ_DEFAULT') === 'true' ||
-    process?.env?.NEXT_PUBLIC_ADDITIONAL_VIZ_DEFAULT === 'true'
+    env('NEXT_PUBLIC_NAT_ADDITIONAL_VIZ_DEFAULT') === 'true' ||
+    process?.env?.NEXT_PUBLIC_NAT_ADDITIONAL_VIZ_DEFAULT === 'true'
       ? true
       : false,
   additionalConfig: {},
   dataStreams: [],  /* Used for holding the associated label of live data streams (see `stream_id` in DATA_STREAMING.md) */
   showDataStreamDisplay:
-    env('NEXT_PUBLIC_SHOW_DATA_STREAM_DEFAULT_ON') === 'true' ||
-    process?.env?.NEXT_PUBLIC_SHOW_DATA_STREAM_DEFAULT_ON === 'true'
+    env('NEXT_PUBLIC_NAT_SHOW_DATA_STREAM_DEFAULT_ON') === 'true' ||
+    process?.env?.NEXT_PUBLIC_NAT_SHOW_DATA_STREAM_DEFAULT_ON === 'true'
       ? true
       : false,
 };

@@ -22,7 +22,7 @@ export const HTTP_ENDPOINT_OPTIONS = [
 ];
 
 // Default endpoint
-const envEndpoint = env('NEXT_PUBLIC_DEFAULT_ENDPOINT') as keyof typeof HTTP_ENDPOINTS | undefined;
+const envEndpoint = env('NEXT_PUBLIC_NAT_DEFAULT_ENDPOINT') as keyof typeof HTTP_ENDPOINTS | undefined;
 export const DEFAULT_HTTP_ENDPOINT =
   envEndpoint && envEndpoint in HTTP_ENDPOINTS
     ? HTTP_ENDPOINTS[envEndpoint]

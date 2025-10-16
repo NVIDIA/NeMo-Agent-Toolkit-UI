@@ -78,7 +78,7 @@ The application supports configuration via environment variables in a `.env` fil
 - `NEXT_PUBLIC_NAT_BACKEND_ADDRESS` - **Required** - Backend server address without protocol (e.g., '127.0.0.1:8000' or 'api.example.com')
   - Used for both HTTP API and WebSocket connections
   - Protocols are automatically added: `http`/`ws` in development, `https`/`wss` in production
-- `NEXT_PUBLIC_DEFAULT_ENDPOINT` - Default endpoint selection
+- `NEXT_PUBLIC_NAT_DEFAULT_ENDPOINT` - Default endpoint selection
 
 **MCP Configuration:**
 - `NEXT_PUBLIC_MCP_PATH` - MCP client API path (defaults to `/mcp/client/tool/list`)
@@ -88,7 +88,7 @@ The application supports configuration via environment variables in a `.env` fil
 - `NEXT_PUBLIC_NAT_CHAT_HISTORY_DEFAULT_ON` - Enable chat history persistence by default (true/false)
 - `NEXT_PUBLIC_NAT_RIGHT_MENU_OPEN` - Show right menu panel by default (true/false)
 - `NEXT_PUBLIC_NAT_ENABLE_INTERMEDIATE_STEPS` - Show AI reasoning steps by default (true/false)
-- `NEXT_PUBLIC_ADDITIONAL_VIZ_DEFAULT` - View settings and toggles not part of the core functionality (true/false)
+- `NEXT_PUBLIC_NAT_ADDITIONAL_VIZ_DEFAULT` - View settings and toggles not part of the core functionality (true/false)
 
 
 **Optional Configuration:**
