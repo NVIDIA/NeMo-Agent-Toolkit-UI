@@ -165,7 +165,9 @@ export const ChatHeader = ({ webSocketModeRef }: Props) => {
                     'webSocketMode',
                     String(newWebSocketMode),
                   );
-                  webSocketModeRef.current = newWebSocketMode;
+                  if (webSocketModeRef) {
+                    webSocketModeRef.current = newWebSocketMode;
+                  }
                   homeDispatch({
                     field: 'webSocketMode',
                     value: newWebSocketMode,
