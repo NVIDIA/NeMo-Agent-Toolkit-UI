@@ -18,7 +18,7 @@ export const HTTP_ENDPOINT_OPTIONS = [
   { label: 'Chat Completions — Non-Streaming', value: HTTP_ENDPOINTS.CHAT },
   { label: 'Generate — Streaming', value: HTTP_ENDPOINTS.GENERATE_STREAM },
   { label: 'Generate — Non-Streaming', value: HTTP_ENDPOINTS.GENERATE },
-  { label: 'Context-Aware RAG — Non-Streaming', value: HTTP_ENDPOINTS.CHAT_CA_RAG },
+  { label: 'Context-Aware RAG — Non-Streaming (Experimental)', value: HTTP_ENDPOINTS.CHAT_CA_RAG },
 ];
 
 // Default endpoint

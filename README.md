@@ -118,6 +118,7 @@ Settings can be configured by selecting the `Settings` icon located on the botto
   - **Chat Completions — Non-Streaming** - Standard OpenAI Chat Completions compatible API endpoint
   - **Generate — Streaming** - Text generation with streaming
   - **Generate — Non-Streaming** - Standard text generation
+  - **Context-Aware RAG — Non-Streaming (Experimental)** - Experimental integration with [Context-Aware RAG](https://github.com/NVIDIA/context-aware-rag) backend
 - `Optional Generation Parameters`: OpenAI Chat Completions compatible JSON parameters that can be added to the request body (available for chat endpoints)
 
 **WebSocket Configuration:** The WebSocket path defaults to `websocket`.
@@ -130,6 +131,8 @@ Settings can be configured by selecting the `Settings` icon located on the botto
 **Note:** For intermediate results streaming, use **Chat Completions — Streaming** (`/chat/stream`) or **Generate — Streaming** (`/generate/stream`).
 
 ### Live Data Streaming
+
+**Note:** This is an experimental feature
 
 The live data streaming feature allows visualization of real-time text updates across multiple streams. This is useful for monitoring ongoing processes or displaying live transcription or streaming data.
 
