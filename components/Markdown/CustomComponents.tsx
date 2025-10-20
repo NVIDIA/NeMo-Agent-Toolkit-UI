@@ -25,13 +25,6 @@ export const getReactMarkDownCustomComponents = (
           children: React.ReactNode;
           [key: string]: any;
         }) => {
-          // if (children?.length) {
-          //   if (children[0] === '▍') {
-          //     return <span className="animate-pulse cursor-default mt-1">▍</span>;
-          //   }
-          //   children[0] = children.length > 0 ? (children[0] as string)?.replace("`▍`", "▍") : '';
-          // }
-
           // Handle inline code (single backticks)
           if (inline) {
             return (

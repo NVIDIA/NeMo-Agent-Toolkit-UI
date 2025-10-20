@@ -138,12 +138,6 @@ function parsePossiblyConcatenatedJson(payload: string): any[] {
   return objs;
 }
 
-// Debug helper for streaming parse issues (commented out for production)
-// const debugParse = (label: string, payload: string) => {
-//   const preview = payload.length > 200 ? payload.slice(0, 200) + '…' : payload;
-//   console.debug(`[stream][${label}] payload preview:`, preview);
-// };
-
 export const Chat = () => {
   const { t } = useTranslation('chat');
   const {

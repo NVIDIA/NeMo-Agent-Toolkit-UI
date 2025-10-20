@@ -96,19 +96,6 @@ function validateBackendUrl(url) {
     };
   }
 
-  // Block localhost/internal IPs (optional - uncomment if needed)
-  // const hostname = parsedUrl.hostname.toLowerCase();
-  // if (hostname === 'localhost' ||
-  //     hostname === '127.0.0.1' ||
-  //     hostname.startsWith('192.168.') ||
-  //     hostname.startsWith('10.') ||
-  //     hostname.startsWith('172.')) {
-  //   return {
-  //     isValid: false,
-  //     error: 'Internal network addresses are not allowed',
-  //   };
-  // }
-
   return { isValid: true };
 }
 
