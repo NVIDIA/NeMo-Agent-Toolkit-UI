@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { SESSION_COOKIE_NAME } from './constants/constants';
+import { SESSION_COOKIE_NAME, HTTP_PROXY_PATH } from './constants';
 
 export default function middleware(req: NextRequest) {
   // Skip middleware for static files and auth routes
   if (
     req.nextUrl.pathname.startsWith('/_next/') ||
-    req.nextUrl.pathname.startsWith('/api/auth/') ||
+    req.nextUrl.pathname.startsWith(`${HTTP_PROXY_PATH}/auth/`) ||
     req.nextUrl.pathname.startsWith('/favicon.ico') ||
     req.nextUrl.pathname.startsWith('/public/')
   ) {
@@ -34,12 +34,12 @@ export default function middleware(req: NextRequest) {
     });
 
     // Add session ID to headers for API routes
-    if (req.nextUrl.pathname.startsWith('/api/')) {
+    if (req.nextUrl.pathname.startsWith(`${HTTP_PROXY_PATH}/`)) {
       response.headers.set('x-session-id', sessionId);
     }
   } else {
     // Add existing session ID to headers for API routes
-    if (req.nextUrl.pathname.startsWith('/api/')) {
+    if (req.nextUrl.pathname.startsWith(`${HTTP_PROXY_PATH}/`)) {
       response.headers.set('x-session-id', sessionCookie.value);
     }
   }
@@ -51,12 +51,14 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api/auth (NextAuth API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
+     * 
+     * Note: API auth routes are filtered dynamically in the middleware
+     * function to respect the HTTP_PROXY_PATH environment variable
      */
-    '/((?!api/auth|_next/static|_next/image|favicon.ico|public).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
   ],
 };

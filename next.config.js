@@ -24,14 +24,6 @@ const nextConfig = {
       bodySizeLimit: process.env.NAT_MAX_FILE_SIZE_STRING || '5mb',
     },
   },
-  webpack(config, { isServer, dev }) {
-    config.experiments = {
-      asyncWebAssembly: true,
-      layers: true,
-    };
-
-    return config;
-  },
   async redirects() {
     return [];
   },

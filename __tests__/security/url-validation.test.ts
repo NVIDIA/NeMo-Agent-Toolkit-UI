@@ -1,117 +1,27 @@
 /**
  * URL Validation Tests
  * 
- * Tests for HTTP request URL, WebSocket URL, Media URL, and OAuth URL validation
+ * Tests for Media URL, OAuth URL, and Path Normalization validation.
+ * HTTP/WebSocket path validation is handled server-side in the proxy layer.
  */
-import { validateRequestURL, validateWebSocketURL } from '@/utils/security/url-validation';
-import { HTTP_ENDPOINTS } from '@/constants/endpoints';
 import { isValidMediaURL } from '@/utils/media/validation';
 import { isValidConsentPromptURL } from '@/utils/security/oauth-validation';
 
+const {
+  validateProxyHttpPath,
+} = require('../../utils/security/url-validation');
+
 describe('URL Validation Tests', () => {
   const originalEnv = process.env.NODE_ENV;
-  const originalBackendAddress = process.env.NEXT_PUBLIC_NAT_BACKEND_ADDRESS;
   
   beforeAll(() => {
     // @ts-ignore - Modifying NODE_ENV for test purposes
     process.env.NODE_ENV = 'development';
-    process.env.NEXT_PUBLIC_NAT_BACKEND_ADDRESS = '127.0.0.1:8000';
   });
   
   afterAll(() => {
     // @ts-ignore - Restoring NODE_ENV after test
     process.env.NODE_ENV = originalEnv;
-    if (originalBackendAddress) {
-      process.env.NEXT_PUBLIC_NAT_BACKEND_ADDRESS = originalBackendAddress;
-    } else {
-      delete process.env.NEXT_PUBLIC_NAT_BACKEND_ADDRESS;
-    }
-  });
-
-  // ============================================================================
-  // HTTP REQUEST VALIDATION
-  // ============================================================================
-  describe('HTTP Request Validation', () => {
-    it.each([
-      ...Object.values(HTTP_ENDPOINTS).map(endpoint => ({ endpoint, shouldPass: true })),
-      { endpoint: '/admin', shouldPass: false },
-      { endpoint: '/secrets', shouldPass: false },
-      { endpoint: '/api/users', shouldPass: false },
-      { endpoint: '/chat/../admin', shouldPass: false },
-    ])('should validate endpoint path: $endpoint (shouldPass: $shouldPass)', ({ endpoint, shouldPass }) => {
-      
-      const result = validateRequestURL(`http://127.0.0.1:8000${endpoint}`);
-      expect(result.isValid).toBe(shouldPass);
-      if (!shouldPass) {
-        expect(result.error).toContain('Path is not in the allowed list');
-      }
-    });
-
-    it.each([
-      { protocol: 'http:', url: 'http://127.0.0.1:8000/chat', shouldPass: true },
-      { protocol: 'https:', url: 'https://127.0.0.1:8000/chat', shouldPass: true },
-      { protocol: 'ftp:', url: 'ftp://127.0.0.1:8000/chat', shouldPass: false },
-    ])('should validate HTTP protocol $protocol in development', ({ url, shouldPass }) => {
-      const result = validateRequestURL(url);
-      expect(result.isValid).toBe(shouldPass);
-      if (!shouldPass) {
-        expect(result.error).toContain('Invalid protocol');
-      }
-    });
-
-    it.each([
-      { protocol: 'https:', url: 'https://127.0.0.1:8000/chat', shouldPass: true },
-      { protocol: 'http:', url: 'http://127.0.0.1:8000/chat', shouldPass: false },
-    ])('should validate HTTP protocol $protocol in production', ({ url, shouldPass }) => {
-      const originalEnv = process.env.NODE_ENV;
-      // @ts-ignore - Modifying NODE_ENV for test purposes
-      process.env.NODE_ENV = 'production';
-      
-      const result = validateRequestURL(url);
-      expect(result.isValid).toBe(shouldPass);
-      if (!shouldPass) {
-        expect(result.error).toContain('Invalid protocol');
-      }
-      
-      // @ts-ignore - Restoring NODE_ENV after test
-      process.env.NODE_ENV = originalEnv;
-    });
-
-    it('should reject wrong backend address', () => {
-      const result = validateRequestURL('http://evil.com:8000/chat');
-      expect(result.isValid).toBe(false);
-      expect(result.error).toContain('Base address does not match configured backend');
-    });
-  });
-
-  // ============================================================================
-  // WEBSOCKET REQUEST VALIDATION
-  // ============================================================================
-  describe('WebSocket Request Validation', () => {
-    it('should validate WebSocket URL with correct path', () => {
-      expect(validateWebSocketURL('ws://127.0.0.1:8000/websocket')).toBe(true);
-    });
-
-    it('should reject wrong backend address', () => {
-      expect(validateWebSocketURL('ws://evil.com:8000/websocket')).toBe(false);
-    });
-
-    it('should reject invalid paths', () => {
-      expect(validateWebSocketURL('ws://127.0.0.1:8000/admin')).toBe(false);
-      expect(validateWebSocketURL('ws://127.0.0.1:8000/secrets')).toBe(false);
-    });
-
-    it('should validate wss in production', () => {
-      const originalEnv = process.env.NODE_ENV;
-      // @ts-ignore
-      process.env.NODE_ENV = 'production';
-      
-      expect(validateWebSocketURL('wss://127.0.0.1:8000/websocket')).toBe(true);
-      expect(validateWebSocketURL('ws://127.0.0.1:8000/websocket')).toBe(false);
-      
-      // @ts-ignore
-      process.env.NODE_ENV = originalEnv;
-    });
   });
 
   // ============================================================================
@@ -297,6 +207,62 @@ describe('URL Validation Tests', () => {
         controlCharUrls.forEach(url => {
           expect(isValidConsentPromptURL(url)).toBe(false);
         });
+      });
+    });
+  });
+
+  // ============================================================================
+  // PATH NORMALIZATION TESTS
+  // ============================================================================
+  describe('Path Normalization Tests', () => {
+    describe('Path Traversal Prevention', () => {
+      it('should block simple path traversal', () => {
+        const result = validateProxyHttpPath('/api/../admin');
+        expect(result.isValid).toBe(false);
+      });
+
+      it('should block encoded path traversal', () => {
+        const result = validateProxyHttpPath('/api/%2E%2E/admin');
+        expect(result.isValid).toBe(false);
+      });
+
+      it('should block double-encoded path traversal', () => {
+        const result = validateProxyHttpPath('/api/%252E%252E%252Fadmin');
+        expect(result.isValid).toBe(false);
+      });
+
+      it('should block complex traversal attempts', () => {
+        const result = validateProxyHttpPath('/api/chat/../../admin');
+        expect(result.isValid).toBe(false);
+      });
+    });
+
+    describe('Valid Paths', () => {
+      it('should allow valid paths', () => {
+        const result = validateProxyHttpPath('/api/chat/stream');
+        expect(result.isValid).toBe(true);
+      });
+
+      it('should normalize and allow paths with dots', () => {
+        const result = validateProxyHttpPath('/api/./chat/stream');
+        expect(result.isValid).toBe(true);
+      });
+
+      it('should handle query parameters', () => {
+        const result = validateProxyHttpPath('/api/chat/stream?session=123');
+        expect(result.isValid).toBe(true);
+      });
+    });
+
+    describe('Edge Cases', () => {
+      it('should reject empty path', () => {
+        const result = validateProxyHttpPath('');
+        expect(result.isValid).toBe(false);
+      });
+
+      it('should reject non-string input', () => {
+        const result = validateProxyHttpPath(null as any);
+        expect(result.isValid).toBe(false);
       });
     });
   });

@@ -4,7 +4,15 @@ import { useTranslation } from 'next-i18next';
 
 import { useTheme } from '@/contexts/ThemeContext';
 import HomeContext from '@/pages/api/home/home.context';
-import { HTTP_ENDPOINTS, DEFAULT_HTTP_ENDPOINT } from '@/constants/endpoints';
+import {
+  DEFAULT_CORE_ROUTE,
+  CHAT_STREAM,
+  CHAT,
+  GENERATE_STREAM,
+  GENERATE,
+  CA_RAG_INIT,
+  CHAT_CA_RAG,
+} from '@/constants';
 
 // WebSocket schema display names to match HTTP endpoint naming
 const WEBSOCKET_SCHEMA_LABELS: Record<string, string> = {
@@ -40,7 +48,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
 
   const [theme, setTheme] = useState<'light' | 'dark'>(themeLightMode);
   const [selectedHttpEndpoint, setSelectedHttpEndpoint] = useState(
-    sessionStorage.getItem('httpEndpoint') || httpEndpoint || DEFAULT_HTTP_ENDPOINT,
+    sessionStorage.getItem('httpEndpoint') || httpEndpoint || DEFAULT_CORE_ROUTE,
   );
   const [jsonBodyInput, setJsonBodyInput] = useState(
     sessionStorage.getItem('optionalGenerationParameters') || optionalGenerationParameters || '',
@@ -140,7 +148,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
 
     // Clear JSON validation error when switching to generate endpoints
     // since the additional JSON field won't be visible/used
-    if (endpoint === HTTP_ENDPOINTS.GENERATE || endpoint === HTTP_ENDPOINTS.GENERATE_STREAM) {
+    if (endpoint === GENERATE || endpoint === GENERATE_STREAM) {
       setJsonValidationError('');
     }
   };
@@ -151,9 +159,9 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       return;
     }
 
-    const isChatEndpoint = selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT ||
-                           selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT_STREAM ||
-                           selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT_CA_RAG;
+    const isChatEndpoint = selectedHttpEndpoint === CHAT ||
+                           selectedHttpEndpoint === CHAT_STREAM ||
+                           selectedHttpEndpoint === CHAT_CA_RAG;
 
     if (isChatEndpoint) {
       const validation = validateAdditionalJson(jsonBodyInput);
@@ -164,7 +172,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
     }
 
     setLightMode(theme);
-    homeDispatch({ field: 'httpEndpoint', value: selectedHttpEndpoint || DEFAULT_HTTP_ENDPOINT });
+    homeDispatch({ field: 'httpEndpoint', value: selectedHttpEndpoint || DEFAULT_CORE_ROUTE });
     homeDispatch({ field: 'optionalGenerationParameters', value: jsonBodyInput });
     homeDispatch({ field: 'webSocketSchema', value: webSocketSchema || 'chat_stream' });
     homeDispatch({ field: 'expandIntermediateSteps', value: detailsToggle });
@@ -181,7 +189,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       value: enableStreamingRagVizOptionsToggle,
     });
 
-    sessionStorage.setItem('httpEndpoint', selectedHttpEndpoint || DEFAULT_HTTP_ENDPOINT);
+    sessionStorage.setItem('httpEndpoint', selectedHttpEndpoint || DEFAULT_CORE_ROUTE);
     sessionStorage.setItem('optionalGenerationParameters', jsonBodyInput);
     sessionStorage.setItem('webSocketSchema', webSocketSchema || 'chat_stream');
     sessionStorage.setItem('expandIntermediateSteps', String(detailsToggle));
@@ -242,7 +250,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
         </select>
 
         {/* Show optional generation parameters for chat endpoints */}
-        {(selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT || selectedHttpEndpoint === HTTP_ENDPOINTS.CHAT_STREAM) && (
+        {(selectedHttpEndpoint === CHAT || selectedHttpEndpoint === CHAT_STREAM) && (
           <>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">
               {t('Optional generation parameters')}

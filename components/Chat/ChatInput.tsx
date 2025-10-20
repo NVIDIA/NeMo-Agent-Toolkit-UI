@@ -220,21 +220,6 @@ export const ChatInput = ({
     }
   };
 
-  const handleInitModal = () => {
-    const selectedPrompt = filteredPrompts[activePromptIndex];
-    if (selectedPrompt) {
-      setContent((prevContent) => {
-        const newContent = prevContent?.replace(
-          /\/\w*$/,
-          selectedPrompt.content,
-        );
-        return newContent;
-      });
-      handlePromptSelect(selectedPrompt);
-    }
-    setShowPromptList(false);
-  };
-
   const parseVariables = (content: string) => {
     const regex = /{{(.*?)}}/g;
     const foundVariables = [];

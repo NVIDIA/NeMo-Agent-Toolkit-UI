@@ -71,35 +71,37 @@ docker run --env-file .env -p 3000:3000 nemo-agent-toolkit-ui
 
 ### Environment Variables
 
-The application supports configuration via environment variables in a `.env` file:
+The application uses a unified proxy architecture for improved security. All configuration is done via environment variables in a `.env` file.
+
+**Backend Configuration (Required):**
+- `NAT_BACKEND_URL` - **Required** - Full backend URL including protocol (e.g., `http://127.0.0.1:8000` or `https://api.example.com`)
+  - This is server-only and never exposed to the browser
+  - Used for both HTTP API and WebSocket connections
+  - Replaces the old `NEXT_PUBLIC_NAT_BACKEND_ADDRESS` variable
 
 **Application Configuration:**
 - `NEXT_PUBLIC_NAT_WORKFLOW` - Application workflow name displayed in the UI
-- `NEXT_PUBLIC_NAT_BACKEND_ADDRESS` - **Required** - Backend server address without protocol (e.g., '127.0.0.1:8000' or 'api.example.com')
-  - Used for both HTTP API and WebSocket connections
-  - Protocols are automatically added: `http`/`ws` in development, `https`/`wss` in production
 - `NEXT_PUBLIC_NAT_DEFAULT_ENDPOINT` - Default endpoint selection
 
-**MCP Configuration:**
-- `NEXT_PUBLIC_MCP_PATH` - MCP client API path (defaults to `/mcp/client/tool/list`)
-  - **Note**: Uses the same server as `NEXT_PUBLIC_SERVER_URL`.
 **Feature Toggles:**
 - `NEXT_PUBLIC_NAT_WEB_SOCKET_DEFAULT_ON` - Enable WebSocket mode by default (true/false)
 - `NEXT_PUBLIC_NAT_CHAT_HISTORY_DEFAULT_ON` - Enable chat history persistence by default (true/false)
 - `NEXT_PUBLIC_NAT_RIGHT_MENU_OPEN` - Show right menu panel by default (true/false)
 - `NEXT_PUBLIC_NAT_ENABLE_INTERMEDIATE_STEPS` - Show AI reasoning steps by default (true/false)
 - `NEXT_PUBLIC_NAT_ADDITIONAL_VIZ_DEFAULT_ON` - View settings and toggles not part of the core functionality (true/false)
+- `NEXT_PUBLIC_NAT_SHOW_DATA_STREAM_DEFAULT_ON` - Show data stream display by default (true/false)
 
+**Proxy Configuration**
+- `PORT` - Public gateway port that the browser connects to (default: 3000, auto-detects if busy)
+- `NEXT_INTERNAL_URL` - Internal Next.js dev server URL (default: `http://localhost:3001`)
+- `HTTP_PUBLIC_PATH` - Public HTTP path prefix for API requests (default: `/api`)
+- `WS_PUBLIC_PATH` - Public WebSocket path (default: `/ws`)
 
 **Optional Configuration:**
-- `NAT_BACKEND_URL` - **Advanced** - Override HTTP API backend URL for production (e.g., 'http://nat-backend-internal:8000')
-  - Only set this if your internal API routing differs from the public WebSocket address
-  - If not set, automatically derived from `NEXT_PUBLIC_NAT_BACKEND_ADDRESS`
-  - Example use case: Internal Docker network for API, public domain for WebSocket
 - `NAT_DEFAULT_MODEL` - Default AI model identifier for server-side rendering
 - `NAT_MAX_FILE_SIZE_STRING` - Maximum file upload size for all operations (e.g., '5mb', '10mb', '1gb')
-- `NODE_ENV` - Environment mode (development/production) affects security settings
 - `NEXT_TELEMETRY_DISABLED` - Disable Next.js telemetry data collection (1 to disable)
+- `NEXT_PUBLIC_MCP_PATH` - MCP client API path (defaults to `/mcp/client/tool/list`)
 
 ### HTTP API Connection
 

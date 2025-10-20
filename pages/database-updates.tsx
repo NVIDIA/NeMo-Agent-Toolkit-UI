@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { IconRefresh, IconFilter, IconHistory, IconSortAscending, IconSortDescending, IconClock, IconCheck } from '@tabler/icons-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { HTTP_PROXY_PATH, UPDATE_DATA_STREAM } from '@/constants';
 import Head from 'next/head';
 
 /**
@@ -85,7 +86,7 @@ const DataStreamHistory = () => {
   const fetchEntries = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/update-data-stream?type=finalized');
+      const response = await fetch(`${HTTP_PROXY_PATH}${UPDATE_DATA_STREAM}?type=finalized`);
       if (!response.ok) {
         throw new Error('Failed to fetch entries');
       }

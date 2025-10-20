@@ -1,7 +1,7 @@
 import toast from 'react-hot-toast';
 
 import { SupportedExportFormats } from '@/types/export';
-import { MAX_FILE_SIZE_BYTES } from '@/constants/constants';
+import { MAX_FILE_SIZE_BYTES } from '@/constants';
 
 /**
  * Validates and sanitizes imported JSON data to prevent XSS and prototype pollution

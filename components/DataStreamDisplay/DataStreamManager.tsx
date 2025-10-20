@@ -5,7 +5,7 @@ import { useEffect, useContext } from 'react';
 import HomeContext from '@/pages/api/home/home.context';
 import { Conversation } from '@/types/chat';
 import { saveConversation } from '@/utils/app/conversation';
-
+import { HTTP_PROXY_PATH, UPDATE_DATA_STREAM } from '@/constants';
 import { DataStreamDisplay } from './DataStreamDisplay';
 
 /**
@@ -84,7 +84,7 @@ export const DataStreamManager = ({
     const interval = setInterval(async () => {
       try {
         // Get available streams
-        const streamsRes = await fetch('/api/update-data-stream');
+        const streamsRes = await fetch(`${HTTP_PROXY_PATH}${UPDATE_DATA_STREAM}`);
         if (streamsRes.ok) {
           const streamsData = await streamsRes.json();
           if (streamsData.streams && Array.isArray(streamsData.streams)) {

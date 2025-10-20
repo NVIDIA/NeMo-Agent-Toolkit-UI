@@ -60,13 +60,9 @@ export const CodeBlock: FC<Props> = memo(({ language, value }) => {
       3,
       true,
     )}${fileExtension}`;
-    // const fileName = window.prompt(
-    //   t('Enter file name') || '',
-    //   suggestedFileName,
-    // );
 
     if (!suggestedFileName) {
-      return; // User pressed cancel on prompt
+      return;
     }
 
     const blob = new Blob([formattedValue], { type: 'text/plain' });
