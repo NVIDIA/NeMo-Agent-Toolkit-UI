@@ -6,7 +6,7 @@ import { ChatLoader } from './ChatLoader';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
 import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
 import HomeContext from '@/pages/api/home/home.context';
-import { DEFAULT_HTTP_ENDPOINT } from '@/constants/endpoints';
+import { DEFAULT_CORE_ROUTE, WEBSOCKET_PROXY_PATH, HTTP_PROXY_PATH } from '@/constants';
 import { ChatApiRequest, Conversation, Message } from '@/types/chat';
 import {
   WebSocketInbound,
@@ -23,7 +23,6 @@ import {
   extractOAuthUrl,
   shouldAppendResponseContent,
 } from '@/types/websocket';
-import { getEndpoint } from '@/utils/app/api';
 import { webSocketMessageTypes } from '@/utils/app/const';
 import {
   saveConversation,
@@ -50,11 +49,8 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'r
 import toast from 'react-hot-toast';
 import { v4 as uuidv4 } from 'uuid';
 
-import { SESSION_COOKIE_NAME } from '@/constants/constants';
+import { SESSION_COOKIE_NAME } from '@/constants';
 import { isValidConsentPromptURL } from '@/utils/security/oauth-validation';
-import { validateWebSocketURL } from '@/utils/security/url-validation';
-
-export { validateWebSocketURL };
 
 
 
@@ -159,7 +155,6 @@ export const Chat = () => {
       chatHistory,
       webSocketConnected,
       webSocketMode,
-      webSocketURL,
       webSocketSchema,
       httpEndpoint,
       optionalGenerationParameters,
@@ -300,51 +295,32 @@ export const Chat = () => {
         webSocketConnectedRef.current = false;
       }
     };
-  }, [webSocketMode, webSocketURL]);
+  }, [webSocketMode]);
 
   const connectWebSocket = async (retryCount = 0) => {
     const maxRetries = 3;
     const retryDelay = 1000; // 1-second delay between retries
 
-    if (!webSocketURL) {
-      console.error('WebSocket URL not configured in environment variables');
-      toast.error('WebSocket URL not configured in environment variables.');
-      return false;
-    }
-
     return new Promise(resolve => {
-      // Universal cookie handling for both cross-origin and same-origin connections
+      // Get session cookie
       const getCookie = (name: string) => {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);
         if (parts.length === 2) return parts.pop()?.split(';').shift();
-        return null;
       };
 
       const sessionCookie = getCookie(SESSION_COOKIE_NAME);
       
-      // Use only the environment-configured WebSocket URL for security
-      let wsUrl: string = webSocketURL;
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      let wsUrl = `${protocol}//${window.location.host}${WEBSOCKET_PROXY_PATH}`;
       
-      // Validate WebSocket URL before connecting to prevent malicious connections
-      if (!validateWebSocketURL(wsUrl)) {
-        console.error('WebSocket URL validation failed, refusing to connect to potentially malicious server:', wsUrl);
-        toast.error('WebSocket URL validation failed.');
-        resolve(false);
-        return;
-      }
-
-      // Determine if this is a cross-origin connection
-      const wsUrlObj = new URL(wsUrl);
-      const isCrossOrigin = wsUrlObj.origin !== window.location.origin;
-
-      // Always add session cookie as query parameter for reliability
-      // This works for both cross-origin (required) and same-origin (redundant but harmless)
+      // Add session cookie as query parameter if present
       if (sessionCookie) {
-        const separator = wsUrl.includes('?') ? '&' : '?';
-        wsUrl += `${separator}session=${encodeURIComponent(sessionCookie)}`;
-      } else {
+        wsUrl += `?session=${encodeURIComponent(sessionCookie)}`;
+        console.log('WebSocket: Connecting with session cookie');
       }
+      
+      console.log('Connecting to WebSocket:', wsUrl);
 
       const ws = new WebSocket(wsUrl);
 
@@ -355,7 +331,7 @@ export const Chat = () => {
 
       ws.onopen = () => {
         toast.success(
-          'Connected to ' + webSocketURL,
+          'WebSocket connected',
           {
             id: 'websocketSuccessToastId',
           }
@@ -371,12 +347,19 @@ export const Chat = () => {
         resolve(true); // Resolve true only when connected
       };
 
+      ws.onerror = (evt) => {
+        console.error('[WebSocket] error:', evt);
+        // Do not ws.close() here; let server/proxy drive closure
+      };
+
       ws.onmessage = event => {
         const message = JSON.parse(event.data);
         handleWebSocketMessage(message);
       };
 
-      ws.onclose = async () => {
+      ws.onclose = async (event) => {
+        console.log('[WebSocket] Connection closed. Code:', event.code, 'Reason:', event.reason, 'Clean:', event.wasClean);
+        
         if (retryCount < maxRetries) {
           retryCount++;
 
@@ -400,14 +383,6 @@ export const Chat = () => {
           });
           resolve(false);
         }
-      };
-
-      ws.onerror = error => {
-        homeDispatch({ field: 'webSocketConnected', value: false });
-        webSocketConnectedRef.current = false;
-        homeDispatch({ field: 'loading', value: false });
-        homeDispatch({ field: 'messageIsStreaming', value: false });
-        ws.close(); // Ensure the WebSocket is closed on error
       };
     });
   };
@@ -888,19 +863,19 @@ export const Chat = () => {
           },
         };
 
-        const endpoint = getEndpoint({ service: 'chat' });
+        const httpEndpointPath = sessionStorage.getItem('httpEndpoint') || httpEndpoint;
         const body = JSON.stringify(chatRequest);
 
         let response;
         try {
-          response = await fetch(`${window.location.origin}/${endpoint}`, {
+          response = await fetch(`${HTTP_PROXY_PATH}${httpEndpointPath}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Conversation-Id': selectedConversation?.id || '',
               'User-Message-ID': message?.id || '',
             },
-            signal: controllerRef.current.signal, // Use ref here
+            signal: controllerRef.current.signal,
             body,
           });
 
@@ -940,7 +915,7 @@ export const Chat = () => {
             let partialIntermediateStep = ''; // Add this to store partial chunks
 
             // Initialize streaming buffers
-            const selectedEndpoint = sessionStorage.getItem('httpEndpoint') || httpEndpoint || DEFAULT_HTTP_ENDPOINT;
+            const selectedEndpoint = sessionStorage.getItem('httpEndpoint') || httpEndpoint || DEFAULT_CORE_ROUTE;
             const isGenerateStream = selectedEndpoint.includes('generate');
             let sseBuffer = '';
             let ndjsonBuffer = '';

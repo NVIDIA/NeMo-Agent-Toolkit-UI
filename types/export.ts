@@ -1,6 +1,5 @@
 import { Conversation, Message } from './chat';
 import { FolderInterface } from './folder';
-import { Prompt } from './prompt';
 
 export type SupportedExportFormats =
   | ExportFormatV1
@@ -40,5 +39,5 @@ export interface ExportFormatV4 {
   version: 4;
   history: Conversation[];
   folders: FolderInterface[];
-  prompts: Prompt[];
+  prompts: any[];
 }

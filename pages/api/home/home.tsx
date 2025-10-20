@@ -25,7 +25,7 @@ import { saveFolders } from '@/utils/app/folders';
 import { getWorkflowName } from '@/utils/app/helper';
 import { getSettings } from '@/utils/app/settings';
 
-import { APPLICATION_NAME } from '@/constants/constants';
+import { APPLICATION_NAME } from '@/constants';
 
 import { Conversation } from '@/types/chat';
 import { KeyValuePair } from '@/types/data';

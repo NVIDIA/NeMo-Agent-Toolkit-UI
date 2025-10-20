@@ -1,5 +1,6 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { HTTP_METHOD_POST, HTTP_METHOD_GET } from '@/constants';
 
 /**
  * Update Data Stream API Endpoint
@@ -108,7 +109,7 @@ let streamTexts: { [streamId: string]: TextData } = {};
 let finalizedEntries: FinalizedDataEntry[] = [];
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method === 'POST') {
+  if (req.method === HTTP_METHOD_POST) {
     const { text, stream_id, timestamp, finalized, uuid } = req.body;
     if (typeof text !== 'string') {
       return res.status(400).json({ error: 'Text must be a string.' });
@@ -155,7 +156,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(200).json({ success: true });
   }
 
-  if (req.method === 'GET') {
+  if (req.method === HTTP_METHOD_GET) {
     const { stream, type } = req.query;
 
     if (type === 'finalized') {

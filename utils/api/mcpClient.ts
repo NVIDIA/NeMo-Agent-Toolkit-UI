@@ -1,3 +1,5 @@
+import { HTTP_PROXY_PATH, MCP_CLIENTS } from '@/constants';
+
 export interface MCPTool {
   name: string;
   description: string;
@@ -23,7 +25,7 @@ export interface MCPClientResponse {
 export const fetchMCPClients = async (): Promise<MCPClientResponse> => {
   try {
     // Use server-side API route instead of direct client-side call
-    const response = await fetch('/api/mcp/clients', {
+    const response = await fetch(`${HTTP_PROXY_PATH}${MCP_CLIENTS}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

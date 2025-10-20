@@ -10,7 +10,7 @@ jest.mock('react-hot-toast', () => ({
 import toast from 'react-hot-toast';
 
 import { validateImportData } from '@/utils/security/import-validation';
-import { MAX_FILE_SIZE_BYTES } from '@/constants/constants';
+import { MAX_FILE_SIZE_BYTES } from '@/constants';
 
 // Get mocked toast functions for assertions
 const mockToast = toast as jest.Mocked<typeof toast>;

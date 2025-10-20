@@ -271,63 +271,6 @@ describe('Conversation State Management', () => {
 });
 
 describe('Message Content Processing - REAL FUNCTION TESTS', () => {
-  describe('Content Appending - REAL FUNCTION TESTS', () => {
-    /**
-     * appendAssistantText() string concatenation logic
-     *
-     * WHAT THIS TESTS: Pure string manipulation without any external dependencies
-     * BUSINESS VALUE: Ensures streaming text is assembled correctly for chat messages
-     *
-     * INPUT: Multiple text chunks that should be concatenated
-     * EXPECTED OUTPUT: Single combined string with all chunks in order
-     */
-    test('appendAssistantText combines content correctly', () => {
-      let content = '';
-      const chunks = ['Hello', ' world', '!', ' How', ' are', ' you?'];
-
-      chunks.forEach(chunk => {
-        content = appendAssistantText(content, chunk);
-      });
-
-      expect(content).toBe('Hello world! How are you?');
-    });
-
-    /**
-     * appendAssistantText() edge case handling
-     *
-     * WHAT THIS TESTS: Function behavior with empty/null inputs
-     * BUSINESS VALUE: Ensures robust handling of streaming edge cases
-     *
-     * INPUT: Various combinations of empty strings
-     * EXPECTED OUTPUT: Logical string concatenation behavior
-     */
-    test('appendAssistantText handles empty inputs', () => {
-      expect(appendAssistantText('', '')).toBe('');
-      expect(appendAssistantText('existing', '')).toBe('existing');
-      expect(appendAssistantText('', 'new')).toBe('new');
-    });
-
-    test('appendAssistantText replaces placeholder content', () => {
-      expect(appendAssistantText('FAIL', 'real content')).toBe('real content');
-      expect(appendAssistantText('', 'real content')).toBe('real content');
-    });
-
-    /**
-     * Description: Verifies that appendAssistantText preserves exact whitespace and newlines during concatenation
-     * Success: Text is concatenated exactly as provided, maintaining all whitespace, newlines, and indentation
-     */
-    test('appendAssistantText preserves whitespace correctly', () => {
-      // Start with non-empty content to test concatenation behavior
-      let content = 'Initial';
-      content = appendAssistantText(content, '\nLine 1\n');
-      content = appendAssistantText(content, 'Line 2\n');
-      content = appendAssistantText(content, '  Indented');
-
-      // When concatenating to existing content, original formatting is preserved
-      expect(content).toBe('Initial\nLine 1\nLine 2\n  Indented');
-    });
-  });
-
   describe('Intermediate Steps Processing', () => {
     /**
      * Description: Verifies that mergeIntermediateSteps maintains the correct order of intermediate steps
@@ -408,57 +351,6 @@ describe('Message Content Processing - REAL FUNCTION TESTS', () => {
       expect(merged[0].index).toBe(0);
       expect(merged[1].index).toBe(1);
       expect(merged[2].index).toBe(2);
-    });
-  });
-
-  describe('Message Rendering Logic - REAL FUNCTION TESTS', () => {
-    /**
-     * shouldRenderAssistantMessage() message filtering logic
-     *
-     * WHAT THIS TESTS: Pure boolean logic for determining message visibility
-     * BUSINESS VALUE: Prevents empty assistant messages from cluttering the UI
-     *
-     * INPUT: Message objects with various content and role combinations
-     * EXPECTED OUTPUT: Boolean indicating if message should be displayed
-     */
-    /**
-     * Description: Verifies that shouldRenderAssistantMessage correctly filters empty assistant messages while showing valid ones
-     * Success: Empty assistant messages return false, messages with content or steps return true, user messages always return true
-     */
-    test('shouldRenderAssistantMessage filters empty messages', () => {
-      const emptyMessage = { role: 'assistant', content: '', intermediateSteps: [] };
-      const contentMessage = { role: 'assistant', content: 'Hello', intermediateSteps: [] };
-      const stepMessage = { role: 'assistant', content: '', intermediateSteps: [{ name: 'Step' }] };
-      const userMessage = { role: 'user', content: '' }; // Users messages always render
-
-      expect(shouldRenderAssistantMessage(emptyMessage)).toBe(false);
-      expect(shouldRenderAssistantMessage(contentMessage)).toBe(true);
-      expect(shouldRenderAssistantMessage(stepMessage)).toBe(true);
-      expect(shouldRenderAssistantMessage(userMessage)).toBe(true);
-    });
-
-    /**
-     * Description: Verifies that shouldRenderAssistantMessage treats whitespace-only content as empty
-     * Success: Messages with only whitespace characters return false, messages with actual content return true
-     */
-    test('shouldRenderAssistantMessage handles whitespace-only content', () => {
-      const whitespaceMessage = { role: 'assistant', content: '   \n\t  ', intermediateSteps: [] };
-      const validMessage = { role: 'assistant', content: '  actual content  ', intermediateSteps: [] };
-
-      expect(shouldRenderAssistantMessage(whitespaceMessage)).toBe(false);
-      expect(shouldRenderAssistantMessage(validMessage)).toBe(true);
-    });
-
-    /**
-     * Description: Verifies that shouldRenderAssistantMessage safely handles null and undefined content
-     * Success: Messages with null or undefined content return false without throwing exceptions
-     */
-    test('shouldRenderAssistantMessage handles undefined/null content', () => {
-      const nullContentMessage = { role: 'assistant', content: null, intermediateSteps: [] };
-      const undefinedContentMessage = { role: 'assistant', content: undefined, intermediateSteps: [] };
-
-      expect(shouldRenderAssistantMessage(nullContentMessage)).toBe(false);
-      expect(shouldRenderAssistantMessage(undefinedContentMessage)).toBe(false);
     });
   });
 });

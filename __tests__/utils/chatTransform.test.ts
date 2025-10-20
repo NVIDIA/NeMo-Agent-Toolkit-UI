@@ -118,7 +118,6 @@ describe('chatTransform', () => {
     id: 'conv-1',
     name: 'New Conversation',
     messages: [],
-    prompt: '',
     temperature: 0.7,
     folderId: null,
   };
@@ -315,7 +314,6 @@ describe('chatTransform', () => {
           { role: 'user', content: 'Hello', id: 'msg-1' },
           { role: 'assistant', content: 'Hi there', id: 'msg-2' },
         ],
-        prompt: '',
         temperature: 0.7,
         folderId: null,
       };
@@ -329,8 +327,6 @@ describe('chatTransform', () => {
         id: 'conv-1',
         name: 'Test',
         messages: [],
-
-        prompt: '',
         temperature: 0.7,
         folderId: null,
       };
@@ -344,8 +340,6 @@ describe('chatTransform', () => {
         id: 'conv-1',
         name: 'Test',
         messages: [{ role: 'user', content: undefined as any, id: 'msg-1' }],
-
-        prompt: '',
         temperature: 0.7,
         folderId: null,
       };

@@ -1,5 +1,6 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { HTTP_PROXY_PATH, UPDATE_DATA_STREAM } from '@/constants';
 
 /**
  * DataStreamDisplay Component
@@ -61,7 +62,7 @@ export const DataStreamDisplay: React.FC<DataStreamDisplayProps> = React.memo(({
     const interval = setInterval(async () => {
       try {
         // Get text for selected stream
-        const textRes = await fetch(`/api/update-data-stream?stream=${selectedStream}`);
+        const textRes = await fetch(`${HTTP_PROXY_PATH}${UPDATE_DATA_STREAM}?stream=${selectedStream}`);
         if (textRes.ok) {
           const textData = await textRes.json();
           if (typeof textData.text === 'string') {
@@ -79,7 +80,7 @@ export const DataStreamDisplay: React.FC<DataStreamDisplayProps> = React.memo(({
   useEffect(() => {
     const fetchLastDbUpdate = async () => {
       try {
-        const response = await fetch(`/api/update-data-stream?type=finalized&stream=${selectedStream}`);
+        const response = await fetch(`${HTTP_PROXY_PATH}${UPDATE_DATA_STREAM}?type=finalized&stream=${selectedStream}`);
         if (response.ok) {
           const data = await response.json();
           const entries: FinalizedDataEntry[] = data.entries || [];

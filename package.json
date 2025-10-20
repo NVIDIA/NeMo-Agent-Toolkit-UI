@@ -3,7 +3,9 @@
   "version": "0.1.1",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently --kill-others --names \"PROXY,UI\" -c \"bgBlue.bold,bgMagenta.bold\" \"npm run dev:gateway\" \"npm run dev:next\"",
+    "dev:gateway": "node proxy/server.js",
+    "dev:next": "NEXT_TELEMETRY_DISABLED=1 next dev -p 3001",
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx",
@@ -12,7 +14,8 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci --coverage --runInBand"
+    "test:ci": "jest --ci --coverage --runInBand",
+    "test:proxy": "jest __tests__/proxy --runInBand --testTimeout=15000"
   },
   "dependencies": {
     "@datadog/browser-rum": "^5.11.0",
@@ -25,6 +28,7 @@
     "file-saver": "^2.0.5",
     "form-data": "^4.0.4",
     "html-to-image": "^1.11.11",
+    "http-proxy": "^1.18.1",
     "i18next": "^22.4.13",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
@@ -58,6 +62,7 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^14.5.1",
     "@trivago/prettier-plugin-sort-imports": "^1.4.4",
+    "@types/http-proxy": "^1.17.14",
     "@types/jsdom": "^21.1.1",
     "@types/node": "18.15.0",
     "@types/react": "18.0.28",
@@ -65,6 +70,9 @@
     "@types/react-syntax-highlighter": "^15.5.6",
     "@types/uuid": "^9.0.1",
     "autoprefixer": "^10.4.14",
+    "concurrently": "^8.2.2",
+    "detect-port": "^2.1.0",
+    "dotenv": "^17.2.3",
     "endent": "^2.1.0",
     "eslint": "8.36.0",
     "eslint-config-next": "^14.2.10",
@@ -79,6 +87,8 @@
     "tailwindcss": "^3.3.3",
     "ts-jest": "^29.1.1",
     "typescript": "4.9.5",
-    "whatwg-fetch": "^3.6.19"
+    "whatwg-fetch": "^3.6.19",
+    "ws": "^8.14.2",
+    "node-fetch": "^2.7.0"
   }
 }

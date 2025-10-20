@@ -1,31 +1,12 @@
 /**
- * Unit tests for chat API endpoint processing functions
+ * Unit tests for proxy response processing functions
  * Tests payload parsing for generate, chat, generateStream, and chatStream
  */
 
-// Mock the fetch function and Request/Response for Edge runtime
+// Mock the fetch function for tests that need it
 global.fetch = jest.fn();
-global.Request = jest.fn();
-global.Response = jest.fn().mockImplementation((body, init) => ({
-  ok: true,
-  status: 200,
-  text: jest.fn().mockResolvedValue(body),
-  json: jest.fn().mockResolvedValue(JSON.parse(body || '{}')),
-  body: {
-    getReader: jest.fn().mockReturnValue({
-      read: jest.fn(),
-      releaseLock: jest.fn(),
-    }),
-  },
-  ...init,
-}));
 
-// Import the handler and expose internal functions for testing
-const chatModule = require('@/pages/api/chat');
-
-// We need to create mock implementations of the internal functions since they're not exported
-// Let's create a test version that exposes them
-describe('Chat API Processing Functions', () => {
+describe('Proxy Response Processing Functions', () => {
   let encoder: TextEncoder;
   let decoder: TextDecoder;
   let mockResponse: any;

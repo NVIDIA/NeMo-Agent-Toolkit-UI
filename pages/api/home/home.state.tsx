@@ -2,8 +2,7 @@ import { env } from 'next-runtime-env';
 
 import { Conversation, Message } from '@/types/chat';
 import { FolderInterface } from '@/types/folder';
-import { DEFAULT_HTTP_ENDPOINT, HTTP_ENDPOINT_OPTIONS } from '@/constants/endpoints';
-import { buildWebSocketBaseURL } from '@/utils/backend-url';
+import { DEFAULT_CORE_ROUTE, CORE_ROUTE_OPTIONS } from '@/constants';
 
 export interface HomeInitialState {
   loading: boolean;
@@ -23,7 +22,6 @@ export interface HomeInitialState {
   optionalGenerationParameters?: string;
   webSocketMode?: boolean;
   webSocketConnected?: boolean;
-  webSocketURL?: string;
   webSocketSchema?: string;
   webSocketSchemas?: string[];
   enableIntermediateSteps?: boolean;
@@ -53,8 +51,8 @@ export const initialState: HomeInitialState = {
     process?.env?.NEXT_PUBLIC_NAT_CHAT_HISTORY_DEFAULT_ON === 'true'
       ? true
       : false,
-  httpEndpoint: DEFAULT_HTTP_ENDPOINT,
-  httpEndpoints: HTTP_ENDPOINT_OPTIONS,
+  httpEndpoint: DEFAULT_CORE_ROUTE,
+  httpEndpoints: CORE_ROUTE_OPTIONS,
   optionalGenerationParameters: '',
   webSocketMode:
     env('NEXT_PUBLIC_NAT_WEB_SOCKET_DEFAULT_ON') === 'true' ||
@@ -62,13 +60,6 @@ export const initialState: HomeInitialState = {
       ? true
       : false,
   webSocketConnected: false,
-  webSocketURL: (() => {
-    const backendAddress = env('NEXT_PUBLIC_NAT_BACKEND_ADDRESS') || process?.env?.NEXT_PUBLIC_NAT_BACKEND_ADDRESS;
-    if (backendAddress) {
-      return buildWebSocketBaseURL(backendAddress);
-    }
-    return undefined;
-  })(),
   webSocketSchema: 'chat_stream',
   webSocketSchemas: ['chat_stream', 'chat', 'generate_stream', 'generate'],
   enableIntermediateSteps:

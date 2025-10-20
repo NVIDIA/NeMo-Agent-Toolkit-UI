@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { env } from 'next-runtime-env'
 import { Message, Conversation, WebSocketMessage, SystemResponseMessage, SystemIntermediateMessage, SystemInteractionMessage, ErrorMessage } from '@/types/chat';
-import { APPLICATION_NAME } from '@/constants/constants';
+import { APPLICATION_NAME } from '@/constants';
 export const getInitials = (fullName = '') => {
     if (!fullName) {
         return "";
@@ -98,25 +98,6 @@ export const getWorkflowName = () => {
     return workflow
 }
 
-export const setSessionError = (message = 'unknown error') => {
-    sessionStorage.setItem('error', 'true');
-    sessionStorage.setItem('errorMessage', message);
-}
-
-export const removeSessionError = () => {
-    sessionStorage.removeItem('error');
-    sessionStorage.removeItem('errorMessage');
-}
-
-export const isInsideIframe = () => {
-    try {
-        return window?.self !== window?.top;
-    } catch (e) {
-        // If a security error occurs (cross-origin), assume it's in an iframe
-        return true;
-    }
-};
-
 export const fetchLastMessage = ({messages = [], role = 'user'}: {messages?: Message[], role?: string}): Message | null => {
     // Loop from the end to find the last message with the role "user"
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -126,8 +107,6 @@ export const fetchLastMessage = ({messages = [], role = 'user'}: {messages?: Mes
     }
     return null;  // Return null if no user message is found
 }
-
-export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 interface IntermediateStep {
     id?: string;
@@ -336,77 +315,6 @@ export const fixMalformedHtml = (content = '') => {
     }
 };
 
-// ===== WebSocket Message Utilities =====
-
-/**
- * Type guards for WebSocket messages
- */
-export const isSystemResponseMessage = (message: any): message is SystemResponseMessage => {
-    return message?.type === 'system_response_message';
-};
-
-export const isSystemIntermediateMessage = (message: any): message is SystemIntermediateMessage => {
-    return message?.type === 'system_intermediate_message';
-};
-
-export const isSystemInteractionMessage = (message: any): message is SystemInteractionMessage => {
-    return message?.type === 'system_interaction_message';
-};
-
-export const isErrorMessage = (message: any): message is ErrorMessage => {
-    return message?.type === 'error';
-};
-
-/**
- * Validates that a WebSocket message has required fields
- */
-export const validateWebSocketMessage = (message: any): message is WebSocketMessage => {
-    return message &&
-           typeof message === 'object' &&
-           message.type &&
-           message.conversation_id;
-};
-
-/**
- * Extracts OAuth URL from interaction message
- */
-export const extractOAuthUrl = (message: SystemInteractionMessage): string | null => {
-    const content = message.content;
-    return content?.oauth_url || content?.redirect_url || content?.text || null;
-};
-
-/**
- * Determines if a system response message should append content
- * Only append for in_progress status with non-empty text
- */
-export const shouldAppendResponseContent = (message: SystemResponseMessage): boolean => {
-    return message.status === 'in_progress' &&
-           !!message.content?.text?.trim();
-};
-
-/**
- * Creates a new assistant message from WebSocket data
- */
-export const createAssistantMessage = (
-    id: string | undefined,
-    parentId: string | undefined,
-    content: string,
-    intermediateSteps: any[] = [],
-    humanInteractionMessages: any[] = [],
-    errorMessages: any[] = []
-): Message => {
-    return {
-        role: 'assistant' as const,
-        id,
-        parentId,
-        content,
-        intermediateSteps,
-        humanInteractionMessages,
-        errorMessages,
-        timestamp: Date.now(),
-    };
-};
-
 /**
  * Updates conversation title from first user message if still default
  */
@@ -422,27 +330,4 @@ export const updateConversationTitle = (conversation: Conversation): Conversatio
 
     return conversation;
 };
-
-/**
- * Safely appends content to assistant message, handling empty content replacement
- */
-export const appendToAssistantContent = (
-    existingContent: string,
-    incomingText: string
-): string => {
-    // Replace empty content entirely, otherwise append
-    return existingContent === '' ? incomingText : existingContent + incomingText;
-};
-
-/**
- * Checks if an assistant message should be rendered (has content or intermediate steps)
- */
-export const shouldRenderAssistantMessage = (message: Message): boolean => {
-    const hasText = !!message.content?.trim();
-    const hasSteps = !!(message.intermediateSteps && message.intermediateSteps.length > 0);
-
-    return message.role !== 'assistant' || hasText || hasSteps;
-};
-
-
 
