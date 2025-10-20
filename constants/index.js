@@ -31,7 +31,6 @@ const GENERATE = '/generate';
 const CA_RAG_INIT = '/init';
 const CHAT_CA_RAG = '/call';
 const UPDATE_DATA_STREAM = '/update-data-stream';
-const MCP_CLIENTS = '/mcp/clients';
 const MCP_CLIENT_TOOL_LIST = '/mcp/client/tool/list';
 
 // =============================================================================
@@ -43,7 +42,6 @@ const CORE_ROUTES = {
   CHAT,
   GENERATE_STREAM,
   GENERATE,
-  MCP_CLIENTS,
   MCP_CLIENT_TOOL_LIST,
 };
 
@@ -137,7 +135,6 @@ module.exports = {
   CA_RAG_INIT,
   CHAT_CA_RAG,
   UPDATE_DATA_STREAM,
-  MCP_CLIENTS,
   MCP_CLIENT_TOOL_LIST,
   CORE_ROUTES,
   CORE_ROUTE_OPTIONS,
