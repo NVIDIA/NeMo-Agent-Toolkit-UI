@@ -1,13 +1,54 @@
 /**
- * Response processing functions for backend endpoints
- * Transforms backend SSE/JSON responses into client-expected formats
+ * Response processors for backend API routes
+ * Each endpoint has its own processor that handles backend responses
+ * and transforms them into client-expected formats
+ *
+ * Architecture:
+ * - Request payload builders (request-transformers.js): UI format → Backend format
+ * - Response processors (this file): Backend response → UI format
  */
 
 const constants = require('../constants');
 
 /**
- * Processes streaming chat responses (SSE format)
- * Extracts content from choices[].delta.content and handles intermediate steps
+ * Helper function to process intermediate_data lines
+ * Parses the intermediate data payload and writes it to the response stream
+ * in the format expected by the UI
+ *
+ * @param {string} line - The line starting with "intermediate_data: "
+ * @param {Object} res - The response object to write to
+ */
+function processIntermediateData(line, res) {
+  try {
+    const data = line.split('intermediate_data: ')[1];
+    const payload = JSON.parse(data);
+    const intermediateMessage = {
+      id: payload?.id || '',
+      status: payload?.status || 'in_progress',
+      error: payload?.error || '',
+      type: 'system_intermediate',
+      parent_id: payload?.parent_id || 'default',
+      intermediate_parent_id: payload?.intermediate_parent_id || 'default',
+      content: {
+        name: payload?.name || 'Step',
+        payload: payload?.payload || 'No details',
+      },
+      time_stamp: payload?.time_stamp || 'default',
+    };
+    res.write(
+      `<intermediatestep>${JSON.stringify(
+        intermediateMessage,
+      )}</intermediatestep>`,
+    );
+  } catch (e) {
+    // Ignore parse errors
+  }
+}
+
+/**
+ * Processes /chat/stream responses (SSE format)
+ * Backend format: Stream with "data:" lines containing chat completion chunks
+ * and "intermediate_data:" lines for progress updates
  */
 async function processChatStream(backendRes, res) {
   if (!backendRes.ok) {
@@ -30,7 +71,9 @@ async function processChatStream(backendRes, res) {
   try {
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        break;
+      }
 
       const chunk = decoder.decode(value, { stream: true });
       buffer += chunk;
@@ -57,44 +100,19 @@ async function processChatStream(backendRes, res) {
             // Ignore parse errors
           }
         } else if (line.startsWith('intermediate_data: ')) {
-          try {
-            const data = line.split('intermediate_data: ')[1];
-            const payload = JSON.parse(data);
-            const intermediateMessage = {
-              id: payload?.id || '',
-              status: payload?.status || 'in_progress',
-              error: payload?.error || '',
-              type: 'system_intermediate',
-              parent_id: payload?.parent_id || 'default',
-              intermediate_parent_id:
-                payload?.intermediate_parent_id || 'default',
-              content: {
-                name: payload?.name || 'Step',
-                payload: payload?.payload || 'No details',
-              },
-              time_stamp: payload?.time_stamp || 'default',
-            };
-            res.write(
-              `<intermediatestep>${JSON.stringify(
-                intermediateMessage,
-              )}</intermediatestep>`,
-            );
-          } catch (e) {
-            // Ignore parse errors
-          }
+          processIntermediateData(line, res);
         }
       }
     }
   } catch (err) {
-    console.error('[ERROR] Stream processing error:', err.message);
+    console.error('[ERROR /chat/stream] Stream processing error:', err.message);
   } finally {
     res.end();
   }
 }
 
 /**
- * Processes non-streaming chat responses
- * Extracts content from choices[].message.content or similar fields
+ * Processes /chat responses
  */
 async function processChat(backendRes, res) {
   if (!backendRes.ok) {
@@ -129,8 +147,7 @@ async function processChat(backendRes, res) {
 }
 
 /**
- * Processes streaming generate responses (SSE format)
- * Extracts value/output/answer fields and handles intermediate steps + final answer
+ * Processes /generate/stream endpoint responses (SSE format)
  */
 async function processGenerateStream(backendRes, res) {
   if (!backendRes.ok) {
@@ -149,12 +166,13 @@ async function processGenerateStream(backendRes, res) {
   const reader = backendRes.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
-  let finalAnswerSent = false;
 
   try {
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        break;
+      }
 
       const chunk = decoder.decode(value, { stream: true });
       buffer += chunk;
@@ -171,51 +189,15 @@ async function processGenerateStream(backendRes, res) {
           }
           try {
             const parsed = JSON.parse(data);
-            const content = parsed.value || parsed.output || parsed.answer;
-            if (content && typeof content === 'string') {
-              res.write(content);
+            // Only send data when value is a simple string (final answer), not nested object
+            if (parsed?.value && typeof parsed.value === 'string') {
+              res.write(data);
             }
           } catch (e) {
             // Ignore parse errors
           }
         } else if (line.startsWith('intermediate_data: ')) {
-          try {
-            const data = line.split('intermediate_data: ')[1];
-            const payload = JSON.parse(data);
-            const intermediateMessage = {
-              id: payload?.id || '',
-              status: payload?.status || 'in_progress',
-              error: payload?.error || '',
-              type: 'system_intermediate',
-              parent_id: payload?.parent_id || 'default',
-              intermediate_parent_id:
-                payload?.intermediate_parent_id || 'default',
-              content: {
-                name: payload?.name || 'Step',
-                payload: payload?.payload || 'No details',
-              },
-              time_stamp: payload?.time_stamp || 'default',
-            };
-            res.write(
-              `<intermediatestep>${JSON.stringify(
-                intermediateMessage,
-              )}</intermediatestep>`,
-            );
-          } catch (e) {
-            // Ignore parse errors
-          }
-        } else if (line.startsWith('final_answer: ') && !finalAnswerSent) {
-          try {
-            const data = line.split('final_answer: ')[1];
-            const parsed = JSON.parse(data);
-            const answer = parsed?.answer || parsed?.value || data;
-            if (answer && typeof answer === 'string') {
-              res.write(answer);
-              finalAnswerSent = true;
-            }
-          } catch (e) {
-            // Ignore parse errors
-          }
+          processIntermediateData(line, res);
         }
       }
     }
@@ -227,8 +209,7 @@ async function processGenerateStream(backendRes, res) {
 }
 
 /**
- * Processes non-streaming generate responses
- * Extracts value/output/answer from JSON response
+ * Processes /generate endpoint responses
  */
 async function processGenerate(backendRes, res) {
   if (!backendRes.ok) {
@@ -238,30 +219,14 @@ async function processGenerate(backendRes, res) {
   }
 
   const data = await backendRes.text();
-  try {
-    const parsed = JSON.parse(data);
-    const value =
-      parsed?.value ||
-      parsed?.output ||
-      parsed?.answer ||
-      (Array.isArray(parsed?.choices)
-        ? parsed.choices[0]?.message?.content
-        : null);
 
-    res.writeHead(200, {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
-      'Access-Control-Allow-Credentials': 'true',
-    });
-    res.end(typeof value === 'string' ? value : JSON.stringify(value));
-  } catch (e) {
-    res.writeHead(200, {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
-      'Access-Control-Allow-Credentials': 'true',
-    });
-    res.end(data);
-  }
+  // Return full JSON response as-is (UI expects {"value":"..."})
+  res.writeHead(200, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
+    'Access-Control-Allow-Credentials': 'true',
+  });
+  res.end(data);
 }
 
 /**

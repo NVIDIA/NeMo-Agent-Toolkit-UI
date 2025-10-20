@@ -203,6 +203,7 @@ const server = http.createServer(async (req, res) => {
     const isCaRag = backendPath === EXTENDED_ROUTES.CHAT_CA_RAG;
 
     // Helper for fetch + process
+    // UI now builds correct payloads - proxy just forwards and processes responses
     const doFetchAndProcess = async (processor) => {
       try {
         const body =
@@ -210,12 +211,14 @@ const server = http.createServer(async (req, res) => {
             ? await readRequestBody(req)
             : undefined;
 
+        // Forward request to backend (no transformation needed)
         const backendRes = await fetch(targetUrl, {
           method: req.method,
           headers: req.headers,
           body,
         });
 
+        // Process response using endpoint-specific processor
         await processor(backendRes, res);
       } catch (err) {
         console.error('[ERROR] Backend request failed:', err.message);
@@ -259,7 +262,6 @@ server.on('upgrade', (req, socket, head) => {
   const parsedUrl = url.parse(req.url);
   const pathname = parsedUrl.pathname || '/';
 
-  // Route 1: Backend WebSocket (public WS path)
   if (
     pathname === WEBSOCKET_PROXY_PATH ||
     pathname.startsWith(WEBSOCKET_PROXY_PATH + '?')
@@ -297,7 +299,6 @@ server.on('upgrade', (req, socket, head) => {
     return;
   }
 
-  // Route 2: Everything else (including /_next/* for HMR) → Next.js dev server
   nextProxy.ws(
     req,
     socket,

@@ -16,14 +16,6 @@ export interface ChatBody {
   // Additional fields from user's JSON will be merged here
 }
 
-// Internal API request interface (includes system variables)
-export interface ChatApiRequest {
-  messages?: Message[];
-  httpEndpoint?: string;
-  optionalGenerationParameters?: string;
-  additionalProps?: any;
-}
-
 export interface Conversation {
   id: string;
   name: string;
@@ -34,7 +26,7 @@ export interface Conversation {
 }
 
 // WebSocket Message Types
-export interface WebSocketMessageBase {
+export interface WebSocketMessageBase { // TODO EE: WEbsocket base may need to include sessin cookie? Message ID.
   id?: string;
   conversation_id?: string;
   parent_id?: string;
