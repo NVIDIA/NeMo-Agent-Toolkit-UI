@@ -1,11 +1,15 @@
 /**
  * URL Validation Tests
  * 
- * Tests for Media URL and OAuth URL validation.
- * HTTP/WebSocket URL validation is now handled server-side in the proxy layer.
+ * Tests for Media URL, OAuth URL, and Path Normalization validation.
+ * HTTP/WebSocket path validation is handled server-side in the proxy layer.
  */
 import { isValidMediaURL } from '@/utils/media/validation';
 import { isValidConsentPromptURL } from '@/utils/security/oauth-validation';
+
+const {
+  validateProxyHttpPath,
+} = require('../../utils/security/url-validation');
 
 describe('URL Validation Tests', () => {
   const originalEnv = process.env.NODE_ENV;
@@ -203,6 +207,62 @@ describe('URL Validation Tests', () => {
         controlCharUrls.forEach(url => {
           expect(isValidConsentPromptURL(url)).toBe(false);
         });
+      });
+    });
+  });
+
+  // ============================================================================
+  // PATH NORMALIZATION TESTS
+  // ============================================================================
+  describe('Path Normalization Tests', () => {
+    describe('Path Traversal Prevention', () => {
+      it('should block simple path traversal', () => {
+        const result = validateProxyHttpPath('/api/../admin');
+        expect(result.isValid).toBe(false);
+      });
+
+      it('should block encoded path traversal', () => {
+        const result = validateProxyHttpPath('/api/%2E%2E/admin');
+        expect(result.isValid).toBe(false);
+      });
+
+      it('should block double-encoded path traversal', () => {
+        const result = validateProxyHttpPath('/api/%252E%252E%252Fadmin');
+        expect(result.isValid).toBe(false);
+      });
+
+      it('should block complex traversal attempts', () => {
+        const result = validateProxyHttpPath('/api/chat/../../admin');
+        expect(result.isValid).toBe(false);
+      });
+    });
+
+    describe('Valid Paths', () => {
+      it('should allow valid paths', () => {
+        const result = validateProxyHttpPath('/api/chat/stream');
+        expect(result.isValid).toBe(true);
+      });
+
+      it('should normalize and allow paths with dots', () => {
+        const result = validateProxyHttpPath('/api/./chat/stream');
+        expect(result.isValid).toBe(true);
+      });
+
+      it('should handle query parameters', () => {
+        const result = validateProxyHttpPath('/api/chat/stream?session=123');
+        expect(result.isValid).toBe(true);
+      });
+    });
+
+    describe('Edge Cases', () => {
+      it('should reject empty path', () => {
+        const result = validateProxyHttpPath('');
+        expect(result.isValid).toBe(false);
+      });
+
+      it('should reject non-string input', () => {
+        const result = validateProxyHttpPath(null as any);
+        expect(result.isValid).toBe(false);
       });
     });
   });

@@ -1,4 +1,4 @@
-import { MCP_CLIENT_TOOL_LIST } from '@/constants';
+import { MCP_CLIENT_TOOL_LIST, HTTP_PROXY_PATH } from '@/constants';
 
 export const webSocketMessageTypes = {
   userMessage: 'user_message',
@@ -15,12 +15,6 @@ export const appConfig = {
 
 // MCP API configuration helper
 export const getMcpApiUrl = () => {
-  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL;
   const mcpPath = process.env.NEXT_PUBLIC_MCP_PATH || MCP_CLIENT_TOOL_LIST;
-
-  if (!serverURL) {
-    throw new Error('Server URL is not configured. Set NEXT_PUBLIC_SERVER_URL.');
-  }
-
-  return `${serverURL}${mcpPath}`;
+  return `${HTTP_PROXY_PATH}${mcpPath}`;
 };

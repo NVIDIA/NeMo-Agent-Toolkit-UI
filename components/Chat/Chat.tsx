@@ -303,19 +303,14 @@ export const Chat = () => {
         if (parts.length === 2) return parts.pop()?.split(';').shift();
       };
 
-      const sessionCookie = getCookie(SESSION_COOKIE_NAME);
-      
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       let wsUrl = `${protocol}//${window.location.host}${WEBSOCKET_PROXY_PATH}`;
       
-      // Add session cookie as query parameter if present
+      // Add session cookie as query parameter for backend authentication
+      const sessionCookie = getCookie(SESSION_COOKIE_NAME);
       if (sessionCookie) {
         wsUrl += `?session=${encodeURIComponent(sessionCookie)}`;
-        console.log('WebSocket: Connecting with session cookie');
       }
-      
-      console.log('Connecting to WebSocket:', wsUrl);
-
       const ws = new WebSocket(wsUrl);
 
       websocketLoadingToastId = toast.loading(

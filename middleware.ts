@@ -50,13 +50,15 @@ export default function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with: # TODO EE: Check
-     * - api/auth (NextAuth API routes)
+     * Match all request paths except for the ones starting with:
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
+     * 
+     * Note: API auth routes are filtered dynamically in the middleware
+     * function to respect the HTTP_PROXY_PATH environment variable
      */
-    '/((?!api/auth|_next/static|_next/image|favicon.ico|public).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
   ],
 };

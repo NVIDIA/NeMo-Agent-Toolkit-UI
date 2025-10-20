@@ -17,8 +17,8 @@ const MAX_FILE_SIZE_BYTES = 5242880; // 5MB
 // Proxy & Routing Configuration
 // =============================================================================
 
-const HTTP_PROXY_PATH = '/api';
-const WEBSOCKET_PROXY_PATH = '/ws';
+const HTTP_PROXY_PATH = process.env.HTTP_PUBLIC_PATH || '/api';
+const WEBSOCKET_PROXY_PATH = process.env.WS_PUBLIC_PATH || '/ws';
 const WEBSOCKET_BACKEND_PATH = '/websocket';
 
 // =============================================================================
@@ -43,14 +43,14 @@ const CORE_ROUTES = {
   CHAT,
   GENERATE_STREAM,
   GENERATE,
+  MCP_CLIENTS,
+  MCP_CLIENT_TOOL_LIST,
 };
 
 const EXTENDED_ROUTES = {
   CA_RAG_INIT,
   CHAT_CA_RAG,
   UPDATE_DATA_STREAM,
-  MCP_CLIENTS,
-  MCP_CLIENT_TOOL_LIST,
 };
 
 // =============================================================================
@@ -139,10 +139,10 @@ module.exports = {
   UPDATE_DATA_STREAM,
   MCP_CLIENTS,
   MCP_CLIENT_TOOL_LIST,
-  HTTP_ENDPOINTS: CORE_ROUTES,
+  CORE_ROUTES,
   CORE_ROUTE_OPTIONS,
   DEFAULT_CORE_ROUTE,
-  ADDITIONAL_ENDPOINTS: EXTENDED_ROUTES,
+  EXTENDED_ROUTES,
   ALLOWED_PATHS,
   HTTP_METHOD_GET,
   HTTP_METHOD_POST,

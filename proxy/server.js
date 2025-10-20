@@ -9,14 +9,12 @@ const { detectPort } = require('detect-port');
 const constants = require('../constants');
 
 const {
+  HTTP_PROXY_PATH,
+  WEBSOCKET_PROXY_PATH,
   WEBSOCKET_BACKEND_PATH,
-  HTTP_ENDPOINTS: { CHAT_STREAM, CHAT, GENERATE_STREAM, GENERATE },
-  ADDITIONAL_ENDPOINTS: { CHAT_CA_RAG },
+  CORE_ROUTES,
+  EXTENDED_ROUTES,
 } = constants;
-
-// Public paths (from env) - these are what the browser sees
-const HTTP_PROXY_PATH = process.env.HTTP_PUBLIC_PATH || '/api';
-const WEBSOCKET_PROXY_PATH = process.env.WS_PUBLIC_PATH || '/ws';
 
 // SSRF validation
 const {
@@ -198,11 +196,11 @@ const server = http.createServer(async (req, res) => {
     }`;
 
     // Determine endpoint type
-    const isChatStream = backendPath === CHAT_STREAM;
-    const isChat = backendPath === CHAT;
-    const isGenerateStream = backendPath === GENERATE_STREAM;
-    const isGenerate = backendPath === GENERATE;
-    const isCaRag = backendPath === CHAT_CA_RAG;
+    const isChatStream = backendPath === CORE_ROUTES.CHAT_STREAM;
+    const isChat = backendPath === CORE_ROUTES.CHAT;
+    const isGenerateStream = backendPath === CORE_ROUTES.GENERATE_STREAM;
+    const isGenerate = backendPath === CORE_ROUTES.GENERATE;
+    const isCaRag = backendPath === EXTENDED_ROUTES.CHAT_CA_RAG;
 
     // Helper for fetch + process
     const doFetchAndProcess = async (processor) => {

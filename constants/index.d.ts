@@ -41,16 +41,16 @@ export const CORE_ROUTES: {
   readonly CHAT: string;
   readonly GENERATE_STREAM: string;
   readonly GENERATE: string;
+  readonly MCP_CLIENTS: string;
+  readonly MCP_CLIENT_TOOL_LIST: string;
 };
 
 export type HttpEndpoint = typeof CORE_ROUTES[keyof typeof CORE_ROUTES];
 
-export const ADDITIONAL_ROUTES: {
+export const EXTENDED_ROUTES: {
   readonly CA_RAG_INIT: string;
   readonly CHAT_CA_RAG: string;
   readonly UPDATE_DATA_STREAM: string;
-  readonly MCP_CLIENTS: string;
-  readonly MCP_CLIENT_TOOL_LIST: string;
 };
 
 // =============================================================================

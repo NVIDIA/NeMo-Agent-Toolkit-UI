@@ -14,14 +14,37 @@ const {
  * SSRF Prevention: Validates HTTP proxy paths
  *
  * Ensures incoming requests only access allowed backend endpoints.
- * Used by proxy server to prevent Server-Side Request Forgery.
+ * Uses URL constructor for safe normalization of:
+ * - Percent-encoding/decoding
+ * - Duplicate slashes
+ * - Dot-segments (., ..)
+ * - Path traversal attempts
  *
  * @param {string} pathname - The full pathname from the request (e.g., '/api/chat/stream')
  * @returns {ValidationResult} Validation result with error message if invalid
  */
 function validateProxyHttpPath(pathname) {
+  if (typeof pathname !== 'string' || pathname.length === 0) {
+    return {
+      isValid: false,
+      error: 'Path must be a non-empty string',
+    };
+  }
+
+  // Use URL constructor to safely normalize the path
+  let normalizedPath;
+  try {
+    const url = new URL(pathname, 'http://localhost');
+    normalizedPath = url.pathname;
+  } catch (err) {
+    return {
+      isValid: false,
+      error: 'Invalid or malformed path',
+    };
+  }
+
   // Must start with /api/
-  if (!pathname.startsWith(HTTP_PROXY_PATH + '/')) {
+  if (!normalizedPath.startsWith(HTTP_PROXY_PATH + '/')) {
     return {
       isValid: false,
       error: `Path must start with ${HTTP_PROXY_PATH}/`,
@@ -29,7 +52,15 @@ function validateProxyHttpPath(pathname) {
   }
 
   // Strip /api prefix to get backend path
-  const backendPath = pathname.substring(HTTP_PROXY_PATH.length);
+  const backendPath = normalizedPath.substring(HTTP_PROXY_PATH.length);
+
+  // Detect any remaining traversal attempts (shouldn't happen after URL normalization, but defense in depth)
+  if (backendPath.includes('..')) {
+    return {
+      isValid: false,
+      error: 'Path traversal is not allowed',
+    };
+  }
 
   // Check against allowlist
   const isAllowed = ALLOWED_PATHS.some(
