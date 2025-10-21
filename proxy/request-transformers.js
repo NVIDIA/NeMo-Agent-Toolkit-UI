@@ -91,7 +91,7 @@ function buildChatPayload(messages, useChatHistory, optionalParams) {
 
 /**
  * Build request payload for /chat/stream endpoint
- * Backend format: {"messages": [...], "model": "...", "stream": false, "temperature": 0.7, ...}
+ * Backend format: {"messages": [...], "model": "...", "stream": true, "temperature": 0.7, ...}
  *
  * @param {Array} messages - Array of message objects with role and content
  * @param {boolean} useChatHistory - Whether to use full chat history or just last message
@@ -102,7 +102,7 @@ function buildChatStreamPayload(messages, useChatHistory, optionalParams) {
   const payload = {
     messages: useChatHistory ? messages : [messages[messages.length - 1]],
     model: 'nvidia/nemotron',
-    stream: false,
+    stream: true,
     temperature: 0.7,
   };
 

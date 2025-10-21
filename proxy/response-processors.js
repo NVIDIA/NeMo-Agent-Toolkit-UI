@@ -105,7 +105,7 @@ async function processChatStream(backendRes, res) {
       }
     }
   } catch (err) {
-    console.error('[ERROR /chat/stream] Stream processing error:', err.message);
+    // Stream processing error
   } finally {
     res.end();
   }
@@ -189,7 +189,6 @@ async function processGenerateStream(backendRes, res) {
           }
           try {
             const parsed = JSON.parse(data);
-            // Only send data when value is a simple string (final answer), not nested object
             if (parsed?.value && typeof parsed.value === 'string') {
               res.write(data);
             }
@@ -220,7 +219,6 @@ async function processGenerate(backendRes, res) {
 
   const data = await backendRes.text();
 
-  // Return full JSON response as-is (UI expects {"value":"..."})
   res.writeHead(200, {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': constants.CORS_ORIGIN,

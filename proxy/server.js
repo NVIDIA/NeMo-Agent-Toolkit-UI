@@ -203,7 +203,6 @@ const server = http.createServer(async (req, res) => {
     const isCaRag = backendPath === EXTENDED_ROUTES.CHAT_CA_RAG;
 
     // Helper for fetch + process
-    // UI now builds correct payloads - proxy just forwards and processes responses
     const doFetchAndProcess = async (processor) => {
       try {
         const body =
@@ -211,7 +210,7 @@ const server = http.createServer(async (req, res) => {
             ? await readRequestBody(req)
             : undefined;
 
-        // Forward request to backend (no transformation needed)
+        // Forward request to backend
         const backendRes = await fetch(targetUrl, {
           method: req.method,
           headers: req.headers,

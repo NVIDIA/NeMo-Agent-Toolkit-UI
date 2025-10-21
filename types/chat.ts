@@ -26,7 +26,7 @@ export interface Conversation {
 }
 
 // WebSocket Message Types
-export interface WebSocketMessageBase { // TODO EE: WEbsocket base may need to include sessin cookie? Message ID.
+export interface WebSocketMessageBase {
   id?: string;
   conversation_id?: string;
   parent_id?: string;
