@@ -148,7 +148,8 @@ For detailed WebSocket integration and message formats, refer to the [WebSocket 
   - **Generate — Streaming** - Streaming generation over WebSocket
   - **Generate — Non-Streaming** - Non-streaming generation over WebSocket
 
-> **⚠️ Important**: WebSocket mode **must be enabled** for interactive workflows like Human-in-the-Loop (HITL). To enable:
+> [!IMPORTANT]
+> WebSocket mode **must be enabled** for interactive workflows like Human-in-the-Loop (HITL). To enable:
 > 1. Open the panel on the top right of the webpage
 > 2. Toggle the **WebSocket** button to ON
 > 3. You will see a notification that says "websocket connected" when successfully connected
@@ -226,7 +227,8 @@ For complete setup instructions, see the [HITL Example](https://github.com/NVIDI
 
 #### 2. Enable WebSocket Mode
 
-> **⚠️ Important**: WebSocket mode is **required** for interactive workflows.
+> [!IMPORTANT]
+> WebSocket mode is **required** for interactive workflows.
 
 Enable WebSocket for bidirectional real-time communication:
 
