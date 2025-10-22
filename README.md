@@ -227,7 +227,8 @@ For complete setup instructions, see the [HITL Example](https://github.com/NVIDI
 
 #### 2. Enable WebSocket Mode
 
-> **⚠️ Important**: WebSocket mode is **required** for interactive workflows.
+> [!IMPORTANT]
+> WebSocket mode is **required** for interactive workflows.
 
 Enable WebSocket for bidirectional real-time communication:
 
