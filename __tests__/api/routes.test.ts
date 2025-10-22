@@ -1,631 +1,271 @@
 /**
- * Unit tests for proxy response processing functions
- * Tests payload parsing for generate, chat, generateStream, and chatStream
+ * Unit tests for proxy request transformers and response processors
+ * Tests payload building and response processing for all endpoints
  */
 
-// Mock the fetch function for tests that need it
+// Import actual implementations
+const {
+  buildGeneratePayload,
+  buildGenerateStreamPayload,
+  buildChatPayload,
+  buildChatStreamPayload,
+  parseOptionalParams,
+} = require('../../proxy/request-transformers');
+
+const {
+  processGenerate,
+  processGenerateStream,
+  processChat,
+  processChatStream,
+  processCaRag,
+} = require('../../proxy/response-processors');
+
+// Mock the fetch function for buildContextAwareRAGPayload tests
 global.fetch = jest.fn();
 
-describe('Proxy Response Processing Functions', () => {
-  let encoder: TextEncoder;
-  let decoder: TextDecoder;
-  let mockResponse: any;
-
+describe('Proxy Request Transformers and Response Processors', () => {
   beforeEach(() => {
-    encoder = new TextEncoder();
-    decoder = new TextDecoder();
     jest.clearAllMocks();
   });
 
-  describe('processGenerate', () => {
-    async function testProcessGenerate(responseData: string): Promise<string> {
-      const mockResponse = {
-        text: jest.fn().mockResolvedValue(responseData),
-      };
-
-      // Since processGenerate is not exported, we'll recreate its logic
-      const data = await mockResponse.text();
-      try {
-        const parsed = JSON.parse(data);
-        const value =
-          parsed?.value ||
-          parsed?.output ||
-          parsed?.answer ||
-          (Array.isArray(parsed?.choices)
-            ? parsed.choices[0]?.message?.content
-            : null);
-        return typeof value === 'string' ? value : JSON.stringify(value);
-      } catch {
-        return data;
-      }
-    }
-
-    it('should parse value field from JSON response', async () => {
-      const responseData = JSON.stringify({ value: 'Test response' });
-      const result = await testProcessGenerate(responseData);
-      expect(result).toBe('Test response');
-    });
-
-    it('should parse output field from JSON response', async () => {
-      const responseData = JSON.stringify({ output: 'Generated output' });
-      const result = await testProcessGenerate(responseData);
-      expect(result).toBe('Generated output');
-    });
-
-    it('should parse answer field from JSON response', async () => {
-      const responseData = JSON.stringify({ answer: 'AI answer' });
-      const result = await testProcessGenerate(responseData);
-      expect(result).toBe('AI answer');
-    });
-
-    it('should parse choices array content', async () => {
-      const responseData = JSON.stringify({
-        choices: [{ message: { content: 'Choice content' } }],
+  describe('Request Payload Builders', () => {
+    describe('parseOptionalParams', () => {
+      it('should parse JSON string format', () => {
+        const result = parseOptionalParams('{"temperature": 0.8, "max_tokens": 100}');
+        expect(result).toEqual({ temperature: 0.8, max_tokens: 100 });
       });
-      const result = await testProcessGenerate(responseData);
-      expect(result).toBe('Choice content');
-    });
 
-    it('should prefer value over other fields', async () => {
-      const responseData = JSON.stringify({
-        value: 'Primary value',
-        output: 'Secondary output',
-        answer: 'Tertiary answer',
+      it('should parse key=value comma-separated format', () => {
+        const result = parseOptionalParams('temperature=0.9,max_tokens=200');
+        expect(result).toEqual({ temperature: 0.9, max_tokens: 200 });
       });
-      const result = await testProcessGenerate(responseData);
-      expect(result).toBe('Primary value');
-    });
 
-    it('should handle non-JSON response as plain text', async () => {
-      const responseData = 'Plain text response';
-      const result = await testProcessGenerate(responseData);
-      expect(result).toBe('Plain text response');
-    });
-
-    it('should stringify non-string values', async () => {
-      const responseData = JSON.stringify({ value: { complex: 'object' } });
-      const result = await testProcessGenerate(responseData);
-      expect(result).toBe('{"complex":"object"}');
-    });
-
-    it('should handle null choices array', async () => {
-      const responseData = JSON.stringify({ choices: null });
-      const result = await testProcessGenerate(responseData);
-      expect(result).toBe('null');
-    });
-  });
-
-  describe('processChat', () => {
-    async function testProcessChat(responseData: string): Promise<string> {
-      const mockResponse = {
-        text: jest.fn().mockResolvedValue(responseData),
-      };
-
-      // Recreate processChat logic
-      const data = await mockResponse.text();
-      try {
-        const parsed = JSON.parse(data);
-        const content =
-          parsed?.output ||
-          parsed?.answer ||
-          parsed?.value ||
-          (Array.isArray(parsed?.choices)
-            ? parsed.choices[0]?.message?.content
-            : null) ||
-          parsed ||
-          data;
-        return typeof content === 'string' ? content : JSON.stringify(content);
-      } catch {
-        return data;
-      }
-    }
-
-    it('should parse output field from JSON response', async () => {
-      const responseData = JSON.stringify({ output: 'Chat output' });
-      const result = await testProcessChat(responseData);
-      expect(result).toBe('Chat output');
-    });
-
-    it('should parse answer field from JSON response', async () => {
-      const responseData = JSON.stringify({ answer: 'Chat answer' });
-      const result = await testProcessChat(responseData);
-      expect(result).toBe('Chat answer');
-    });
-
-    it('should parse value field from JSON response', async () => {
-      const responseData = JSON.stringify({ value: 'Chat value' });
-      const result = await testProcessChat(responseData);
-      expect(result).toBe('Chat value');
-    });
-
-    it('should parse choices array content', async () => {
-      const responseData = JSON.stringify({
-        choices: [{ message: { content: 'OpenAI style content' } }],
+      it('should parse boolean values', () => {
+        const result = parseOptionalParams('echo=true,stream=false');
+        expect(result).toEqual({ echo: true, stream: false });
       });
-      const result = await testProcessChat(responseData);
-      expect(result).toBe('OpenAI style content');
-    });
 
-    it('should prefer output over other fields', async () => {
-      const responseData = JSON.stringify({
-        output: 'Primary output',
-        answer: 'Secondary answer',
-        value: 'Tertiary value',
+      it('should return empty object for empty string', () => {
+        const result = parseOptionalParams('');
+        expect(result).toEqual({});
       });
-      const result = await testProcessChat(responseData);
-      expect(result).toBe('Primary output');
-    });
 
-    it('should fallback to parsed object when no specific fields found', async () => {
-      const responseData = JSON.stringify({ custom: 'field', other: 'data' });
-      const result = await testProcessChat(responseData);
-      expect(result).toBe('{"custom":"field","other":"data"}');
-    });
-
-    it('should handle non-JSON response as plain text', async () => {
-      const responseData = 'Plain chat response';
-      const result = await testProcessChat(responseData);
-      expect(result).toBe('Plain chat response');
-    });
-  });
-
-  describe('processGenerateStream', () => {
-    function createMockStreamResponse(chunks: string[]): any {
-      let chunkIndex = 0;
-      return {
-        body: {
-          getReader: () => ({
-            read: jest.fn().mockImplementation(() => {
-              if (chunkIndex >= chunks.length) {
-                return Promise.resolve({ done: true, value: undefined });
-              }
-              const chunk = chunks[chunkIndex++];
-              const encoded = encoder.encode(chunk);
-              return Promise.resolve({ done: false, value: encoded });
-            }),
-            releaseLock: jest.fn(),
-          }),
-        },
-      };
-    }
-
-    async function processStreamChunks(chunks: string[], additionalProps = { enableIntermediateSteps: true }): Promise<string[]> {
-      const mockResponse = createMockStreamResponse(chunks);
-      const results: string[] = [];
-
-      // Recreate processGenerateStream logic
-      const reader = mockResponse.body.getReader();
-      let buffer = '';
-      let streamContent = '';
-      let finalAnswerSent = false;
-      let counter = 0;
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value, { stream: true });
-          buffer += chunk;
-          streamContent += chunk;
-
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(5);
-              if (data.trim() === '[DONE]') {
-                return results;
-              }
-              try {
-                const parsed = JSON.parse(data);
-                const content =
-                  parsed?.value ||
-                  parsed?.output ||
-                  parsed?.answer ||
-                  parsed?.choices?.[0]?.message?.content ||
-                  parsed?.choices?.[0]?.delta?.content;
-                if (content && typeof content === 'string') {
-                  results.push(content);
-                }
-              } catch {}
-            } else if (
-              line.includes('<intermediatestep>') &&
-              line.includes('</intermediatestep>') &&
-              additionalProps.enableIntermediateSteps
-            ) {
-              results.push(line);
-            } else if (line.startsWith('intermediate_data: ')) {
-              try {
-                const data = line.split('intermediate_data: ')[1];
-                const payload = JSON.parse(data);
-                const intermediateMessage = {
-                  id: payload?.id || '',
-                  status: payload?.status || 'in_progress',
-                  error: payload?.error || '',
-                  type: 'system_intermediate',
-                  parent_id: payload?.parent_id || 'default',
-                  intermediate_parent_id: payload?.intermediate_parent_id || 'default',
-                  content: {
-                    name: payload?.name || 'Step',
-                    payload: payload?.payload || 'No details',
-                  },
-                  time_stamp: payload?.time_stamp || 'default',
-                  index: counter++,
-                };
-                const msg = `<intermediatestep>${JSON.stringify(intermediateMessage)}</intermediatestep>`;
-                results.push(msg);
-              } catch {}
-            }
-          }
-        }
-      } finally {
-        if (!finalAnswerSent) {
-          try {
-            const parsed = JSON.parse(streamContent);
-            const value =
-              parsed?.value ||
-              parsed?.output ||
-              parsed?.answer ||
-              parsed?.choices?.[0]?.message?.content;
-            if (value && typeof value === 'string') {
-              results.push(value.trim());
-              finalAnswerSent = true;
-            }
-          } catch {}
-        }
-        reader.releaseLock();
-      }
-
-      return results;
-    }
-
-    it('should parse SSE data frames with value field', async () => {
-      const chunks = ['data: {"value": "Stream content"}\n', 'data: [DONE]\n'];
-      const results = await processStreamChunks(chunks);
-      expect(results).toContain('Stream content');
-    });
-
-    it('should parse SSE data frames with choices delta', async () => {
-      const chunks = [
-        'data: {"choices": [{"delta": {"content": "Hello"}}]}\n',
-        'data: {"choices": [{"delta": {"content": " world"}}]}\n',
-        'data: [DONE]\n'
-      ];
-      const results = await processStreamChunks(chunks);
-      expect(results).toContain('Hello');
-      expect(results).toContain(' world');
-    });
-
-    it('should handle intermediate step tags when enabled', async () => {
-      const chunks = ['<intermediatestep>{"type": "test"}</intermediatestep>\n'];
-      const results = await processStreamChunks(chunks, { enableIntermediateSteps: true });
-      expect(results).toContain('<intermediatestep>{"type": "test"}</intermediatestep>');
-    });
-
-    it('should ignore intermediate step tags when disabled', async () => {
-      const chunks = ['<intermediatestep>{"type": "test"}</intermediatestep>\n'];
-      const results = await processStreamChunks(chunks, { enableIntermediateSteps: false });
-      expect(results).not.toContain('<intermediatestep>{"type": "test"}</intermediatestep>');
-    });
-
-    it('should process intermediate_data lines', async () => {
-      const chunks = ['intermediate_data: {"id": "step1", "name": "Test Step", "payload": "data"}\n'];
-      const results = await processStreamChunks(chunks);
-      const intermediateMsg = results.find(r => r.includes('<intermediatestep>'));
-      expect(intermediateMsg).toBeDefined();
-
-      const parsed = JSON.parse(intermediateMsg!.replace('<intermediatestep>', '').replace('</intermediatestep>', ''));
-      expect(parsed.type).toBe('system_intermediate');
-      expect(parsed.content.name).toBe('Test Step');
-      expect(parsed.content.payload).toBe('data');
-    });
-
-    it('should handle malformed JSON gracefully', async () => {
-      const chunks = [
-        'data: invalid json\n',
-        'data: {"value": "valid content"}\n',
-        'data: [DONE]\n'
-      ];
-      const results = await processStreamChunks(chunks);
-      expect(results).toContain('valid content');
-    });
-
-    it('should process final response from accumulated stream content', async () => {
-      const chunks = ['{"value": "Final response"}\n'];
-      const results = await processStreamChunks(chunks);
-      expect(results).toContain('Final response');
-    });
-  });
-
-  describe('processChatStream', () => {
-    function createMockStreamResponse(chunks: string[]): any {
-      let chunkIndex = 0;
-      return {
-        body: {
-          getReader: () => ({
-            read: jest.fn().mockImplementation(() => {
-              if (chunkIndex >= chunks.length) {
-                return Promise.resolve({ done: true, value: undefined });
-              }
-              const chunk = chunks[chunkIndex++];
-              const encoded = encoder.encode(chunk);
-              return Promise.resolve({ done: false, value: encoded });
-            }),
-            releaseLock: jest.fn(),
-          }),
-        },
-      };
-    }
-
-    async function processChatStreamChunks(chunks: string[], additionalProps = { enableIntermediateSteps: true }): Promise<string[]> {
-      const mockResponse = createMockStreamResponse(chunks);
-      const results: string[] = [];
-
-      // Recreate processChatStream logic
-      const reader = mockResponse.body.getReader();
-      let buffer = '';
-      let counter = 0;
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value, { stream: true });
-          buffer += chunk;
-
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(5);
-              if (data.trim() === '[DONE]') {
-                return results;
-              }
-              try {
-                const parsed = JSON.parse(data);
-                const content =
-                  parsed.choices?.[0]?.message?.content ||
-                  parsed.choices?.[0]?.delta?.content;
-                if (content) {
-                  results.push(content);
-                }
-              } catch {}
-            } else if (
-              line.startsWith('intermediate_data: ') &&
-              additionalProps.enableIntermediateSteps
-            ) {
-              try {
-                const data = line.split('intermediate_data: ')[1];
-                const payload = JSON.parse(data);
-                const intermediateMessage = {
-                  id: payload?.id || '',
-                  status: payload?.status || 'in_progress',
-                  error: payload?.error || '',
-                  type: 'system_intermediate',
-                  parent_id: payload?.parent_id || 'default',
-                  intermediate_parent_id: payload?.intermediate_parent_id || 'default',
-                  content: {
-                    name: payload?.name || 'Step',
-                    payload: payload?.payload || 'No details',
-                  },
-                  time_stamp: payload?.time_stamp || 'default',
-                  index: counter++,
-                };
-                const msg = `<intermediatestep>${JSON.stringify(intermediateMessage)}</intermediatestep>`;
-                results.push(msg);
-              } catch {}
-            }
-          }
-        }
-      } finally {
-        reader.releaseLock();
-      }
-
-      return results;
-    }
-
-    it('should parse OpenAI-style choices with message content', async () => {
-      const chunks = [
-        'data: {"choices": [{"message": {"content": "Chat response"}}]}\n',
-        'data: [DONE]\n'
-      ];
-      const results = await processChatStreamChunks(chunks);
-      expect(results).toContain('Chat response');
-    });
-
-    it('should parse OpenAI-style choices with delta content', async () => {
-      const chunks = [
-        'data: {"choices": [{"delta": {"content": "Streaming"}}]}\n',
-        'data: {"choices": [{"delta": {"content": " chat"}}]}\n',
-        'data: [DONE]\n'
-      ];
-      const results = await processChatStreamChunks(chunks);
-      expect(results).toContain('Streaming');
-      expect(results).toContain(' chat');
-    });
-
-    it('should process intermediate_data when enabled', async () => {
-      const chunks = ['intermediate_data: {"id": "chat-step", "name": "Chat Step"}\n'];
-      const results = await processChatStreamChunks(chunks, { enableIntermediateSteps: true });
-      const intermediateMsg = results.find(r => r.includes('<intermediatestep>'));
-      expect(intermediateMsg).toBeDefined();
-
-      const parsed = JSON.parse(intermediateMsg!.replace('<intermediatestep>', '').replace('</intermediatestep>', ''));
-      expect(parsed.content.name).toBe('Chat Step');
-    });
-
-    it('should ignore intermediate_data when disabled', async () => {
-      const chunks = ['intermediate_data: {"id": "chat-step", "name": "Chat Step"}\n'];
-      const results = await processChatStreamChunks(chunks, { enableIntermediateSteps: false });
-      expect(results).toHaveLength(0);
-    });
-
-    it('should handle malformed SSE data gracefully', async () => {
-      const chunks = [
-        'data: invalid json\n',
-        'data: {"choices": [{"delta": {"content": "valid"}}]}\n',
-        'data: [DONE]\n'
-      ];
-      const results = await processChatStreamChunks(chunks);
-      expect(results).toContain('valid');
-    });
-
-    it('should ignore non-choices data in SSE frames', async () => {
-      const chunks = [
-        'data: {"value": "should be ignored"}\n',
-        'data: {"choices": [{"delta": {"content": "should be included"}}]}\n',
-        'data: [DONE]\n'
-      ];
-      const results = await processChatStreamChunks(chunks);
-      expect(results).not.toContain('should be ignored');
-      expect(results).toContain('should be included');
-    });
-  });
-
-  describe('processContextAwareRAG', () => {
-    async function testProcessContextAwareRAG(responseData: string): Promise<string> {
-      const mockResponse = {
-        text: jest.fn().mockResolvedValue(responseData),
-      };
-
-      // Recreate processContextAwareRAG logic
-      const data = await mockResponse.text();
-      try {
-        const parsed = JSON.parse(data);
-        const content =
-          parsed?.result ||
-          (Array.isArray(parsed?.choices)
-            ? parsed.choices[0]?.message?.content
-            : null) ||
-          parsed ||
-          data;
-        return typeof content === 'string' ? content : JSON.stringify(content);
-      } catch {
-        return data;
-      }
-    }
-
-    it('should parse result field from JSON response', async () => {
-      const responseData = JSON.stringify({ result: 'Context-aware response' });
-      const result = await testProcessContextAwareRAG(responseData);
-      expect(result).toBe('Context-aware response');
-    });
-
-    it('should parse choices array content', async () => {
-      const responseData = JSON.stringify({
-        choices: [{ message: { content: 'RAG choice content' } }],
+      it('should return empty object for whitespace', () => {
+        const result = parseOptionalParams('   ');
+        expect(result).toEqual({});
       });
-      const result = await testProcessContextAwareRAG(responseData);
-      expect(result).toBe('RAG choice content');
     });
 
-    it('should prefer result over choices', async () => {
-      const responseData = JSON.stringify({
-        result: 'Primary result',
-        choices: [{ message: { content: 'Secondary choice' } }],
-      });
-      const result = await testProcessContextAwareRAG(responseData);
-      expect(result).toBe('Primary result');
-    });
-
-    it('should fallback to parsed object when no specific fields found', async () => {
-      const responseData = JSON.stringify({ custom: 'data', other: 'field' });
-      const result = await testProcessContextAwareRAG(responseData);
-      expect(result).toBe('{"custom":"data","other":"field"}');
-    });
-
-    it('should handle non-JSON response as plain text', async () => {
-      const responseData = 'Plain RAG response';
-      const result = await testProcessContextAwareRAG(responseData);
-      expect(result).toBe('Plain RAG response');
-    });
-
-    it('should stringify non-string result values', async () => {
-      const responseData = JSON.stringify({ result: { complex: 'object', nested: true } });
-      const result = await testProcessContextAwareRAG(responseData);
-      expect(result).toBe('{"complex":"object","nested":true}');
-    });
-
-    it('should handle null choices array', async () => {
-      const responseData = JSON.stringify({ choices: null });
-      const result = await testProcessContextAwareRAG(responseData);
-      expect(result).toBe('{"choices":null}');
-    });
-  });
-
-  describe('Payload Building Functions', () => {
     describe('buildGeneratePayload', () => {
-      function testBuildGeneratePayload(messages: any[]) {
-        const userMessage = messages?.at(-1)?.content;
-        if (!userMessage) {
-          throw new Error('User message not found.');
-        }
-        return { input_message: userMessage };
-      }
+      it('should build payload with input_message', () => {
+        const result = buildGeneratePayload('Hello world');
+        expect(result).toEqual({ input_message: 'Hello world' });
+      });
 
-      it('should extract user message from messages array', () => {
+      it('should handle empty string', () => {
+        const result = buildGeneratePayload('');
+        expect(result).toEqual({ input_message: '' });
+      });
+
+      it('should handle undefined with empty string fallback', () => {
+        const result = buildGeneratePayload(undefined);
+        expect(result).toEqual({ input_message: '' });
+      });
+    });
+
+    describe('buildGenerateStreamPayload', () => {
+      it('should build payload with input_message', () => {
+        const result = buildGenerateStreamPayload('Stream this message');
+        expect(result).toEqual({ input_message: 'Stream this message' });
+      });
+
+      it('should handle empty string', () => {
+        const result = buildGenerateStreamPayload('');
+        expect(result).toEqual({ input_message: '' });
+      });
+    });
+
+    describe('buildChatPayload', () => {
+      it('should build payload with stream: false', () => {
         const messages = [
           { role: 'user', content: 'Hello' },
-          { role: 'assistant', content: 'Hi there' },
+          { role: 'assistant', content: 'Hi' },
           { role: 'user', content: 'How are you?' }
         ];
-        const result = testBuildGeneratePayload(messages);
-        expect(result).toEqual({ input_message: 'How are you?' });
+        const result = buildChatPayload(messages, true, '');
+        
+        expect(result.stream).toBe(false);
+        expect(result.messages).toEqual(messages);
+        expect(result.model).toBe('nvidia/nemotron');
+        expect(result.temperature).toBe(0.7);
       });
 
-      it('should throw error when no messages provided', () => {
-        expect(() => testBuildGeneratePayload([])).toThrow('User message not found.');
+      it('should use only last message when useChatHistory is false', () => {
+        const messages = [
+          { role: 'user', content: 'Hello' },
+          { role: 'assistant', content: 'Hi' },
+          { role: 'user', content: 'How are you?' }
+        ];
+        const result = buildChatPayload(messages, false, '');
+        
+        expect(result.messages).toEqual([{ role: 'user', content: 'How are you?' }]);
       });
 
-      it('should throw error when last message has no content', () => {
-        const messages = [{ role: 'user' }];
-        expect(() => testBuildGeneratePayload(messages)).toThrow('User message not found.');
+      it('should merge optional parameters', () => {
+        const messages = [{ role: 'user', content: 'Test' }];
+        const result = buildChatPayload(messages, true, '{"max_tokens": 500, "top_p": 0.9}');
+        
+        expect(result.max_tokens).toBe(500);
+        expect(result.top_p).toBe(0.9);
+        expect(result.stream).toBe(false);
+      });
+
+      it('should use key=value format for optional params', () => {
+        const messages = [{ role: 'user', content: 'Test' }];
+        const result = buildChatPayload(messages, true, 'max_tokens=300,top_p=0.95');
+        
+        expect(result.max_tokens).toBe(300);
+        expect(result.top_p).toBe(0.95);
+      });
+
+      it('should enforce server-side filtering of reserved fields', () => {
+        // Server-side enforcement: Even if UI validation is bypassed, the server
+        // filters out reserved fields (messages, stream) from optionalParams
+        const messages = [{ role: 'user', content: 'Test' }];
+        
+        // Attempt to override reserved field 'stream' via optionalParams
+        const result = buildChatPayload(messages, true, '{"stream": true, "max_tokens": 100}');
+        
+        // Server enforces: 'stream' is filtered out, remains false
+        expect(result.stream).toBe(false);
+        // Non-reserved fields are still merged
+        expect(result.max_tokens).toBe(100);
+      });
+
+      it('should filter out messages field from optionalParams', () => {
+        const messages = [
+          { role: 'user', content: 'Hello' },
+          { role: 'assistant', content: 'Hi' },
+        ];
+        
+        // Attempt to override 'messages' via optionalParams
+        const result = buildChatPayload(
+          messages,
+          true,
+          '{"messages": [{"role": "system", "content": "Override"}], "temperature": 0.9}'
+        );
+        
+        // Server enforces: 'messages' is filtered out, original messages preserved
+        expect(result.messages).toEqual(messages);
+        // Non-reserved fields are still merged
+        expect(result.temperature).toBe(0.9);
+      });
+
+      it('should handle parse errors in optionalParams gracefully', () => {
+        const messages = [{ role: 'user', content: 'Test' }];
+        
+        // Invalid JSON should not crash, just use defaults
+        const result = buildChatPayload(messages, true, '{invalid json}');
+        
+        expect(result.stream).toBe(false);
+        expect(result.model).toBe('nvidia/nemotron');
+        expect(result.temperature).toBe(0.7);
       });
     });
 
-    describe('buildOpenAIChatPayload', () => {
-      function testBuildOpenAIChatPayload(messages: any[], isStreaming: boolean = true) {
-        return {
+    describe('buildChatStreamPayload', () => {
+      it('should build payload with stream: true', () => {
+        const messages = [
+          { role: 'user', content: 'Hello' },
+          { role: 'assistant', content: 'Hi' },
+          { role: 'user', content: 'How are you?' }
+        ];
+        const result = buildChatStreamPayload(messages, true, '');
+        
+        expect(result.stream).toBe(true);
+        expect(result.messages).toEqual(messages);
+        expect(result.model).toBe('nvidia/nemotron');
+        expect(result.temperature).toBe(0.7);
+      });
+
+      it('should use only last message when useChatHistory is false', () => {
+        const messages = [
+          { role: 'user', content: 'Hello' },
+          { role: 'assistant', content: 'Hi' },
+          { role: 'user', content: 'How are you?' }
+        ];
+        const result = buildChatStreamPayload(messages, false, '');
+        
+        expect(result.messages).toEqual([{ role: 'user', content: 'How are you?' }]);
+      });
+
+      it('should merge optional parameters', () => {
+        const messages = [{ role: 'user', content: 'Test' }];
+        const result = buildChatStreamPayload(messages, true, '{"max_tokens": 500, "top_p": 0.9}');
+        
+        expect(result.max_tokens).toBe(500);
+        expect(result.top_p).toBe(0.9);
+        expect(result.stream).toBe(true);
+      });
+
+      it('should use key=value format for optional params', () => {
+        const messages = [{ role: 'user', content: 'Test' }];
+        const result = buildChatStreamPayload(messages, true, 'max_tokens=300,top_p=0.95');
+        
+        expect(result.max_tokens).toBe(300);
+        expect(result.top_p).toBe(0.95);
+      });
+
+      it('should enforce server-side filtering of reserved fields', () => {
+        // Server-side enforcement: Even if UI validation is bypassed, the server
+        // filters out reserved fields (messages, stream) from optionalParams
+        const messages = [{ role: 'user', content: 'Test' }];
+        
+        // Attempt to override reserved field 'stream' via optionalParams
+        const result = buildChatStreamPayload(messages, true, '{"stream": false, "max_tokens": 100}');
+        
+        // Server enforces: 'stream' is filtered out, remains true (critical fix)
+        expect(result.stream).toBe(true);
+        // Non-reserved fields are still merged
+        expect(result.max_tokens).toBe(100);
+      });
+
+      it('should filter out messages field from optionalParams', () => {
+        const messages = [
+          { role: 'user', content: 'Hello' },
+          { role: 'assistant', content: 'Hi' },
+        ];
+        
+        // Attempt to override 'messages' via optionalParams
+        const result = buildChatStreamPayload(
           messages,
-          stream: isStreaming,
-        };
-      }
+          true,
+          '{"messages": [{"role": "system", "content": "Override"}], "temperature": 0.8}'
+        );
+        
+        // Server enforces: 'messages' is filtered out, original messages preserved
+        expect(result.messages).toEqual(messages);
+        // Non-reserved fields are still merged
+        expect(result.temperature).toBe(0.8);
+      });
 
-      it('should build OpenAI-compatible payload with messages', () => {
-        const messages = [
-          { role: 'user', content: 'Test message' }
-        ];
-        const result = testBuildOpenAIChatPayload(messages);
-        expect(result.messages).toBe(messages);
+      it('should always have stream: true (critical fix)', () => {
+        const messages = [{ role: 'user', content: 'Test' }];
+        const result = buildChatStreamPayload(messages, true, '');
+ 
+        // Critical: buildChatStreamPayload MUST always set stream: true for SSE
         expect(result.stream).toBe(true);
       });
 
-      it('should handle empty messages array', () => {
-        const result = testBuildOpenAIChatPayload([]);
-        expect(result.messages).toEqual([]);
+      it('should handle parse errors in optionalParams gracefully', () => {
+        const messages = [{ role: 'user', content: 'Test' }];
+        
+        // Invalid JSON should not crash, just use defaults
+        const result = buildChatStreamPayload(messages, true, '{invalid json}');
+        
         expect(result.stream).toBe(true);
-      });
-
-      it('should set stream to true when isStreaming is true', () => {
-        const messages = [
-          { role: 'user', content: 'Test message' }
-        ];
-        const result = testBuildOpenAIChatPayload(messages, true);
-        expect(result.messages).toBe(messages);
-        expect(result.stream).toBe(true);
-      });
-
-      it('should set stream to false when isStreaming is explicitly false', () => {
-        const messages = [
-          { role: 'user', content: 'Test message' }
-        ];
-        const result = testBuildOpenAIChatPayload(messages, false);
-        expect(result.messages).toBe(messages);
-        expect(result.stream).toBe(false);
+        expect(result.model).toBe('nvidia/nemotron');
+        expect(result.temperature).toBe(0.7);
       });
     });
 
@@ -826,6 +466,283 @@ describe('Proxy Response Processing Functions', () => {
             }
           }
         });
+      });
+    });
+  });
+
+  describe('Response Processors', () => {
+    describe('processGenerate', () => {
+      it('should process JSON response with value field', async () => {
+        const mockBackendRes = {
+          ok: true,
+          text: jest.fn().mockResolvedValue('{"value":"Test response"}'),
+        };
+        
+        const mockRes = {
+          writeHead: jest.fn(),
+          end: jest.fn(),
+        };
+
+        await processGenerate(mockBackendRes, mockRes);
+
+        expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
+          'Content-Type': 'application/json; charset=utf-8',
+        }));
+        expect(mockRes.end).toHaveBeenCalledWith('{"value":"Test response"}');
+      });
+
+      it('should handle non-ok response', async () => {
+        const mockBackendRes = {
+          ok: false,
+          status: 500,
+          statusText: 'Internal Server Error',
+          text: jest.fn().mockResolvedValue('Internal Server Error'),
+        };
+        
+        const mockRes = {
+          writeHead: jest.fn(),
+          end: jest.fn(),
+        };
+
+        await processGenerate(mockBackendRes, mockRes);
+
+        expect(mockRes.writeHead).toHaveBeenCalledWith(500, expect.any(Object));
+        expect(mockRes.end).toHaveBeenCalledWith('Internal Server Error');
+      });
+    });
+
+    describe('processChat', () => {
+      it('should process JSON response', async () => {
+        const mockBackendRes = {
+          ok: true,
+          text: jest.fn().mockResolvedValue('{"choices":[{"message":{"content":"Chat response"}}]}'),
+        };
+        
+        const mockRes = {
+          writeHead: jest.fn(),
+          end: jest.fn(),
+        };
+
+        await processChat(mockBackendRes, mockRes);
+
+        expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.any(Object));
+        expect(mockRes.end).toHaveBeenCalled();
+      });
+
+      it('should handle non-ok response', async () => {
+        const mockBackendRes = {
+          ok: false,
+          status: 400,
+          statusText: 'Bad Request',
+          text: jest.fn().mockResolvedValue('Bad Request'),
+        };
+        
+        const mockRes = {
+          writeHead: jest.fn(),
+          end: jest.fn(),
+        };
+
+        await processChat(mockBackendRes, mockRes);
+
+        expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
+        expect(mockRes.end).toHaveBeenCalledWith('Bad Request');
+      });
+    });
+
+    describe('processChatStream', () => {
+      function createStreamingResponse(chunks) {
+        const encoder = new TextEncoder();
+        let chunkIndex = 0;
+        
+        return {
+          ok: true,
+          body: {
+            getReader: () => ({
+              read: jest.fn().mockImplementation(() => {
+                if (chunkIndex >= chunks.length) {
+                  return Promise.resolve({ done: true, value: undefined });
+                }
+                const chunk = chunks[chunkIndex++];
+                return Promise.resolve({ done: false, value: encoder.encode(chunk) });
+              }),
+            }),
+          },
+        };
+      }
+
+      it('should process SSE stream with chat data', async () => {
+        const mockBackendRes = createStreamingResponse([
+          'data: {"choices":[{"delta":{"content":"Hello"}}]}\n',
+          'data: {"choices":[{"delta":{"content":" world"}}]}\n',
+        ]);
+        
+        const mockRes = {
+          writeHead: jest.fn(),
+          write: jest.fn(),
+          end: jest.fn(),
+        };
+
+        await processChatStream(mockBackendRes, mockRes);
+
+        expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
+          'Content-Type': expect.stringMatching(/text\/event-stream/i),
+        }));
+        expect(mockRes.write).toHaveBeenCalledWith('Hello');
+        expect(mockRes.write).toHaveBeenCalledWith(' world');
+        expect(mockRes.end).toHaveBeenCalled();
+      });
+
+      it('should process intermediate_data lines', async () => {
+        const mockBackendRes = createStreamingResponse([
+          'intermediate_data: {"id":"step1","name":"Test Step","payload":"data"}\n',
+        ]);
+        
+        const mockRes = {
+          writeHead: jest.fn(),
+          write: jest.fn(),
+          end: jest.fn(),
+        };
+
+        await processChatStream(mockBackendRes, mockRes);
+
+        expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('<intermediatestep>'));
+        expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('Test Step'));
+      });
+
+      it('should handle non-ok response', async () => {
+        const mockBackendRes = {
+          ok: false,
+          status: 502,
+          statusText: 'Bad Gateway',
+          text: jest.fn().mockResolvedValue('Bad Gateway'),
+        };
+        
+        const mockRes = {
+          writeHead: jest.fn(),
+          end: jest.fn(),
+        };
+
+        await processChatStream(mockBackendRes, mockRes);
+
+        expect(mockRes.writeHead).toHaveBeenCalledWith(502, expect.any(Object));
+        expect(mockRes.end).toHaveBeenCalledWith('Bad Gateway');
+      });
+    });
+
+    describe('processGenerateStream', () => {
+      function createStreamingResponse(chunks) {
+        const encoder = new TextEncoder();
+        let chunkIndex = 0;
+        
+        return {
+          ok: true,
+          body: {
+            getReader: () => ({
+              read: jest.fn().mockImplementation(() => {
+                if (chunkIndex >= chunks.length) {
+                  return Promise.resolve({ done: true, value: undefined });
+                }
+                const chunk = chunks[chunkIndex++];
+                return Promise.resolve({ done: false, value: encoder.encode(chunk) });
+              }),
+            }),
+          },
+        };
+      }
+
+      it('should process SSE stream with generate data', async () => {
+        const mockBackendRes = createStreamingResponse([
+          'data: {"value":"Stream"}\n',
+          'data: {"value":" content"}\n',
+        ]);
+        
+        const mockRes = {
+          writeHead: jest.fn(),
+          write: jest.fn(),
+          end: jest.fn(),
+        };
+
+        await processGenerateStream(mockBackendRes, mockRes);
+
+        expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
+          'Content-Type': expect.stringMatching(/text\/event-stream/i),
+        }));
+        expect(mockRes.write).toHaveBeenCalled();
+        expect(mockRes.end).toHaveBeenCalled();
+      });
+
+      it('should process intermediate_data lines', async () => {
+        const mockBackendRes = createStreamingResponse([
+          'intermediate_data: {"id":"gen-step","name":"Generation Step"}\n',
+        ]);
+        
+        const mockRes = {
+          writeHead: jest.fn(),
+          write: jest.fn(),
+          end: jest.fn(),
+        };
+
+        await processGenerateStream(mockBackendRes, mockRes);
+
+        expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('<intermediatestep>'));
+        expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('Generation Step'));
+      });
+
+      it('should handle non-ok response', async () => {
+        const mockBackendRes = {
+          ok: false,
+          status: 503,
+          statusText: 'Service Unavailable',
+          text: jest.fn().mockResolvedValue('Service Unavailable'),
+        };
+        
+        const mockRes = {
+          writeHead: jest.fn(),
+          end: jest.fn(),
+        };
+
+        await processGenerateStream(mockBackendRes, mockRes);
+
+        expect(mockRes.writeHead).toHaveBeenCalledWith(503, expect.any(Object));
+        expect(mockRes.end).toHaveBeenCalledWith('Service Unavailable');
+      });
+    });
+
+    describe('processCaRag', () => {
+      it('should process JSON response with result field', async () => {
+        const mockBackendRes = {
+          ok: true,
+          text: jest.fn().mockResolvedValue('{"result":"RAG response"}'),
+        };
+        
+        const mockRes = {
+          writeHead: jest.fn(),
+          end: jest.fn(),
+        };
+
+        await processCaRag(mockBackendRes, mockRes);
+
+        expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.any(Object));
+        expect(mockRes.end).toHaveBeenCalled();
+      });
+
+      it('should handle non-ok response', async () => {
+        const mockBackendRes = {
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
+          text: jest.fn().mockResolvedValue('Not Found'),
+        };
+        
+        const mockRes = {
+          writeHead: jest.fn(),
+          end: jest.fn(),
+        };
+
+        await processCaRag(mockBackendRes, mockRes);
+
+        expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.any(Object));
+        expect(mockRes.end).toHaveBeenCalledWith('Not Found');
       });
     });
   });

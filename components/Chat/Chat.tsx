@@ -6,8 +6,13 @@ import { ChatLoader } from './ChatLoader';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
 import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
 import HomeContext from '@/pages/api/home/home.context';
-import { DEFAULT_CORE_ROUTE, WEBSOCKET_PROXY_PATH, HTTP_PROXY_PATH } from '@/constants';
-import { ChatApiRequest, Conversation, Message } from '@/types/chat';
+import { 
+  DEFAULT_CORE_ROUTE, 
+  WEBSOCKET_PROXY_PATH, 
+  HTTP_PROXY_PATH,
+  CORE_ROUTES,
+} from '@/constants';
+import { Conversation, Message } from '@/types/chat';
 import {
   WebSocketInbound,
   validateWebSocketMessage,
@@ -51,6 +56,12 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { SESSION_COOKIE_NAME } from '@/constants';
 import { isValidConsentPromptURL } from '@/utils/security/oauth-validation';
+import {
+  buildGeneratePayload,
+  buildGenerateStreamPayload,
+  buildChatPayload,
+  buildChatStreamPayload,
+} from '@/proxy/request-transformers';
 
 
 
@@ -59,6 +70,7 @@ function normalizeNewlines(s: string): string {
   // turn CRLF into LF so splitting is predictable
   return s.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 }
+
 
 function extractSsePayloads(buffer: string): {
   frames: string[];
@@ -231,9 +243,15 @@ export const Chat = () => {
     interactionMessage = {},
     userResponse = '',
   }: any) => {
+    if (!selectedConversation) {
+      console.error('Cannot send interaction response: no conversation selected');
+      return;
+    }
+
     const wsMessage = {
       type: webSocketMessageTypes.userInteractionMessage,
       id: uuidv4(), //new id for every new message
+      conversation_id: selectedConversation.id, // Required for backend routing
       thread_id: interactionMessage?.thread_id, // same thread_id from interaction message received
       parent_id: interactionMessage?.parent_id, // same parent_id from interaction message received
       content: {
@@ -826,34 +844,45 @@ export const Chat = () => {
           return;
         }
 
-        // cleaning up messages to fit the request payload
-        const messagesCleaned = updatedConversation.messages.map(message => {
-          return {
-            role: message.role,
-            content: (typeof message.content === 'string'
-              ? message.content
-              : ''
-            ).trim(),
-          };
-        });
-
-        const chatRequest: ChatApiRequest = {
-          messages: chatHistory
-            ? messagesCleaned
-            : [{ role: 'user', content: message?.content }],
-          httpEndpoint: sessionStorage.getItem('httpEndpoint') || httpEndpoint,
-          optionalGenerationParameters: sessionStorage.getItem('optionalGenerationParameters') || optionalGenerationParameters,
-          additionalProps: {
-            enableIntermediateSteps: sessionStorage.getItem(
-              'enableIntermediateSteps'
-            )
-              ? sessionStorage.getItem('enableIntermediateSteps') === 'true'
-              : enableIntermediateSteps,
-          },
-        };
-
+        // Get selected endpoint from settings
         const httpEndpointPath = sessionStorage.getItem('httpEndpoint') || httpEndpoint;
-        const body = JSON.stringify(chatRequest);
+        const optionalParams = sessionStorage.getItem('optionalGenerationParameters') || optionalGenerationParameters;
+        
+        // Clean messages for chat endpoints
+        const messagesCleaned = updatedConversation.messages.map(msg => ({
+          role: msg.role,
+          content: (typeof msg.content === 'string' ? msg.content : '').trim(),
+        }));
+        
+        // Build endpoint-specific payload using dedicated builder functions
+        let requestPayload: any;
+        
+        if (httpEndpointPath === CORE_ROUTES.GENERATE) {
+          requestPayload = buildGeneratePayload(message?.content || '');
+        } else if (httpEndpointPath === CORE_ROUTES.GENERATE_STREAM) {
+          requestPayload = buildGenerateStreamPayload(message?.content || '');
+        } else if (httpEndpointPath === CORE_ROUTES.CHAT) {
+          requestPayload = buildChatPayload(
+            chatHistory ? messagesCleaned : [{ role: 'user', content: message?.content }],
+            chatHistory,
+            optionalParams || ''
+          );
+        } else if (httpEndpointPath === CORE_ROUTES.CHAT_STREAM) {
+          requestPayload = buildChatStreamPayload(
+            chatHistory ? messagesCleaned : [{ role: 'user', content: message?.content }],
+            chatHistory,
+            optionalParams || ''
+          );
+        } else {
+          // Fallback for other endpoints
+          requestPayload = {
+            messages: chatHistory
+              ? messagesCleaned
+              : [{ role: 'user', content: message?.content }],
+          };
+        }
+
+        const body = JSON.stringify(requestPayload);
 
         let response;
         try {
@@ -905,7 +934,7 @@ export const Chat = () => {
 
             // Initialize streaming buffers
             const selectedEndpoint = sessionStorage.getItem('httpEndpoint') || httpEndpoint || DEFAULT_CORE_ROUTE;
-            const isGenerateStream = selectedEndpoint.includes('generate');
+            const isGenerateStream = selectedEndpoint.includes('/generate/stream');
             let sseBuffer = '';
             let ndjsonBuffer = '';
 

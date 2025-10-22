@@ -210,12 +210,14 @@ const server = http.createServer(async (req, res) => {
             ? await readRequestBody(req)
             : undefined;
 
+        // Forward request to backend
         const backendRes = await fetch(targetUrl, {
           method: req.method,
           headers: req.headers,
           body,
         });
 
+        // Process response using endpoint-specific processor
         await processor(backendRes, res);
       } catch (err) {
         console.error('[ERROR] Backend request failed:', err.message);
@@ -259,7 +261,6 @@ server.on('upgrade', (req, socket, head) => {
   const parsedUrl = url.parse(req.url);
   const pathname = parsedUrl.pathname || '/';
 
-  // Route 1: Backend WebSocket (public WS path)
   if (
     pathname === WEBSOCKET_PROXY_PATH ||
     pathname.startsWith(WEBSOCKET_PROXY_PATH + '?')
@@ -297,7 +298,6 @@ server.on('upgrade', (req, socket, head) => {
     return;
   }
 
-  // Route 2: Everything else (including /_next/* for HMR) → Next.js dev server
   nextProxy.ws(
     req,
     socket,

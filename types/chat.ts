@@ -16,14 +16,6 @@ export interface ChatBody {
   // Additional fields from user's JSON will be merged here
 }
 
-// Internal API request interface (includes system variables)
-export interface ChatApiRequest {
-  messages?: Message[];
-  httpEndpoint?: string;
-  optionalGenerationParameters?: string;
-  additionalProps?: any;
-}
-
 export interface Conversation {
   id: string;
   name: string;
