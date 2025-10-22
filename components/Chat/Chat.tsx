@@ -243,9 +243,15 @@ export const Chat = () => {
     interactionMessage = {},
     userResponse = '',
   }: any) => {
+    if (!selectedConversation) {
+      console.error('Cannot send interaction response: no conversation selected');
+      return;
+    }
+
     const wsMessage = {
       type: webSocketMessageTypes.userInteractionMessage,
       id: uuidv4(), //new id for every new message
+      conversation_id: selectedConversation.id, // Required for backend routing
       thread_id: interactionMessage?.thread_id, // same thread_id from interaction message received
       parent_id: interactionMessage?.parent_id, // same parent_id from interaction message received
       content: {
@@ -928,7 +934,7 @@ export const Chat = () => {
 
             // Initialize streaming buffers
             const selectedEndpoint = sessionStorage.getItem('httpEndpoint') || httpEndpoint || DEFAULT_CORE_ROUTE;
-            const isGenerateStream = selectedEndpoint.includes('generate');
+            const isGenerateStream = selectedEndpoint.includes('/generate/stream');
             let sseBuffer = '';
             let ndjsonBuffer = '';
 

@@ -103,11 +103,29 @@ The application uses a unified proxy architecture for improved security. All con
 - `NEXT_TELEMETRY_DISABLED` - Disable Next.js telemetry data collection (1 to disable)
 - `NEXT_PUBLIC_MCP_PATH` - MCP client API path (defaults to `/mcp/client/tool/list`)
 
-### HTTP API Connection
+### API Connection
 
 Settings can be configured by selecting the `Settings` icon located on the bottom left corner of the home page.
 
-![NeMo Agent Toolkit Web UI Settings](public/screenshots/ui_generate_example_settings.png)
+![NeMo Agent Toolkit Web UI Settings](public/screenshots/ui_chat_stream_settings_example.png)
+
+### Communication Protocols
+
+The UI supports two communication modes:
+
+**HTTP/REST (Default)**
+- Standard request-response pattern
+- OpenAI Chat Completions compatible
+- Supports both streaming and non-streaming responses
+- Best for: Simple request-response workflows, stateless interactions
+
+**WebSocket (Real-time)**
+- Bidirectional persistent connections
+- Required for Human-in-the-Loop (HITL) workflows
+- Enables server-initiated messages and interruptions
+- Best for: Interactive workflows, multi-turn conversations, HITL scenarios
+
+For detailed WebSocket integration and message formats, refer to the [WebSocket Documentation](https://docs.nvidia.com/nemo/agent-toolkit/latest/reference/websockets.html) in the NeMo Agent Toolkit documentation.
 
 ### Settings Options
 
@@ -130,6 +148,12 @@ Settings can be configured by selecting the `Settings` icon located on the botto
   - **Generate — Streaming** - Streaming generation over WebSocket
   - **Generate — Non-Streaming** - Non-streaming generation over WebSocket
 
+> **⚠️ Important**: WebSocket mode **must be enabled** for interactive workflows like Human-in-the-Loop (HITL). To enable:
+> 1. Open the panel on the top right of the webpage
+> 2. Toggle the **WebSocket** button to ON
+> 3. You will see a notification that says "websocket connected" when successfully connected
+> 4. Configure the **WebSocket Schema** in settings (use `Chat Completions — Streaming` for HITL)
+
 **Note:** For intermediate results streaming, use **Chat Completions — Streaming** (`/chat/stream`) or **Generate — Streaming** (`/generate/stream`).
 
 ### Live Data Streaming
@@ -142,18 +166,30 @@ For more detail, see the [README for live data streaming](DATA_STREAMING.md).
 
 ## Usage Examples
 
-### Getting Started Example
+### Quick Start: Simple Calculator Example
 
-#### Setup and Configuration
 
-1. Set up [NeMo Agent Toolkit](https://docs.nvidia.com/nemo/agent-toolkit/latest/quick-start/installing.html) following the getting started guide
-2. Start workflow by following the [Getting Started Examples](https://github.com/NVIDIA/NeMo-Agent-Toolkit/blob/develop/examples/getting_started/simple_calculator/README.md)
+This example demonstrates an agent workflow using HTTP streaming with intermediate step visualization.
+
+#### 1. Backend Setup
+
+First, install and configure [NeMo Agent Toolkit](https://docs.nvidia.com/nemo/agent-toolkit/latest/quick-start/installing.html), then start the simple calculator workflow:
 
 ```bash
+# Start the NeMo Agent Toolkit backend with the calculator example
 nat serve --config_file=examples/getting_started/simple_calculator/configs/config.yml
 ```
 
-#### Testing the Calculator
+For detailed setup instructions, see the [Simple Calculator Example](https://github.com/NVIDIA/NeMo-Agent-Toolkit/blob/develop/examples/getting_started/simple_calculator/README.md) in the NeMo Agent Toolkit repository.
+
+#### 2. Configure the UI
+
+Open the settings panel (gear icon in bottom left) and configure:
+
+- **HTTP Endpoint**: Select `Chat Completions — Streaming` (OpenAI compatible, default setting) to enable real-time streaming responses
+- **Enable Intermediate Steps**: Toggle on to see the agent's reasoning process
+
+#### 3. Test the Agent
 
 Interact with the chat interface by prompting the agent with the message:
 
@@ -161,44 +197,63 @@ Interact with the chat interface by prompting the agent with the message:
 Is 4 + 4 greater than the current hour of the day?
 ```
 
-![NeMo Agent Toolkit Web UI Workflow Result](public/screenshots/ui_generate_example.png)
+The agent will:
+1. Break down the problem into steps
+2. Call the calculator tool to compute `4 + 4 = 8`
+3. Get the current time
+4. Compare the values and provide an answer
 
-### Human In The Loop (HITL) Example
+![Agent Workflow with Intermediate Steps](public/screenshots/ui_simple_calculator_example.png)
 
-#### Setup and Configuration
+**Expected Result**: The UI displays both the intermediate reasoning steps and the final answer, showing how the agent solves the problem step-by-step.
 
-1. Set up [NeMo Agent Toolkit](https://docs.nvidia.com/nemo/agent-toolkit/latest/quick-start/installing.html) following the getting started guide
-2. Start workflow by following the [HITL Example](https://github.com/NVIDIA/NeMo-Agent-Toolkit/blob/develop/examples/HITL/simple_calculator_hitl/README.md)
+---
+
+### Advanced: Human-in-the-Loop (HITL) Workflows
+
+This example demonstrates bidirectional real-time communication using WebSockets, allowing human intervention during agent execution.
+
+#### 1. Backend Setup
+
+Start the HITL-enabled calculator workflow:
 
 ```bash
+# Start the NeMo Agent Toolkit backend with HITL support
 nat serve --config_file=examples/HITL/simple_calculator_hitl/configs/config-hitl.yml
 ```
 
-#### Configuring HITL Settings
+For complete setup instructions, see the [HITL Example](https://github.com/NVIDIA/NeMo-Agent-Toolkit/blob/develop/examples/HITL/simple_calculator_hitl/README.md) in the NeMo Agent Toolkit repository.
 
-Enable WebSocket mode in the settings panel for bidirectional real-time communication between the client and server.
+#### 2. Enable WebSocket Mode
 
-![NeMo Agent Toolkit Web UI HITL Settings](public/screenshots/hitl_settings.png)
+> **⚠️ Important**: WebSocket mode is **required** for interactive workflows.
 
-#### Example Conversation
+Enable WebSocket for bidirectional real-time communication:
 
-1. Send the following prompt:
+1. Open the panel on the **top right** of the webpage
+2. Toggle the **WebSocket** button to ON
+3. You will see a notification that says "websocket connected" when successfully connected
+4. In settings, ensure **WebSocket Schema** is set to `Chat Completions — Streaming`
+
+#### 3. Interact with the Agent
+
+**Step 1**: Interact with the chat by submitting the prompt below:
 
 ```
-Can you process my input and display the result for the given prompt: How are you today?
+Is 4 + 4 greater than the current hour of the day?
 ```
 
-2. Enter your response when prompted:
+**Step 2**: The agent will pause and request your input via an interactive modal:
 
-![NeMo Agent Toolkit Web UI HITL Prompt](public/screenshots/hitl_prompt.png)
+![HITL Input Request](public/screenshots/hitl_prompt.png)
 
-3. Monitor the result:
+**Step 3**: Enter your response in the human-in-the-loop modal (e.g., "yes" or "no") and click Submit.
 
-![NeMo Agent Toolkit Web UI HITL Result](public/screenshots/hitl_prompt.png)
 
-### Server Communication
 
-The UI supports both HTTP requests (OpenAI Chat compatible) and WebSocket connections for server communication. For detailed information about WebSocket messaging integration, please refer to the [WebSocket Documentation](https://docs.nvidia.com/nemo/agent-toolkit/latest/reference/websockets.html) in the NeMo Agent Toolkit documentation.
+**Expected Result**: The agent receives your input and continues execution, displaying intermediate reasoning steps and the final answer. The result will be identical to what was demonstrated in the [Quick Start: Simple Calculator Example](#quick-start-simple-calculator-example) above.
+
+---
 
 ## License
 
