@@ -128,16 +128,48 @@ describe('Proxy Request Transformers and Response Processors', () => {
         expect(result.top_p).toBe(0.95);
       });
 
-      it('UI validation prevents reserved fields in optionalParams', () => {
-        // Note: The UI (SettingDialog.tsx) validates and blocks reserved fields
-        // like 'messages' and 'stream' from being entered in optionalParams.
-        // This test documents that the backend relies on UI-level validation.
+      it('should enforce server-side filtering of reserved fields', () => {
+        // Server-side enforcement: Even if UI validation is bypassed, the server
+        // filters out reserved fields (messages, stream) from optionalParams
         const messages = [{ role: 'user', content: 'Test' }];
         
-        const result = buildChatPayload(messages, true, '{"stream": true}');
+        // Attempt to override reserved field 'stream' via optionalParams
+        const result = buildChatPayload(messages, true, '{"stream": true, "max_tokens": 100}');
         
-        // Current implementation: Object.assign allows override (UI prevents in practice)
-        expect(result.stream).toBe(true); // Would be overridden if UI validation bypassed
+        // Server enforces: 'stream' is filtered out, remains false
+        expect(result.stream).toBe(false);
+        // Non-reserved fields are still merged
+        expect(result.max_tokens).toBe(100);
+      });
+
+      it('should filter out messages field from optionalParams', () => {
+        const messages = [
+          { role: 'user', content: 'Hello' },
+          { role: 'assistant', content: 'Hi' },
+        ];
+        
+        // Attempt to override 'messages' via optionalParams
+        const result = buildChatPayload(
+          messages,
+          true,
+          '{"messages": [{"role": "system", "content": "Override"}], "temperature": 0.9}'
+        );
+        
+        // Server enforces: 'messages' is filtered out, original messages preserved
+        expect(result.messages).toEqual(messages);
+        // Non-reserved fields are still merged
+        expect(result.temperature).toBe(0.9);
+      });
+
+      it('should handle parse errors in optionalParams gracefully', () => {
+        const messages = [{ role: 'user', content: 'Test' }];
+        
+        // Invalid JSON should not crash, just use defaults
+        const result = buildChatPayload(messages, true, '{invalid json}');
+        
+        expect(result.stream).toBe(false);
+        expect(result.model).toBe('nvidia/nemotron');
+        expect(result.temperature).toBe(0.7);
       });
     });
 
@@ -184,22 +216,56 @@ describe('Proxy Request Transformers and Response Processors', () => {
         expect(result.top_p).toBe(0.95);
       });
 
-      it('UI validation prevents reserved fields in optionalParams', () => {
-        // Note: The UI (SettingDialog.tsx) validates and blocks reserved fields
-        // This test documents that the backend relies on UI-level validation.
+      it('should enforce server-side filtering of reserved fields', () => {
+        // Server-side enforcement: Even if UI validation is bypassed, the server
+        // filters out reserved fields (messages, stream) from optionalParams
         const messages = [{ role: 'user', content: 'Test' }];
         
-        const result = buildChatStreamPayload(messages, true, '{"stream": false}');
+        // Attempt to override reserved field 'stream' via optionalParams
+        const result = buildChatStreamPayload(messages, true, '{"stream": false, "max_tokens": 100}');
         
-        // Current implementation: Object.assign allows override (UI prevents in practice)
-        expect(result.stream).toBe(false); // Would be overridden if UI validation bypassed
+        // Server enforces: 'stream' is filtered out, remains true (critical fix)
+        expect(result.stream).toBe(true);
+        // Non-reserved fields are still merged
+        expect(result.max_tokens).toBe(100);
+      });
+
+      it('should filter out messages field from optionalParams', () => {
+        const messages = [
+          { role: 'user', content: 'Hello' },
+          { role: 'assistant', content: 'Hi' },
+        ];
+        
+        // Attempt to override 'messages' via optionalParams
+        const result = buildChatStreamPayload(
+          messages,
+          true,
+          '{"messages": [{"role": "system", "content": "Override"}], "temperature": 0.8}'
+        );
+        
+        // Server enforces: 'messages' is filtered out, original messages preserved
+        expect(result.messages).toEqual(messages);
+        // Non-reserved fields are still merged
+        expect(result.temperature).toBe(0.8);
       });
 
       it('should always have stream: true (critical fix)', () => {
         const messages = [{ role: 'user', content: 'Test' }];
         const result = buildChatStreamPayload(messages, true, '');
-
+ 
+        // Critical: buildChatStreamPayload MUST always set stream: true for SSE
         expect(result.stream).toBe(true);
+      });
+
+      it('should handle parse errors in optionalParams gracefully', () => {
+        const messages = [{ role: 'user', content: 'Test' }];
+        
+        // Invalid JSON should not crash, just use defaults
+        const result = buildChatStreamPayload(messages, true, '{invalid json}');
+        
+        expect(result.stream).toBe(true);
+        expect(result.model).toBe('nvidia/nemotron');
+        expect(result.temperature).toBe(0.7);
       });
     });
 
@@ -518,7 +584,9 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         await processChatStream(mockBackendRes, mockRes);
 
-        expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.any(Object));
+        expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
+          'Content-Type': expect.stringMatching(/text\/event-stream/i),
+        }));
         expect(mockRes.write).toHaveBeenCalledWith('Hello');
         expect(mockRes.write).toHaveBeenCalledWith(' world');
         expect(mockRes.end).toHaveBeenCalled();
@@ -596,7 +664,9 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         await processGenerateStream(mockBackendRes, mockRes);
 
-        expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.any(Object));
+        expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
+          'Content-Type': expect.stringMatching(/text\/event-stream/i),
+        }));
         expect(mockRes.write).toHaveBeenCalled();
         expect(mockRes.end).toHaveBeenCalled();
       });

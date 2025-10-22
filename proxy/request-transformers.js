@@ -73,6 +73,9 @@ function buildGeneratePayload(message) {
  * @returns {Object} Backend request payload
  */
 function buildChatPayload(messages, useChatHistory, optionalParams) {
+  // Reserved fields that cannot be overridden by optionalParams
+  const RESERVED_FIELDS = ['messages', 'stream'];
+
   const payload = {
     messages: useChatHistory ? messages : [messages[messages.length - 1]],
     model: 'nvidia/nemotron',
@@ -80,10 +83,20 @@ function buildChatPayload(messages, useChatHistory, optionalParams) {
     temperature: 0.7,
   };
 
-  // Merge optional generation parameters if provided
+  // Merge optional generation parameters if provided, filtering out reserved fields
   if (optionalParams && optionalParams.trim()) {
-    const parsedParams = parseOptionalParams(optionalParams);
-    Object.assign(payload, parsedParams);
+    try {
+      const parsedParams = parseOptionalParams(optionalParams);
+
+      // Only merge non-reserved fields
+      Object.keys(parsedParams).forEach((key) => {
+        if (!RESERVED_FIELDS.includes(key)) {
+          payload[key] = parsedParams[key];
+        }
+      });
+    } catch (error) {
+      // Silently ignore parse errors - payload will use defaults
+    }
   }
 
   return payload;
@@ -99,6 +112,9 @@ function buildChatPayload(messages, useChatHistory, optionalParams) {
  * @returns {Object} Backend request payload
  */
 function buildChatStreamPayload(messages, useChatHistory, optionalParams) {
+  // Reserved fields that cannot be overridden by optionalParams
+  const RESERVED_FIELDS = ['messages', 'stream'];
+
   const payload = {
     messages: useChatHistory ? messages : [messages[messages.length - 1]],
     model: 'nvidia/nemotron',
@@ -106,10 +122,20 @@ function buildChatStreamPayload(messages, useChatHistory, optionalParams) {
     temperature: 0.7,
   };
 
-  // Merge optional generation parameters if provided
+  // Merge optional generation parameters if provided, filtering out reserved fields
   if (optionalParams && optionalParams.trim()) {
-    const parsedParams = parseOptionalParams(optionalParams);
-    Object.assign(payload, parsedParams);
+    try {
+      const parsedParams = parseOptionalParams(optionalParams);
+
+      // Only merge non-reserved fields
+      Object.keys(parsedParams).forEach((key) => {
+        if (!RESERVED_FIELDS.includes(key)) {
+          payload[key] = parsedParams[key];
+        }
+      });
+    } catch (error) {
+      // Silently ignore parse errors - payload will use defaults
+    }
   }
 
   return payload;

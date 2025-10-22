@@ -58,7 +58,7 @@ async function processChatStream(backendRes, res) {
   }
 
   res.writeHead(200, {
-    'Content-Type': 'text/plain; charset=utf-8',
+    'Content-Type': 'text/event-stream; charset=utf-8',
     'Transfer-Encoding': 'chunked',
     'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
     'Access-Control-Allow-Credentials': 'true',
@@ -157,7 +157,7 @@ async function processGenerateStream(backendRes, res) {
   }
 
   res.writeHead(200, {
-    'Content-Type': 'text/plain; charset=utf-8',
+    'Content-Type': 'text/event-stream; charset=utf-8',
     'Transfer-Encoding': 'chunked',
     'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
     'Access-Control-Allow-Credentials': 'true',
