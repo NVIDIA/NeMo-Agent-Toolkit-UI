@@ -18,9 +18,12 @@ const customJestConfig = {
     '^@/constants/(.*)$': '<rootDir>/constants/$1',
     '^react-markdown$': '<rootDir>/__mocks__/react-markdown.js',
     '^next-i18next$': '<rootDir>/__mocks__/next-i18next.js',
+    '^rehype-raw$': '<rootDir>/__mocks__/rehype-raw.js',
+    '^remark-gfm$': '<rootDir>/__mocks__/remark-gfm.js',
+    '^remark-math$': '<rootDir>/__mocks__/remark-math.js',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-markdown|remark-.*|rehype-.*|unified|vfile.*|micromark.*|mdast-.*|hast-.*|next-i18next|react-i18next)/)'
+    'node_modules/(?!(react-markdown|remark-.*|rehype-.*|unified|vfile.*|micromark.*|mdast-.*|hast-.*|unist-.*|bail|is-plain-obj|trough|property-information|space-separated-tokens|comma-separated-tokens|web-namespaces|next-i18next|react-i18next)/)'
   ],
   testMatch: [
     '**/__tests__/**/*.(ts|tsx|js)',
