@@ -1141,7 +1141,7 @@ export const Chat = () => {
                     role: 'assistant',
                     content: text, // main response content without intermediate steps
                     intermediateSteps: [...processedIntermediateSteps], // intermediate steps
-                    observabilityTraceId: extractedObservabilityTraceId || observabilityTraceId, // Weave Call ID from stream or headers
+                    observabilityTraceId: extractedObservabilityTraceId || observabilityTraceId, // Trace ID from stream or headers
                   },
                 ];
 
@@ -1181,7 +1181,7 @@ export const Chat = () => {
                         ...message,
                         content: text, // main response content
                         intermediateSteps: updatedIntermediateSteps, // intermediate steps
-                        observabilityTraceId: extractedObservabilityTraceId || observabilityTraceId, // Weave Call ID from stream or headers
+                        observabilityTraceId: extractedObservabilityTraceId || observabilityTraceId, // Trace ID from stream or headers
                       };
                       return msg;
                     }

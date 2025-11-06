@@ -546,7 +546,7 @@ data: {"value": "another valid"}
     });
 
     /**
-     * Description: Verifies that incomplete weave call ID tags are handled without breaking processing
+     * Description: Verifies that incomplete trace ID tags are handled without breaking processing
      * Success: Incomplete tags are buffered appropriately, processing continues when complete
      */
     test('handles incomplete observabilitytraceid tags across chunks', () => {
@@ -593,8 +593,8 @@ data: {"value": "another valid"}
     });
 
     /**
-     * Description: Verifies that only the first weave call ID is extracted when multiple are present
-     * Success: Only the first weave call ID is captured, subsequent ones are ignored
+     * Description: Verifies that only the first trace ID is extracted when multiple are present
+     * Success: Only the first trace ID is captured, subsequent ones are ignored
      */
     test('extracts only first observabilitytraceid when multiple present', () => {
       const chunksWithMultiple = [
@@ -623,7 +623,7 @@ data: {"value": "another valid"}
     });
 
     /**
-     * Description: Verifies that malformed weave call ID tags are ignored gracefully
+     * Description: Verifies that malformed trace ID tags are ignored gracefully
      * Success: Malformed tags don't break processing, valid tags are still extracted
      */
     test('ignores malformed observabilitytraceid tags', () => {
@@ -686,7 +686,7 @@ data: {"value": "another valid"}
 
     /**
      * Description: Verifies that observabilitytraceid tags interleaved with intermediate steps maintain order
-     * Success: Both weave call IDs and intermediate steps are processed in correct order
+     * Success: Both trace IDs and intermediate steps are processed in correct order
      */
     test('handles observabilitytraceid tags interleaved with intermediate steps', () => {
       const interleavedChunks = [
@@ -738,7 +738,7 @@ data: {"value": "another valid"}
 
     /**
      * Description: Verifies that observabilitytraceid tags with special characters are handled correctly
-     * Success: Special characters in weave call IDs are preserved without corruption
+     * Success: Special characters in trace IDs are preserved without corruption
      */
     test('handles observabilitytraceid with special characters', () => {
       const specialChars = [
