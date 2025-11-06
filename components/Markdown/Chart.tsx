@@ -55,6 +55,7 @@ const Chart = (props: any) => {
   const {
     Label = '',
     ChartType = '',
+    ChartHeight = 300,
     Data = [],
     XAxisKey = '',
     YAxisKey = '',
@@ -106,7 +107,7 @@ const Chart = (props: any) => {
     switch (ChartType) {
       case 'BarChart':
         return (
-          <ResponsiveContainer width="100%" height={300} className={'p-2'}>
+          <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
             <BarChart id={`chart-BarChart-${Label}`} data={Data}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey={XAxisKey} />
@@ -120,7 +121,7 @@ const Chart = (props: any) => {
 
       case 'LineChart':
         return (
-          <ResponsiveContainer width="100%" height={300} className={'p-2'}>
+          <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
             <LineChart id={`chart-LineChart-${Label}`} data={Data}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey={XAxisKey} />
@@ -134,7 +135,7 @@ const Chart = (props: any) => {
 
       case 'PieChart':
         return (
-          <ResponsiveContainer width="100%" height={300} className={'p-2'}>
+          <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
             <PieChart id={`chart-PieChart-${Label}`}>
               <Tooltip />
               <Legend />
@@ -155,7 +156,7 @@ const Chart = (props: any) => {
 
       case 'AreaChart':
         return (
-          <ResponsiveContainer width="100%" height={300} className={'p-2'}>
+          <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
             <AreaChart id={`chart-AreaChart-${Label}`} data={Data}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey={XAxisKey} />
@@ -174,7 +175,7 @@ const Chart = (props: any) => {
 
       case 'RadarChart':
         return (
-          <ResponsiveContainer width="100%" height={300} className={'p-2'}>
+          <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
             <RadarChart id={`chart-RadarChart-${Label}`} data={Data}>
               <PolarGrid />
               <PolarAngleAxis dataKey={PolarAngleKey} />
@@ -193,7 +194,7 @@ const Chart = (props: any) => {
 
       case 'ScatterChart':
         return (
-          <ResponsiveContainer width="100%" height={300} className={'p-2'}>
+          <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
             <ScatterChart id={`chart-ScatterChart-${Label}`}>
               <CartesianGrid />
               <XAxis type="number" dataKey={XAxisKey} name={XAxisKey} />
@@ -207,7 +208,7 @@ const Chart = (props: any) => {
 
       case 'ComposedChart':
         return (
-          <ResponsiveContainer width="100%" height={300} className={'p-2'}>
+          <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
             <ComposedChart id={`chart-ComposedChart-${Label}`} data={Data}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey={XAxisKey} />
