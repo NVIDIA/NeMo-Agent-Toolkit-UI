@@ -54,6 +54,8 @@ const Chart = (props: any) => {
   const data = props?.payload;
   const {
     Label = '',
+    SeriesLabel = '',
+    SeriesLabelMap = {},
     ChartType = '',
     ChartHeight = 300,
     Data = [],
@@ -114,7 +116,7 @@ const Chart = (props: any) => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey={YAxisKey} fill={colors.fill} />
+              <Bar dataKey={YAxisKey} name={SeriesLabel} fill={colors.fill} />
             </BarChart>
           </ResponsiveContainer>
         );
@@ -128,7 +130,7 @@ const Chart = (props: any) => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey={YAxisKey} stroke={colors.fill} />
+              <Line type="monotone" dataKey={YAxisKey} name={SeriesLabel} stroke={colors.fill}  />
             </LineChart>
           </ResponsiveContainer>
         );
@@ -166,6 +168,7 @@ const Chart = (props: any) => {
               <Area
                 type="monotone"
                 dataKey={YAxisKey}
+                name={SeriesLabel}
                 stroke={colors.stroke}
                 fill={colors.fill}
               />
@@ -181,7 +184,7 @@ const Chart = (props: any) => {
               <PolarAngleAxis dataKey={PolarAngleKey} />
               <PolarRadiusAxis />
               <Radar
-                name="Metrics"
+                name={SeriesLabel}
                 dataKey={PolarValueKey}
                 stroke={colors.stroke}
                 fill={colors.fill}
@@ -201,7 +204,7 @@ const Chart = (props: any) => {
               <YAxis type="number" dataKey={YAxisKey} name={YAxisKey} />
               <Tooltip cursor={{ strokeDasharray: '3 3' }} />
               <Legend />
-              <Scatter name="Sales vs Profit" data={Data} fill={colors.fill} />
+              <Scatter data={Data} name={SeriesLabel} fill={colors.fill} />
             </ScatterChart>
           </ResponsiveContainer>
         );
@@ -215,8 +218,8 @@ const Chart = (props: any) => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey={BarKey} fill={colors.fill} />
-              <Line type="monotone" dataKey={LineKey} stroke={colors.stroke} />
+              <Bar dataKey={BarKey} name={SeriesLabelMap.bar} fill={colors.fill} />
+              <Line type="monotone" dataKey={LineKey} name={SeriesLabelMap.line} stroke={colors.stroke} />
             </ComposedChart>
           </ResponsiveContainer>
         );
