@@ -112,7 +112,7 @@ const Chart = (props: any) => {
           <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
             <BarChart id={`chart-BarChart-${Label}`} data={Data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={XAxisKey} />
+              <XAxis dataKey={XAxisKey} angle={25} textAnchor="start" height={100} />
               <YAxis />
               <Tooltip />
               <Legend />
@@ -126,7 +126,7 @@ const Chart = (props: any) => {
           <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
             <LineChart id={`chart-LineChart-${Label}`} data={Data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={XAxisKey} />
+              <XAxis dataKey={XAxisKey} angle={25} textAnchor="start" height={100} />
               <YAxis />
               <Tooltip />
               <Legend />
@@ -161,7 +161,7 @@ const Chart = (props: any) => {
           <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
             <AreaChart id={`chart-AreaChart-${Label}`} data={Data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={XAxisKey} />
+              <XAxis dataKey={XAxisKey} angle={25} textAnchor="start" height={100} />
               <YAxis />
               <Tooltip />
               <Legend />
@@ -200,7 +200,7 @@ const Chart = (props: any) => {
           <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
             <ScatterChart id={`chart-ScatterChart-${Label}`}>
               <CartesianGrid />
-              <XAxis type="number" dataKey={XAxisKey} name={XAxisKey} />
+              <XAxis type="number" dataKey={XAxisKey} name={XAxisKey} angle={45} textAnchor="start" height={100} />
               <YAxis type="number" dataKey={YAxisKey} name={YAxisKey} />
               <Tooltip cursor={{ strokeDasharray: '3 3' }} />
               <Legend />
@@ -214,7 +214,7 @@ const Chart = (props: any) => {
           <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
             <ComposedChart id={`chart-ComposedChart-${Label}`} data={Data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={XAxisKey} />
+              <XAxis dataKey={XAxisKey} angle={25} textAnchor="start" height={100} />
               <YAxis />
               <Tooltip />
               <Legend />
