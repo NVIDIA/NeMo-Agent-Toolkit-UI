@@ -59,6 +59,7 @@ const Chart = (props: any) => {
     ChartType = '',
     ChartHeight = 300,
     Data = [],
+    LegendProps = {},
     XAxisKey = '',
     YAxisKey = '',
     ValueKey = '',
@@ -134,7 +135,7 @@ const Chart = (props: any) => {
               <XAxis {...defaultXAxisProps} />
               <YAxis />
               <Tooltip />
-              <Legend />
+              <Legend {...LegendProps} />
               <Bar dataKey={YAxisKey} name={SeriesLabel} fill={colors.fill} />
             </BarChart>
           </ResponsiveContainer>
@@ -148,7 +149,7 @@ const Chart = (props: any) => {
               <XAxis {...defaultXAxisProps} />
               <YAxis />
               <Tooltip />
-              <Legend />
+              <Legend {...LegendProps} />
               <Line type="monotone" dataKey={YAxisKey} name={SeriesLabel} stroke={colors.fill}  />
             </LineChart>
           </ResponsiveContainer>
@@ -159,7 +160,7 @@ const Chart = (props: any) => {
           <ResponsiveContainer {...defaultContainerProps}>
             <PieChart id={`chart-PieChart-${Label}`}>
               <Tooltip />
-              <Legend />
+              <Legend {...LegendProps} />
               <Pie
                 data={Data}
                 dataKey={ValueKey}
@@ -183,7 +184,7 @@ const Chart = (props: any) => {
               <XAxis {...defaultXAxisProps} />
               <YAxis />
               <Tooltip />
-              <Legend />
+              <Legend {...LegendProps} />
               <Area
                 type="monotone"
                 dataKey={YAxisKey}
@@ -209,7 +210,7 @@ const Chart = (props: any) => {
                 fill={colors.fill}
                 fillOpacity={0.6}
               />
-              <Legend />
+              <Legend {...LegendProps} />
             </RadarChart>
           </ResponsiveContainer>
         );
@@ -222,7 +223,7 @@ const Chart = (props: any) => {
               <XAxis type="number" {...defaultXAxisProps} />
               <YAxis type="number" dataKey={YAxisKey} name={YAxisKey} />
               <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-              <Legend />
+              <Legend {...LegendProps} />
               <Scatter data={Data} name={SeriesLabel} fill={colors.fill} />
             </ScatterChart>
           </ResponsiveContainer>
@@ -236,7 +237,7 @@ const Chart = (props: any) => {
               <XAxis {...defaultXAxisProps} />
               <YAxis />
               <Tooltip />
-              <Legend />
+              <Legend {...LegendProps} />
               <Bar dataKey={BarKey} name={SeriesLabelMap.bar} fill={colors.fill} />
               <Line dataKey={LineKey} name={SeriesLabelMap.line} stroke={colors.stroke} type="monotone" />
             </ComposedChart>
