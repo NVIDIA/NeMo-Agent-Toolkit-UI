@@ -81,6 +81,25 @@ const Chart = (props: any) => {
     stroke: 'black',
   };
 
+  const defaultContainerProps = {
+    width: '100%',
+    height: ChartHeight,
+    className: 'p-2',
+  };
+
+  const defaultXAxisProps = {
+    dataKey: XAxisKey,
+    angle: 25,
+    textAnchor: 'start',
+    height: 100,
+    tickFormatter: (label: string) => {
+        // truncate long xAxis labels with ellipsis
+      const maxLength = 20;
+      return label.length > maxLength ? `${label.substring(0, maxLength)}...` : label;
+    },
+  };
+
+
   const handleDownload = async () => {
     try {
       const chartElement = document.getElementById(`chart-${Label}`);
@@ -105,20 +124,14 @@ const Chart = (props: any) => {
     }
   };
 
-  // Utility function to truncate xAxis labels with ellipsis
-  const truncateLabel = (label: string) => {
-    const maxLength = 20;
-    return label.length > maxLength ? `${label.substring(0, maxLength)}...` : label;
-  };
-
   const renderChart = () => {
     switch (ChartType) {
       case 'BarChart':
         return (
-          <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
+          <ResponsiveContainer {...defaultContainerProps}>
             <BarChart id={`chart-BarChart-${Label}`} data={Data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={XAxisKey} angle={25} textAnchor="start" height={100} tickFormatter={truncateLabel} />
+              <XAxis {...defaultXAxisProps} />
               <YAxis />
               <Tooltip />
               <Legend />
@@ -129,10 +142,10 @@ const Chart = (props: any) => {
 
       case 'LineChart':
         return (
-          <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
+          <ResponsiveContainer {...defaultContainerProps}>
             <LineChart id={`chart-LineChart-${Label}`} data={Data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={XAxisKey} angle={25} textAnchor="start" height={100} tickFormatter={truncateLabel} />
+              <XAxis {...defaultXAxisProps} />
               <YAxis />
               <Tooltip />
               <Legend />
@@ -143,7 +156,7 @@ const Chart = (props: any) => {
 
       case 'PieChart':
         return (
-          <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
+          <ResponsiveContainer {...defaultContainerProps}>
             <PieChart id={`chart-PieChart-${Label}`}>
               <Tooltip />
               <Legend />
@@ -164,10 +177,10 @@ const Chart = (props: any) => {
 
       case 'AreaChart':
         return (
-          <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
+          <ResponsiveContainer {...defaultContainerProps}>
             <AreaChart id={`chart-AreaChart-${Label}`} data={Data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={XAxisKey} angle={25} textAnchor="start" height={100} tickFormatter={truncateLabel} />
+              <XAxis {...defaultXAxisProps} />
               <YAxis />
               <Tooltip />
               <Legend />
@@ -184,7 +197,7 @@ const Chart = (props: any) => {
 
       case 'RadarChart':
         return (
-          <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
+          <ResponsiveContainer {...defaultContainerProps}>
             <RadarChart id={`chart-RadarChart-${Label}`} data={Data}>
               <PolarGrid />
               <PolarAngleAxis dataKey={PolarAngleKey} />
@@ -203,10 +216,10 @@ const Chart = (props: any) => {
 
       case 'ScatterChart':
         return (
-          <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
+          <ResponsiveContainer {...defaultContainerProps}>
             <ScatterChart id={`chart-ScatterChart-${Label}`}>
               <CartesianGrid />
-              <XAxis type="number" dataKey={XAxisKey} name={XAxisKey} angle={45} textAnchor="start" height={100} tickFormatter={truncateLabel} />
+              <XAxis type="number" {...defaultXAxisProps} />
               <YAxis type="number" dataKey={YAxisKey} name={YAxisKey} />
               <Tooltip cursor={{ strokeDasharray: '3 3' }} />
               <Legend />
@@ -217,15 +230,15 @@ const Chart = (props: any) => {
 
       case 'ComposedChart':
         return (
-          <ResponsiveContainer width="100%" height={ChartHeight} className={'p-2'}>
+          <ResponsiveContainer {...defaultContainerProps}>
             <ComposedChart id={`chart-ComposedChart-${Label}`} data={Data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={XAxisKey} angle={25} textAnchor="start" height={100} tickFormatter={truncateLabel} />
+              <XAxis {...defaultXAxisProps} />
               <YAxis />
               <Tooltip />
               <Legend />
               <Bar dataKey={BarKey} name={SeriesLabelMap.bar} fill={colors.fill} />
-              <Line type="monotone" dataKey={LineKey} name={SeriesLabelMap.line} stroke={colors.stroke} />
+              <Line dataKey={LineKey} name={SeriesLabelMap.line} stroke={colors.stroke} type="monotone" />
             </ComposedChart>
           </ResponsiveContainer>
         );
@@ -277,7 +290,7 @@ const Chart = (props: any) => {
         onClick={handleDownload}
       />
       <div className="pt-4" id={`chart-${Label}`}>
-        <div className="pl-4">{Label}</div>
+        <div className="pl-4 font-bold">{Label}</div>
         {renderChart()}
       </div>
     </div>
