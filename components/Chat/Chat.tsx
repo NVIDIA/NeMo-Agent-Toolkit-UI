@@ -536,7 +536,7 @@ export const Chat = () => {
       );
 
       return messages.map((m, idx) =>
-        idx === lastIdx ? updateAssistantMessage(m, m.content, mergedSteps) : m
+        idx === lastIdx ? updateAssistantMessage(m, m.content, mergedSteps, message.weave_call_id) : m
       );
     }
   };
@@ -561,6 +561,7 @@ export const Chat = () => {
               ...m,
               errorMessages: [...(m.errorMessages || []), message],
               timestamp: Date.now(),
+              ...(message.weave_call_id && { weaveCallId: message.weave_call_id }),
             }
           : m
       );

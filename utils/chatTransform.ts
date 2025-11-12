@@ -138,12 +138,14 @@ export function createAssistantMessage(
 export function updateAssistantMessage(
   message: Message,
   newContent?: string,
-  newIntermediateSteps?: IntermediateStep[]
+  newIntermediateSteps?: IntermediateStep[],
+  weaveCallId?: string,
 ): Message {
   return {
     ...message,
     content: newContent !== undefined ? newContent : message.content || '',
     intermediateSteps: newIntermediateSteps || message.intermediateSteps || [],
+    weaveCallId: weaveCallId || message.weaveCallId,
     timestamp: Date.now()
   };
 }
