@@ -122,6 +122,16 @@ async function processChat(backendRes, res) {
   }
 
   const data = await backendRes.text();
+  
+  // Construct response headers
+  const weaveCallId = backendRes.headers.get('weave-call-id');
+  const responseHeaders = {
+    'Content-Type': 'text/plain; charset=utf-8',
+    'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
+    'Access-Control-Allow-Credentials': 'true',
+    ...(weaveCallId ? { 'Weave-Call-Id': weaveCallId } : {}),
+  };
+  
   try {
     const parsed = JSON.parse(data);
     const content =
@@ -130,18 +140,10 @@ async function processChat(backendRes, res) {
       parsed?.answer ||
       parsed?.value;
 
-    res.writeHead(200, {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
-      'Access-Control-Allow-Credentials': 'true',
-    });
+    res.writeHead(200, responseHeaders);
     res.end(typeof content === 'string' ? content : JSON.stringify(content));
   } catch (e) {
-    res.writeHead(200, {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
-      'Access-Control-Allow-Credentials': 'true',
-    });
+    res.writeHead(200, responseHeaders);
     res.end(data);
   }
 }
@@ -219,11 +221,16 @@ async function processGenerate(backendRes, res) {
 
   const data = await backendRes.text();
 
-  res.writeHead(200, {
+  // Construct response headers
+  const weaveCallId = backendRes.headers.get('weave-call-id');
+  const responseHeaders = {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
     'Access-Control-Allow-Credentials': 'true',
-  });
+    ...(weaveCallId ? { 'Weave-Call-Id': weaveCallId } : {}),
+  };
+
+  res.writeHead(200, responseHeaders);
   res.end(data);
 }
 
