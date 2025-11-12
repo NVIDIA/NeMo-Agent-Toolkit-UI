@@ -1239,4 +1239,237 @@ describe('WebSocket Functionality', () => {
       fail('Expected early return when conversation is undefined');
     });
   });
+
+  describe('Weave Call ID Handling', () => {
+    it('should extract weave_call_id from system_response_message', () => {
+      const wsMessage = {
+        type: 'system_response_message',
+        conversation_id: 'conv-123',
+        weave_call_id: 'weave-abc-123',
+        content: { text: 'AI response' },
+        status: 'in_progress'
+      };
+
+      // Simulate message processing logic
+      const processMessage = (message: any) => {
+        return {
+          role: 'assistant',
+          content: message.content.text,
+          weaveCallId: message.weave_call_id,
+          timestamp: Date.now()
+        };
+      };
+
+      const processedMessage = processMessage(wsMessage);
+
+      expect(processedMessage.weaveCallId).toBe('weave-abc-123');
+      expect(processedMessage.content).toBe('AI response');
+    });
+
+    it('should handle messages without weave_call_id gracefully', () => {
+      const wsMessage = {
+        type: 'system_response_message',
+        conversation_id: 'conv-123',
+        content: { text: 'AI response' },
+        status: 'in_progress'
+      };
+
+      const processMessage = (message: any) => {
+        return {
+          role: 'assistant',
+          content: message.content.text,
+          ...(message.weave_call_id && { weaveCallId: message.weave_call_id }),
+          timestamp: Date.now()
+        };
+      };
+
+      const processedMessage = processMessage(wsMessage);
+
+      expect(processedMessage.weaveCallId).toBeUndefined();
+      expect(processedMessage.content).toBe('AI response');
+    });
+
+    it('should preserve weave_call_id when updating existing message', () => {
+      const existingMessage = {
+        role: 'assistant',
+        content: 'Partial response',
+        weaveCallId: 'weave-existing-456',
+        timestamp: 1000
+      };
+
+      const wsUpdate = {
+        type: 'system_response_message',
+        conversation_id: 'conv-123',
+        weave_call_id: 'weave-existing-456',
+        content: { text: ' continued' },
+        status: 'in_progress'
+      };
+
+      // Simulate appending to existing message
+      const updateMessage = (existing: any, update: any) => {
+        return {
+          ...existing,
+          content: existing.content + update.content.text,
+          ...(update.weave_call_id && { weaveCallId: update.weave_call_id }),
+          timestamp: Date.now()
+        };
+      };
+
+      const updatedMessage = updateMessage(existingMessage, wsUpdate);
+
+      expect(updatedMessage.weaveCallId).toBe('weave-existing-456');
+      expect(updatedMessage.content).toBe('Partial response continued');
+    });
+
+    it('should store weave_call_id in error messages', () => {
+      const errorMessage = {
+        type: 'error',
+        conversation_id: 'conv-123',
+        weave_call_id: 'weave-error-789',
+        content: { text: 'Error occurred' },
+        status: 'error'
+      };
+
+      const processErrorMessage = (message: any) => {
+        return {
+          role: 'system',
+          content: message.content.text,
+          ...(message.weave_call_id && { weaveCallId: message.weave_call_id }),
+          errorMessages: [message],
+          timestamp: Date.now()
+        };
+      };
+
+      const processedError = processErrorMessage(errorMessage);
+
+      expect(processedError.weaveCallId).toBe('weave-error-789');
+      expect(processedError.errorMessages).toHaveLength(1);
+    });
+
+    it('should handle weave_call_id in complete status messages', () => {
+      const completeMessage = {
+        type: 'system_response_message',
+        conversation_id: 'conv-123',
+        weave_call_id: 'weave-complete-999',
+        content: { text: 'Final response' },
+        status: 'complete'
+      };
+
+      const processCompleteMessage = (message: any) => {
+        return {
+          role: 'assistant',
+          content: message.content.text,
+          weaveCallId: message.weave_call_id,
+          status: message.status,
+          timestamp: Date.now()
+        };
+      };
+
+      const processed = processCompleteMessage(completeMessage);
+
+      expect(processed.weaveCallId).toBe('weave-complete-999');
+      expect(processed.status).toBe('complete');
+      expect(processed.content).toBe('Final response');
+    });
+
+    it('should validate weave_call_id field is optional in message validation', () => {
+      const validateMessage = (message: any) => {
+        if (!message.conversation_id) {
+          throw new Error('conversation_id is required');
+        }
+        if (!message.type) {
+          throw new Error('type is required');
+        }
+        // weave_call_id is optional
+        return true;
+      };
+
+      const messageWithWeaveId = {
+        type: 'system_response_message',
+        conversation_id: 'conv-123',
+        weave_call_id: 'weave-123',
+        content: { text: 'Test' }
+      };
+
+      const messageWithoutWeaveId = {
+        type: 'system_response_message',
+        conversation_id: 'conv-123',
+        content: { text: 'Test' }
+      };
+
+      expect(() => validateMessage(messageWithWeaveId)).not.toThrow();
+      expect(() => validateMessage(messageWithoutWeaveId)).not.toThrow();
+    });
+
+    it('should handle weave_call_id with various formats', () => {
+      const testCases = [
+        { id: 'weave-abc-123', description: 'standard format' },
+        { id: 'weave_underscore_456', description: 'with underscores' },
+        { id: 'weave:colon:789', description: 'with colons' },
+        { id: 'weave.dot.012', description: 'with dots' },
+        { id: '12345678-1234-1234-1234-123456789abc', description: 'UUID format' }
+      ];
+
+      testCases.forEach(({ id, description }) => {
+        const wsMessage = {
+          type: 'system_response_message',
+          conversation_id: 'conv-123',
+          weave_call_id: id,
+          content: { text: `Response with ${description}` },
+          status: 'in_progress'
+        };
+
+        const processMessage = (message: any) => {
+          return {
+            role: 'assistant',
+            content: message.content.text,
+            weaveCallId: message.weave_call_id
+          };
+        };
+
+        const processed = processMessage(wsMessage);
+        expect(processed.weaveCallId).toBe(id);
+      });
+    });
+
+    it('should not overwrite weave_call_id when processing multiple chunks', () => {
+      let storedWeaveCallId: string | undefined = undefined;
+
+      const messages = [
+        {
+          type: 'system_response_message',
+          conversation_id: 'conv-123',
+          weave_call_id: 'weave-initial-111',
+          content: { text: 'First chunk' },
+          status: 'in_progress'
+        },
+        {
+          type: 'system_response_message',
+          conversation_id: 'conv-123',
+          // No weave_call_id in subsequent chunks
+          content: { text: ' second chunk' },
+          status: 'in_progress'
+        },
+        {
+          type: 'system_response_message',
+          conversation_id: 'conv-123',
+          content: { text: ' third chunk' },
+          status: 'complete'
+        }
+      ];
+
+      let responseText = '';
+
+      messages.forEach(message => {
+        // Store weave_call_id from first message that has it
+        if (message.weave_call_id && !storedWeaveCallId) {
+          storedWeaveCallId = message.weave_call_id;
+        }
+        responseText += message.content.text;
+      });
+
+      expect(storedWeaveCallId).toBe('weave-initial-111');
+      expect(responseText).toBe('First chunk second chunk third chunk');
+    });
+  });
 });

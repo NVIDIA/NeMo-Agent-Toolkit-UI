@@ -261,6 +261,66 @@ describe('chatTransform', () => {
 
       expect(result.content).toBe('');
     });
+
+    it('preserves existing weaveCallId when not provided', () => {
+      const messageWithWeaveId = { ...baseMessage, weaveCallId: 'weave-123' };
+      const result = updateAssistantMessage(messageWithWeaveId, 'New content');
+
+      expect(result.weaveCallId).toBe('weave-123');
+      expect(result.content).toBe('New content');
+    });
+
+    it('updates weaveCallId when provided', () => {
+      const messageWithWeaveId = { ...baseMessage, weaveCallId: 'weave-123' };
+      const result = updateAssistantMessage(
+        messageWithWeaveId,
+        'New content',
+        undefined,
+        'weave-456'
+      );
+
+      expect(result.weaveCallId).toBe('weave-456');
+      expect(result.content).toBe('New content');
+    });
+
+    it('sets weaveCallId when message does not have one', () => {
+      const result = updateAssistantMessage(
+        baseMessage,
+        'New content',
+        undefined,
+        'weave-789'
+      );
+
+      expect(result.weaveCallId).toBe('weave-789');
+      expect(result.content).toBe('New content');
+    });
+
+    it('preserves weaveCallId with undefined parameter', () => {
+      const messageWithWeaveId = { ...baseMessage, weaveCallId: 'weave-123' };
+      const result = updateAssistantMessage(
+        messageWithWeaveId,
+        'New content',
+        undefined,
+        undefined
+      );
+
+      expect(result.weaveCallId).toBe('weave-123');
+    });
+
+    it('updates all fields including weaveCallId together', () => {
+      const newSteps: IntermediateStep[] = [{ id: 'step-1' }];
+      const result = updateAssistantMessage(
+        baseMessage,
+        'Updated content',
+        newSteps,
+        'weave-new'
+      );
+
+      expect(result.content).toBe('Updated content');
+      expect(result.intermediateSteps).toBe(newSteps);
+      expect(result.weaveCallId).toBe('weave-new');
+      expect(result.timestamp).toBeGreaterThan(baseMessage.timestamp!);
+    });
   });
 
   describe('shouldRenderAssistantMessage', () => {

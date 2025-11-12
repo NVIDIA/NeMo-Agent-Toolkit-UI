@@ -476,6 +476,9 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const mockBackendRes = {
           ok: true,
           text: jest.fn().mockResolvedValue('{"value":"Test response"}'),
+          headers: {
+            get: jest.fn().mockReturnValue(null),
+          },
         };
         
         const mockRes = {
@@ -516,6 +519,9 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const mockBackendRes = {
           ok: true,
           text: jest.fn().mockResolvedValue('{"choices":[{"message":{"content":"Chat response"}}]}'),
+          headers: {
+            get: jest.fn().mockReturnValue(null),
+          },
         };
         
         const mockRes = {

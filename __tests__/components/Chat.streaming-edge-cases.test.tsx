@@ -501,4 +501,273 @@ data: {"value": "another valid"}
       expect(orderedItems[4].type).toBe('response');
     });
   });
+
+  describe('Weave Call ID Tag Processing', () => {
+    /**
+     * Description: Verifies that complete weave call ID tags are extracted correctly from streaming responses
+     * Success: Weave call ID is extracted and tags are removed from response content
+     */
+    test('extracts complete weavecallid tags from stream', () => {
+      const chunksWithWeaveId = [
+        'data: {"value": "Response text"}\n\n',
+        '<weavecallid>weave-abc-123</weavecallid>',
+        'data: [DONE]\n\n'
+      ];
+
+      const responses: string[] = [];
+      let extractedWeaveCallId: string | undefined = undefined;
+
+      chunksWithWeaveId.forEach(chunk => {
+        // Extract responses from SSE data
+        if (chunk.includes('data: ')) {
+          const { frames } = extractSsePayloads(chunk);
+          responses.push(...frames);
+        }
+
+        // Extract weave call ID tags
+        const weaveCallIdMatches = chunk.match(/<weavecallid>([\s\S]*?)<\/weavecallid>/g) || [];
+        for (const match of weaveCallIdMatches) {
+          try {
+            const idString = match
+              .replace('<weavecallid>', '')
+              .replace('</weavecallid>', '')
+              .trim();
+            if (idString && !extractedWeaveCallId) {
+              extractedWeaveCallId = idString;
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        }
+      });
+
+      expect(responses).toContain('{"value": "Response text"}');
+      expect(extractedWeaveCallId).toBe('weave-abc-123');
+    });
+
+    /**
+     * Description: Verifies that incomplete weave call ID tags are handled without breaking processing
+     * Success: Incomplete tags are buffered appropriately, processing continues when complete
+     */
+    test('handles incomplete weavecallid tags across chunks', () => {
+      const incompleteChunks = [
+        'data: {"value": "start"}\n\n',
+        '<weavecallid>weave-def-',  // Incomplete
+        '456</weavecallid>',  // Completion
+        'data: {"value": "end"}\n\n'
+      ];
+
+      let buffer = '';
+      let extractedWeaveCallId: string | undefined = undefined;
+      const responses: string[] = [];
+
+      incompleteChunks.forEach(chunk => {
+        // Handle SSE data
+        if (chunk.includes('data: ')) {
+          const { frames } = extractSsePayloads(chunk);
+          responses.push(...frames);
+        }
+
+        // Buffer potential partial weave call ID tags
+        if (chunk.includes('<weavecallid>') || buffer.includes('<weavecallid>')) {
+          buffer += chunk;
+
+          // Check for complete tags
+          const weaveCallIdMatches = buffer.match(/<weavecallid>([\s\S]*?)<\/weavecallid>/g) || [];
+          weaveCallIdMatches.forEach(match => {
+            const idString = match
+              .replace('<weavecallid>', '')
+              .replace('</weavecallid>', '')
+              .trim();
+            if (idString && !extractedWeaveCallId) {
+              extractedWeaveCallId = idString;
+            }
+            // Remove processed tag from buffer
+            buffer = buffer.replace(match, '');
+          });
+        }
+      });
+
+      expect(responses).toHaveLength(2);
+      expect(extractedWeaveCallId).toBe('weave-def-456');
+    });
+
+    /**
+     * Description: Verifies that only the first weave call ID is extracted when multiple are present
+     * Success: Only the first weave call ID is captured, subsequent ones are ignored
+     */
+    test('extracts only first weavecallid when multiple present', () => {
+      const chunksWithMultiple = [
+        'data: {"value": "Response"}\n\n',
+        '<weavecallid>weave-first-123</weavecallid>',
+        '<weavecallid>weave-second-456</weavecallid>',
+        'data: [DONE]\n\n'
+      ];
+
+      let extractedWeaveCallId: string | undefined = undefined;
+
+      chunksWithMultiple.forEach(chunk => {
+        const weaveCallIdMatches = chunk.match(/<weavecallid>([\s\S]*?)<\/weavecallid>/g) || [];
+        for (const match of weaveCallIdMatches) {
+          const idString = match
+            .replace('<weavecallid>', '')
+            .replace('</weavecallid>', '')
+            .trim();
+          if (idString && !extractedWeaveCallId) {
+            extractedWeaveCallId = idString;
+          }
+        }
+      });
+
+      expect(extractedWeaveCallId).toBe('weave-first-123');
+    });
+
+    /**
+     * Description: Verifies that malformed weave call ID tags are ignored gracefully
+     * Success: Malformed tags don't break processing, valid tags are still extracted
+     */
+    test('ignores malformed weavecallid tags', () => {
+      const chunksWithMalformed = [
+        'data: {"value": "Response"}\n\n',
+        '<weavecallid></weavecallid>',  // Empty tag
+        '<weavecallid>   </weavecallid>',  // Whitespace only
+        '<weavecallid>weave-valid-123</weavecallid>',  // Valid
+        'data: [DONE]\n\n'
+      ];
+
+      let extractedWeaveCallId: string | undefined = undefined;
+
+      chunksWithMalformed.forEach(chunk => {
+        const weaveCallIdMatches = chunk.match(/<weavecallid>([\s\S]*?)<\/weavecallid>/g) || [];
+        for (const match of weaveCallIdMatches) {
+          const idString = match
+            .replace('<weavecallid>', '')
+            .replace('</weavecallid>', '')
+            .trim();
+          if (idString && !extractedWeaveCallId) {
+            extractedWeaveCallId = idString;
+          }
+        }
+      });
+
+      expect(extractedWeaveCallId).toBe('weave-valid-123');
+    });
+
+    /**
+     * Description: Verifies that weavecallid tags are removed from chunk content
+     * Success: Tags are stripped from content so they don't appear in the UI
+     */
+    test('removes weavecallid tags from chunk content', () => {
+      let chunkValue = 'Response text <weavecallid>weave-123</weavecallid> more text';
+
+      // Extract weave call ID
+      const weaveCallIdMatches = chunkValue.match(/<weavecallid>([\s\S]*?)<\/weavecallid>/g) || [];
+      let extractedWeaveCallId: string | undefined = undefined;
+
+      for (const match of weaveCallIdMatches) {
+        const idString = match
+          .replace('<weavecallid>', '')
+          .replace('</weavecallid>', '')
+          .trim();
+        if (idString && !extractedWeaveCallId) {
+          extractedWeaveCallId = idString;
+        }
+      }
+
+      // Remove tags from content
+      if (weaveCallIdMatches.length > 0) {
+        chunkValue = chunkValue.replace(/<weavecallid>[\s\S]*?<\/weavecallid>/g, '');
+      }
+
+      expect(extractedWeaveCallId).toBe('weave-123');
+      expect(chunkValue).toBe('Response text  more text');
+      expect(chunkValue).not.toContain('<weavecallid>');
+    });
+
+    /**
+     * Description: Verifies that weavecallid tags interleaved with intermediate steps maintain order
+     * Success: Both weave call IDs and intermediate steps are processed in correct order
+     */
+    test('handles weavecallid tags interleaved with intermediate steps', () => {
+      const interleavedChunks = [
+        'data: {"value": "Start"}\n\n',
+        '<intermediatestep>{"id": "step-1", "type": "system_intermediate"}</intermediatestep>',
+        '<weavecallid>weave-interleaved-789</weavecallid>',
+        '<intermediatestep>{"id": "step-2", "type": "system_intermediate"}</intermediatestep>',
+        'data: {"value": " end"}\n\n'
+      ];
+
+      let extractedWeaveCallId: string | undefined = undefined;
+      const steps: string[] = [];
+      const responses: string[] = [];
+
+      interleavedChunks.forEach(chunk => {
+        // Process responses
+        if (chunk.includes('data: ')) {
+          const { frames } = extractSsePayloads(chunk);
+          responses.push(...frames);
+        }
+
+        // Process intermediate steps
+        const stepMatches = chunk.match(/<intermediatestep>([\s\S]*?)<\/intermediatestep>/g) || [];
+        stepMatches.forEach(match => {
+          const jsonString = match
+            .replace('<intermediatestep>', '')
+            .replace('</intermediatestep>', '')
+            .trim();
+          steps.push(jsonString);
+        });
+
+        // Process weave call ID
+        const weaveCallIdMatches = chunk.match(/<weavecallid>([\s\S]*?)<\/weavecallid>/g) || [];
+        for (const match of weaveCallIdMatches) {
+          const idString = match
+            .replace('<weavecallid>', '')
+            .replace('</weavecallid>', '')
+            .trim();
+          if (idString && !extractedWeaveCallId) {
+            extractedWeaveCallId = idString;
+          }
+        }
+      });
+
+      expect(responses).toHaveLength(2);
+      expect(steps).toHaveLength(2);
+      expect(extractedWeaveCallId).toBe('weave-interleaved-789');
+    });
+
+    /**
+     * Description: Verifies that weavecallid tags with special characters are handled correctly
+     * Success: Special characters in weave call IDs are preserved without corruption
+     */
+    test('handles weavecallid with special characters', () => {
+      const specialChars = [
+        '<weavecallid>weave-with-dashes-123</weavecallid>',
+        '<weavecallid>weave_with_underscores_456</weavecallid>',
+        '<weavecallid>weave:with:colons:789</weavecallid>',
+        '<weavecallid>weave.with.dots.012</weavecallid>'
+      ];
+
+      const extractedIds: string[] = [];
+
+      specialChars.forEach(chunk => {
+        const weaveCallIdMatches = chunk.match(/<weavecallid>([\s\S]*?)<\/weavecallid>/g) || [];
+        weaveCallIdMatches.forEach(match => {
+          const idString = match
+            .replace('<weavecallid>', '')
+            .replace('</weavecallid>', '')
+            .trim();
+          if (idString) {
+            extractedIds.push(idString);
+          }
+        });
+      });
+
+      expect(extractedIds).toHaveLength(4);
+      expect(extractedIds[0]).toBe('weave-with-dashes-123');
+      expect(extractedIds[1]).toBe('weave_with_underscores_456');
+      expect(extractedIds[2]).toBe('weave:with:colons:789');
+      expect(extractedIds[3]).toBe('weave.with.dots.012');
+    });
+  });
 });
