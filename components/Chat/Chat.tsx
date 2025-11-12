@@ -917,6 +917,10 @@ export const Chat = () => {
             toast.error('Error: No data received from server');
             return;
           }
+          
+          // Extract Weave-Call-Id from response headers
+          const weaveCallId = response.headers.get('Weave-Call-Id') || undefined;
+          
           if (!false) {
             if (updatedConversation.messages.length === 1) {
               const { content } = message;
@@ -1080,6 +1084,7 @@ export const Chat = () => {
                     role: 'assistant',
                     content: text, // main response content without intermediate steps
                     intermediateSteps: [...processedIntermediateSteps], // intermediate steps
+                    weaveCallId, // Weave Call ID from response headers
                   },
                 ];
 
@@ -1119,6 +1124,7 @@ export const Chat = () => {
                         ...message,
                         content: text, // main response content
                         intermediateSteps: updatedIntermediateSteps, // intermediate steps
+                        weaveCallId, // Weave Call ID from response headers
                       };
                       return msg;
                     }
@@ -1161,7 +1167,7 @@ export const Chat = () => {
             const { answer } = await response?.json();
             const updatedMessages: Message[] = [
               ...updatedConversation.messages,
-              { role: 'assistant', content: answer },
+              { role: 'assistant', content: answer, weaveCallId },
             ];
             updatedConversation = {
               ...updatedConversation,
