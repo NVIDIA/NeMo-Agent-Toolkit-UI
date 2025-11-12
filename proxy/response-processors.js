@@ -67,6 +67,7 @@ async function processChatStream(backendRes, res) {
   const reader = backendRes.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  let weaveCallIdSent = false;
 
   try {
     while (true) {
@@ -95,6 +96,11 @@ async function processChatStream(backendRes, res) {
               parsed.choices?.[0]?.delta?.content;
             if (content) {
               res.write(content);
+            }
+            // Extract and send weave_call_id once if present
+            if (!weaveCallIdSent && parsed.weave_call_id) {
+              res.write(`<weavecallid>${parsed.weave_call_id}</weavecallid>`);
+              weaveCallIdSent = true;
             }
           } catch (e) {
             // Ignore parse errors

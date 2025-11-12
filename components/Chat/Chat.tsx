@@ -948,6 +948,7 @@ export const Chat = () => {
             const isGenerateStream = selectedEndpoint.includes('/generate/stream');
             let sseBuffer = '';
             let ndjsonBuffer = '';
+            let extractedWeaveCallId: string | undefined = undefined;
 
             while (!done) {
               const { value, done: doneReading } = await reader.read();
@@ -1012,6 +1013,33 @@ export const Chat = () => {
               if (partialIntermediateStep) {
                 chunkValue = partialIntermediateStep + chunkValue;
                 partialIntermediateStep = '';
+              }
+
+              // Process complete weave_call_id tags (following intermediatestep pattern)
+              let weaveCallIdMatches =
+                chunkValue.match(
+                  /<weavecallid>([\s\S]*?)<\/weavecallid>/g
+                ) || [];
+              for (const match of weaveCallIdMatches) {
+                try {
+                  const idString = match
+                    .replace('<weavecallid>', '')
+                    .replace('</weavecallid>', '')
+                    .trim();
+                  if (idString && !extractedWeaveCallId) {
+                    extractedWeaveCallId = idString;
+                  }
+                } catch (error) {
+                  // Ignore parse errors
+                }
+              }
+
+              // if the received chunk contains weaveCallId then remove them from the chunkValue
+              if (weaveCallIdMatches.length > 0) {
+                chunkValue = chunkValue.replace(
+                  /<weavecallid>[\s\S]*?<\/weavecallid>/g,
+                  ''
+                );
               }
 
               // Check for incomplete tags
@@ -1085,7 +1113,7 @@ export const Chat = () => {
                     role: 'assistant',
                     content: text, // main response content without intermediate steps
                     intermediateSteps: [...processedIntermediateSteps], // intermediate steps
-                    weaveCallId, // Weave Call ID from response headers
+                    weaveCallId: extractedWeaveCallId || weaveCallId, // Weave Call ID from stream or headers
                   },
                 ];
 
@@ -1125,7 +1153,7 @@ export const Chat = () => {
                         ...message,
                         content: text, // main response content
                         intermediateSteps: updatedIntermediateSteps, // intermediate steps
-                        weaveCallId, // Weave Call ID from response headers
+                        weaveCallId: extractedWeaveCallId || weaveCallId, // Weave Call ID from stream or headers
                       };
                       return msg;
                     }
