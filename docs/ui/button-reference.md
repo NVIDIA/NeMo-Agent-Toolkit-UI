@@ -28,6 +28,8 @@ This document provides a comprehensive reference for all interactive buttons use
 |--------|------|----------|---------|----------------------|
 | **Copy Message** | `IconCopy` / `IconCheck` | Below assistant messages | Copy message content to clipboard | Not visible while streaming; shows check mark after copy |
 | **Text-to-Speech** | `IconVolume2` / `IconPlayerPause` | Below assistant messages | Play/pause message audio | Not visible while streaming; animates while playing |
+| **Thumbs Up** | `IconThumbUp` | Below assistant messages | Provide positive feedback on response | Only visible when message has Weave Call ID |
+| **Thumbs Down** | `IconThumbDown` | Below assistant messages | Provide negative feedback on response | Only visible when message has Weave Call ID |
 | **Edit Message** | `IconEdit` | User message hover | Enable inline message editing | Only on user messages |
 | **Delete Message** | `IconTrash` | User message hover | Delete message from conversation | Only on user messages |
 

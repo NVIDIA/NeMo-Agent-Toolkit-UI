@@ -18,7 +18,7 @@ The chat interface provides real-time conversational interaction with AI agents 
 | Regenerate Button | Button | Top Center | onRegenerate | Only visible after assistant response |
 | Voice Input | Button | Input Left | handleSpeechToText | Uses browser speech recognition |
 | Scroll Down | Button | Bottom Right | onScrollDownClick | Auto-hides when at bottom |
-| Message Actions | Buttons | Message Hover | Copy, Edit, Delete, Speak | Per-message actions |
+| Message Actions | Buttons | Message Hover | Copy, Edit, Delete, Speak, Feedback | Per-message actions; feedback buttons only for Weave-traced responses |
 
 ## Component Tree
 ```
@@ -59,6 +59,7 @@ The chat interface provides real-time conversational interaction with AI agents 
 - Voice input via browser speech recognition API
 - Text-to-speech playback for accessibility
 - Markdown rendering with syntax highlighting
+- Feedback buttons for Weave-traced assistant responses
 
 ## Source Links
 - [components/Chat/Chat.tsx](../../../components/Chat/Chat.tsx)

@@ -30,6 +30,7 @@ This directory contains all components related to the chat interface functionali
 - Conversation history persists across sessions
 - Copy functionality for sharing message content
 - Text-to-speech playback for accessibility
+- Feedback buttons (👍/👎) for quality tracking on Weave-traced responses
 
 **Human-in-the-Loop:**
 - Interactive modals for user approval workflows
@@ -44,6 +45,7 @@ This directory contains all components related to the chat interface functionali
 - **Human-in-the-Loop Workflows**: Interactive modals with OAuth consent handling via new tabs
 - **Voice Integration**: Speech-to-text input and text-to-speech output
 - **Intermediate Steps**: Visualization of AI reasoning process during generation
+- **Response Quality Tracking**: Feedback buttons for Weave-traced responses
 - **Markdown Rendering**: Full markdown support with syntax highlighting and custom components
 - **Message Management**: Edit, delete, regenerate, copy, and organize conversations
 - **Responsive Design**: Optimized for mobile and desktop with auto-scroll management
