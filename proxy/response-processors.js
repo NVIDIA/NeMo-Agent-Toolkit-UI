@@ -67,7 +67,7 @@ async function processChatStream(backendRes, res) {
   const reader = backendRes.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
-  let weaveCallIdSent = false;
+  let observabilityTraceIdSent = false;
 
   try {
     while (true) {
@@ -97,10 +97,10 @@ async function processChatStream(backendRes, res) {
             if (content) {
               res.write(content);
             }
-            // Extract and send weave_call_id once if present
-            if (!weaveCallIdSent && parsed.weave_call_id) {
-              res.write(`<weavecallid>${parsed.weave_call_id}</weavecallid>`);
-              weaveCallIdSent = true;
+            // Extract and send observability_trace_id once if present
+            if (!observabilityTraceIdSent && parsed.observability_trace_id) {
+              res.write(`<observabilitytraceid>${parsed.observability_trace_id}</observabilitytraceid>`);
+              observabilityTraceIdSent = true;
             }
           } catch (e) {
             // Ignore parse errors
@@ -130,12 +130,12 @@ async function processChat(backendRes, res) {
   const data = await backendRes.text();
   
   // Construct response headers
-  const weaveCallId = backendRes.headers.get('weave-call-id');
+  const observabilityTraceId = backendRes.headers.get('observability-trace-id');
   const responseHeaders = {
     'Content-Type': 'text/plain; charset=utf-8',
     'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
     'Access-Control-Allow-Credentials': 'true',
-    ...(weaveCallId ? { 'Weave-Call-Id': weaveCallId } : {}),
+    ...(observabilityTraceId ? { 'Observability-Trace-Id': observabilityTraceId } : {}),
   };
   
   try {
@@ -228,12 +228,12 @@ async function processGenerate(backendRes, res) {
   const data = await backendRes.text();
 
   // Construct response headers
-  const weaveCallId = backendRes.headers.get('weave-call-id');
+  const observabilityTraceId = backendRes.headers.get('observability-trace-id');
   const responseHeaders = {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
     'Access-Control-Allow-Credentials': 'true',
-    ...(weaveCallId ? { 'Weave-Call-Id': weaveCallId } : {}),
+    ...(observabilityTraceId ? { 'Observability-Trace-Id': observabilityTraceId } : {}),
   };
 
   res.writeHead(200, responseHeaders);

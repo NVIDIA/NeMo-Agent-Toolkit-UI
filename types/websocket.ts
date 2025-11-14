@@ -10,7 +10,7 @@ export interface WebSocketMessageBase {
   parent_id?: string;
   timestamp?: string;
   status?: string;
-  weave_call_id?: string;
+  observability_trace_id?: string;
 }
 
 // System response message types

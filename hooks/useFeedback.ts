@@ -8,7 +8,7 @@ export const useFeedback = () => {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-          weave_call_id: traceId,
+          observability_trace_id: traceId,
           reaction_type: reactionType,
         })
       });

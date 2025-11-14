@@ -1241,11 +1241,11 @@ describe('WebSocket Functionality', () => {
   });
 
   describe('Weave Call ID Handling', () => {
-    it('should extract weave_call_id from system_response_message', () => {
+    it('should extract observability_trace_id from system_response_message', () => {
       const wsMessage = {
         type: 'system_response_message',
         conversation_id: 'conv-123',
-        weave_call_id: 'weave-abc-123',
+        observability_trace_id: 'weave-abc-123',
         content: { text: 'AI response' },
         status: 'in_progress'
       };
@@ -1255,18 +1255,18 @@ describe('WebSocket Functionality', () => {
         return {
           role: 'assistant',
           content: message.content.text,
-          weaveCallId: message.weave_call_id,
+          observabilityTraceId: message.observability_trace_id,
           timestamp: Date.now()
         };
       };
 
       const processedMessage = processMessage(wsMessage);
 
-      expect(processedMessage.weaveCallId).toBe('weave-abc-123');
+      expect(processedMessage.observabilityTraceId).toBe('weave-abc-123');
       expect(processedMessage.content).toBe('AI response');
     });
 
-    it('should handle messages without weave_call_id gracefully', () => {
+    it('should handle messages without observability_trace_id gracefully', () => {
       const wsMessage = {
         type: 'system_response_message',
         conversation_id: 'conv-123',
@@ -1278,29 +1278,29 @@ describe('WebSocket Functionality', () => {
         return {
           role: 'assistant',
           content: message.content.text,
-          ...(message.weave_call_id && { weaveCallId: message.weave_call_id }),
+          ...(message.observability_trace_id && { observabilityTraceId: message.observability_trace_id }),
           timestamp: Date.now()
         };
       };
 
       const processedMessage = processMessage(wsMessage);
 
-      expect(processedMessage.weaveCallId).toBeUndefined();
+      expect(processedMessage.observabilityTraceId).toBeUndefined();
       expect(processedMessage.content).toBe('AI response');
     });
 
-    it('should preserve weave_call_id when updating existing message', () => {
+    it('should preserve observability_trace_id when updating existing message', () => {
       const existingMessage = {
         role: 'assistant',
         content: 'Partial response',
-        weaveCallId: 'weave-existing-456',
+        observabilityTraceId: 'weave-existing-456',
         timestamp: 1000
       };
 
       const wsUpdate = {
         type: 'system_response_message',
         conversation_id: 'conv-123',
-        weave_call_id: 'weave-existing-456',
+        observability_trace_id: 'weave-existing-456',
         content: { text: ' continued' },
         status: 'in_progress'
       };
@@ -1310,22 +1310,22 @@ describe('WebSocket Functionality', () => {
         return {
           ...existing,
           content: existing.content + update.content.text,
-          ...(update.weave_call_id && { weaveCallId: update.weave_call_id }),
+          ...(update.observability_trace_id && { observabilityTraceId: update.observability_trace_id }),
           timestamp: Date.now()
         };
       };
 
       const updatedMessage = updateMessage(existingMessage, wsUpdate);
 
-      expect(updatedMessage.weaveCallId).toBe('weave-existing-456');
+      expect(updatedMessage.observabilityTraceId).toBe('weave-existing-456');
       expect(updatedMessage.content).toBe('Partial response continued');
     });
 
-    it('should store weave_call_id in error messages', () => {
+    it('should store observability_trace_id in error messages', () => {
       const errorMessage = {
         type: 'error',
         conversation_id: 'conv-123',
-        weave_call_id: 'weave-error-789',
+        observability_trace_id: 'weave-error-789',
         content: { text: 'Error occurred' },
         status: 'error'
       };
@@ -1334,7 +1334,7 @@ describe('WebSocket Functionality', () => {
         return {
           role: 'system',
           content: message.content.text,
-          ...(message.weave_call_id && { weaveCallId: message.weave_call_id }),
+          ...(message.observability_trace_id && { observabilityTraceId: message.observability_trace_id }),
           errorMessages: [message],
           timestamp: Date.now()
         };
@@ -1342,15 +1342,15 @@ describe('WebSocket Functionality', () => {
 
       const processedError = processErrorMessage(errorMessage);
 
-      expect(processedError.weaveCallId).toBe('weave-error-789');
+      expect(processedError.observabilityTraceId).toBe('weave-error-789');
       expect(processedError.errorMessages).toHaveLength(1);
     });
 
-    it('should handle weave_call_id in complete status messages', () => {
+    it('should handle observability_trace_id in complete status messages', () => {
       const completeMessage = {
         type: 'system_response_message',
         conversation_id: 'conv-123',
-        weave_call_id: 'weave-complete-999',
+        observability_trace_id: 'weave-complete-999',
         content: { text: 'Final response' },
         status: 'complete'
       };
@@ -1359,7 +1359,7 @@ describe('WebSocket Functionality', () => {
         return {
           role: 'assistant',
           content: message.content.text,
-          weaveCallId: message.weave_call_id,
+          observabilityTraceId: message.observability_trace_id,
           status: message.status,
           timestamp: Date.now()
         };
@@ -1367,12 +1367,12 @@ describe('WebSocket Functionality', () => {
 
       const processed = processCompleteMessage(completeMessage);
 
-      expect(processed.weaveCallId).toBe('weave-complete-999');
+      expect(processed.observabilityTraceId).toBe('weave-complete-999');
       expect(processed.status).toBe('complete');
       expect(processed.content).toBe('Final response');
     });
 
-    it('should validate weave_call_id field is optional in message validation', () => {
+    it('should validate observability_trace_id field is optional in message validation', () => {
       const validateMessage = (message: any) => {
         if (!message.conversation_id) {
           throw new Error('conversation_id is required');
@@ -1380,14 +1380,14 @@ describe('WebSocket Functionality', () => {
         if (!message.type) {
           throw new Error('type is required');
         }
-        // weave_call_id is optional
+        // observability_trace_id is optional
         return true;
       };
 
       const messageWithWeaveId = {
         type: 'system_response_message',
         conversation_id: 'conv-123',
-        weave_call_id: 'weave-123',
+        observability_trace_id: 'weave-123',
         content: { text: 'Test' }
       };
 
@@ -1401,7 +1401,7 @@ describe('WebSocket Functionality', () => {
       expect(() => validateMessage(messageWithoutWeaveId)).not.toThrow();
     });
 
-    it('should handle weave_call_id with various formats', () => {
+    it('should handle observability_trace_id with various formats', () => {
       const testCases = [
         { id: 'weave-abc-123', description: 'standard format' },
         { id: 'weave_underscore_456', description: 'with underscores' },
@@ -1414,7 +1414,7 @@ describe('WebSocket Functionality', () => {
         const wsMessage = {
           type: 'system_response_message',
           conversation_id: 'conv-123',
-          weave_call_id: id,
+          observability_trace_id: id,
           content: { text: `Response with ${description}` },
           status: 'in_progress'
         };
@@ -1423,30 +1423,30 @@ describe('WebSocket Functionality', () => {
           return {
             role: 'assistant',
             content: message.content.text,
-            weaveCallId: message.weave_call_id
+            observabilityTraceId: message.observability_trace_id
           };
         };
 
         const processed = processMessage(wsMessage);
-        expect(processed.weaveCallId).toBe(id);
+        expect(processed.observabilityTraceId).toBe(id);
       });
     });
 
-    it('should not overwrite weave_call_id when processing multiple chunks', () => {
-      let storedWeaveCallId: string | undefined = undefined;
+    it('should not overwrite observability_trace_id when processing multiple chunks', () => {
+      let storedObservabilityTraceId: string | undefined = undefined;
 
       const messages = [
         {
           type: 'system_response_message',
           conversation_id: 'conv-123',
-          weave_call_id: 'weave-initial-111',
+          observability_trace_id: 'weave-initial-111',
           content: { text: 'First chunk' },
           status: 'in_progress'
         },
         {
           type: 'system_response_message',
           conversation_id: 'conv-123',
-          // No weave_call_id in subsequent chunks
+          // No observability_trace_id in subsequent chunks
           content: { text: ' second chunk' },
           status: 'in_progress'
         },
@@ -1461,14 +1461,14 @@ describe('WebSocket Functionality', () => {
       let responseText = '';
 
       messages.forEach(message => {
-        // Store weave_call_id from first message that has it
-        if (message.weave_call_id && !storedWeaveCallId) {
-          storedWeaveCallId = message.weave_call_id;
+        // Store observability_trace_id from first message that has it
+        if (message.observability_trace_id && !storedObservabilityTraceId) {
+          storedObservabilityTraceId = message.observability_trace_id;
         }
         responseText += message.content.text;
       });
 
-      expect(storedWeaveCallId).toBe('weave-initial-111');
+      expect(storedObservabilityTraceId).toBe('weave-initial-111');
       expect(responseText).toBe('First chunk second chunk third chunk');
     });
   });

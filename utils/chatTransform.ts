@@ -139,13 +139,13 @@ export function updateAssistantMessage(
   message: Message,
   newContent?: string,
   newIntermediateSteps?: IntermediateStep[],
-  weaveCallId?: string,
+  observabilityTraceId?: string,
 ): Message {
   return {
     ...message,
     content: newContent !== undefined ? newContent : message.content || '',
     intermediateSteps: newIntermediateSteps || message.intermediateSteps || [],
-    weaveCallId: weaveCallId || message.weaveCallId,
+    observabilityTraceId: observabilityTraceId || message.observabilityTraceId,
     timestamp: Date.now()
   };
 }

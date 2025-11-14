@@ -383,18 +383,18 @@ export const ChatMessage: FC<Props> = memo(
                             <IconVolume2 size={20} />
                           )}
                         </button>
-                        {message.weaveCallId &&  (
+                        {message.observabilityTraceId &&  (
                           <>
                             <button
                               className={"text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300"}
-                              onClick={() => submitFeedback(message.weaveCallId, '👍')}
+                              onClick={() => submitFeedback(message.observabilityTraceId, '👍')}
                               title="Give thumbs up"
                             >
                               <IconThumbUp size={20}/>
                             </button>
                             <button
                               className={"text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300"}
-                              onClick={() => submitFeedback(message.weaveCallId, '👎')}
+                              onClick={() => submitFeedback(message.observabilityTraceId, '👎')}
                               title="Give thumbs down"
                             >
                               <IconThumbDown size={20}/>
