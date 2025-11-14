@@ -1240,236 +1240,93 @@ describe('WebSocket Functionality', () => {
     });
   });
 
-  describe('Weave Call ID Handling', () => {
-    it('should extract observability_trace_id from system_response_message', () => {
-      const wsMessage = {
-        type: 'system_response_message',
-        conversation_id: 'conv-123',
-        observability_trace_id: 'weave-abc-123',
-        content: { text: 'AI response' },
-        status: 'in_progress'
-      };
-
-      // Simulate message processing logic
-      const processMessage = (message: any) => {
-        return {
-          role: 'assistant',
-          content: message.content.text,
-          observabilityTraceId: message.observability_trace_id,
-          timestamp: Date.now()
-        };
-      };
-
-      const processedMessage = processMessage(wsMessage);
-
-      expect(processedMessage.observabilityTraceId).toBe('weave-abc-123');
-      expect(processedMessage.content).toBe('AI response');
-    });
-
-    it('should handle messages without observability_trace_id gracefully', () => {
-      const wsMessage = {
+  describe('Observability Trace Handling', () => {
+    it('should attach trace ID from separate observability_trace_message', () => {
+      const messages: any[] = [];
+      
+      // First, receive response message
+      const responseMessage = {
         type: 'system_response_message',
         conversation_id: 'conv-123',
         content: { text: 'AI response' },
-        status: 'in_progress'
-      };
-
-      const processMessage = (message: any) => {
-        return {
-          role: 'assistant',
-          content: message.content.text,
-          ...(message.observability_trace_id && { observabilityTraceId: message.observability_trace_id }),
-          timestamp: Date.now()
-        };
-      };
-
-      const processedMessage = processMessage(wsMessage);
-
-      expect(processedMessage.observabilityTraceId).toBeUndefined();
-      expect(processedMessage.content).toBe('AI response');
-    });
-
-    it('should preserve observability_trace_id when updating existing message', () => {
-      const existingMessage = {
-        role: 'assistant',
-        content: 'Partial response',
-        observabilityTraceId: 'weave-existing-456',
-        timestamp: 1000
-      };
-
-      const wsUpdate = {
-        type: 'system_response_message',
-        conversation_id: 'conv-123',
-        observability_trace_id: 'weave-existing-456',
-        content: { text: ' continued' },
-        status: 'in_progress'
-      };
-
-      // Simulate appending to existing message
-      const updateMessage = (existing: any, update: any) => {
-        return {
-          ...existing,
-          content: existing.content + update.content.text,
-          ...(update.observability_trace_id && { observabilityTraceId: update.observability_trace_id }),
-          timestamp: Date.now()
-        };
-      };
-
-      const updatedMessage = updateMessage(existingMessage, wsUpdate);
-
-      expect(updatedMessage.observabilityTraceId).toBe('weave-existing-456');
-      expect(updatedMessage.content).toBe('Partial response continued');
-    });
-
-    it('should store observability_trace_id in error messages', () => {
-      const errorMessage = {
-        type: 'error',
-        conversation_id: 'conv-123',
-        observability_trace_id: 'weave-error-789',
-        content: { text: 'Error occurred' },
-        status: 'error'
-      };
-
-      const processErrorMessage = (message: any) => {
-        return {
-          role: 'system',
-          content: message.content.text,
-          ...(message.observability_trace_id && { observabilityTraceId: message.observability_trace_id }),
-          errorMessages: [message],
-          timestamp: Date.now()
-        };
-      };
-
-      const processedError = processErrorMessage(errorMessage);
-
-      expect(processedError.observabilityTraceId).toBe('weave-error-789');
-      expect(processedError.errorMessages).toHaveLength(1);
-    });
-
-    it('should handle observability_trace_id in complete status messages', () => {
-      const completeMessage = {
-        type: 'system_response_message',
-        conversation_id: 'conv-123',
-        observability_trace_id: 'weave-complete-999',
-        content: { text: 'Final response' },
         status: 'complete'
       };
-
-      const processCompleteMessage = (message: any) => {
-        return {
-          role: 'assistant',
-          content: message.content.text,
-          observabilityTraceId: message.observability_trace_id,
-          status: message.status,
-          timestamp: Date.now()
-        };
+      
+      messages.push({
+        role: 'assistant',
+        content: responseMessage.content.text
+      });
+      
+      // Then, receive separate trace message
+      const traceMessage = {
+        type: 'observability_trace_message',
+        conversation_id: 'conv-123',
+        content: { 
+          observability_trace_id: 'trace-abc-123' 
+        }
       };
-
-      const processed = processCompleteMessage(completeMessage);
-
-      expect(processed.observabilityTraceId).toBe('weave-complete-999');
-      expect(processed.status).toBe('complete');
-      expect(processed.content).toBe('Final response');
+      
+      // Simulate attaching trace to last message
+      const lastMessage = messages[messages.length - 1];
+      const updatedMessage = {
+        ...lastMessage,
+        observabilityTraceId: traceMessage.content.observability_trace_id
+      };
+      messages[messages.length - 1] = updatedMessage;
+      
+      expect(messages[0].observabilityTraceId).toBe('trace-abc-123');
+      expect(messages[0].content).toBe('AI response');
     });
 
-    it('should validate observability_trace_id field is optional in message validation', () => {
-      const validateMessage = (message: any) => {
-        if (!message.conversation_id) {
-          throw new Error('conversation_id is required');
-        }
-        if (!message.type) {
-          throw new Error('type is required');
-        }
-        // observability_trace_id is optional
-        return true;
-      };
-
-      const messageWithWeaveId = {
-        type: 'system_response_message',
+    it('should handle observability_trace_message without assistant message', () => {
+      const messages: any[] = [];
+      
+      const traceMessage = {
+        type: 'observability_trace_message',
         conversation_id: 'conv-123',
-        observability_trace_id: 'weave-123',
-        content: { text: 'Test' }
+        content: { 
+          observability_trace_id: 'trace-early-123' 
+        }
       };
-
-      const messageWithoutWeaveId = {
-        type: 'system_response_message',
-        conversation_id: 'conv-123',
-        content: { text: 'Test' }
-      };
-
-      expect(() => validateMessage(messageWithWeaveId)).not.toThrow();
-      expect(() => validateMessage(messageWithoutWeaveId)).not.toThrow();
+      
+      // If there's no assistant message, trace message should be ignored
+      const lastMessage = messages[messages.length - 1];
+      const isLastAssistant = lastMessage?.role === 'assistant';
+      
+      if (!isLastAssistant) {
+        // Don't create a new message, just skip
+        expect(messages.length).toBe(0);
+      }
     });
 
-    it('should handle observability_trace_id with various formats', () => {
+    it('should handle trace message with various ID formats', () => {
       const testCases = [
-        { id: 'weave-abc-123', description: 'standard format' },
-        { id: 'weave_underscore_456', description: 'with underscores' },
-        { id: 'weave:colon:789', description: 'with colons' },
-        { id: 'weave.dot.012', description: 'with dots' },
-        { id: '12345678-1234-1234-1234-123456789abc', description: 'UUID format' }
+        'trace-abc-123',
+        'trace_underscore_456',
+        'trace:colon:789',
+        'trace.dot.012',
+        '12345678-1234-1234-1234-123456789abc'
       ];
 
-      testCases.forEach(({ id, description }) => {
-        const wsMessage = {
-          type: 'system_response_message',
+      testCases.forEach(traceId => {
+        const messages = [{
+          role: 'assistant',
+          content: 'Test response'
+        }];
+        
+        const traceMessage = {
+          type: 'observability_trace_message',
           conversation_id: 'conv-123',
-          observability_trace_id: id,
-          content: { text: `Response with ${description}` },
-          status: 'in_progress'
+          content: { observability_trace_id: traceId }
         };
-
-        const processMessage = (message: any) => {
-          return {
-            role: 'assistant',
-            content: message.content.text,
-            observabilityTraceId: message.observability_trace_id
-          };
+        
+        messages[0] = {
+          ...messages[0],
+          observabilityTraceId: traceMessage.content.observability_trace_id
         };
-
-        const processed = processMessage(wsMessage);
-        expect(processed.observabilityTraceId).toBe(id);
+        
+        expect(messages[0].observabilityTraceId).toBe(traceId);
       });
-    });
-
-    it('should not overwrite observability_trace_id when processing multiple chunks', () => {
-      let storedObservabilityTraceId: string | undefined = undefined;
-
-      const messages = [
-        {
-          type: 'system_response_message',
-          conversation_id: 'conv-123',
-          observability_trace_id: 'weave-initial-111',
-          content: { text: 'First chunk' },
-          status: 'in_progress'
-        },
-        {
-          type: 'system_response_message',
-          conversation_id: 'conv-123',
-          // No observability_trace_id in subsequent chunks
-          content: { text: ' second chunk' },
-          status: 'in_progress'
-        },
-        {
-          type: 'system_response_message',
-          conversation_id: 'conv-123',
-          content: { text: ' third chunk' },
-          status: 'complete'
-        }
-      ];
-
-      let responseText = '';
-
-      messages.forEach(message => {
-        // Store observability_trace_id from first message that has it
-        if (message.observability_trace_id && !storedObservabilityTraceId) {
-          storedObservabilityTraceId = message.observability_trace_id;
-        }
-        responseText += message.content.text;
-      });
-
-      expect(storedObservabilityTraceId).toBe('weave-initial-111');
-      expect(responseText).toBe('First chunk second chunk third chunk');
     });
   });
 });

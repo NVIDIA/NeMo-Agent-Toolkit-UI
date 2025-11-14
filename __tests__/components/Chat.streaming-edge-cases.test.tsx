@@ -502,29 +502,29 @@ data: {"value": "another valid"}
     });
   });
 
-  describe('Weave Call ID Tag Processing', () => {
+  describe('Observability Trace ID Tag Processing', () => {
     /**
-     * Description: Verifies that complete weave call ID tags are extracted correctly from streaming responses
-     * Success: Weave call ID is extracted and tags are removed from response content
+     * Description: Verifies that complete observability trace ID tags are extracted correctly from streaming responses
+     * Success: Trace ID is extracted and tags are removed from response content
      */
     test('extracts complete observabilitytraceid tags from stream', () => {
-      const chunksWithWeaveId = [
+      const chunksWithTraceId = [
         'data: {"value": "Response text"}\n\n',
-        '<observabilitytraceid>weave-abc-123</observabilitytraceid>',
+        '<observabilitytraceid>trace-abc-123</observabilitytraceid>',
         'data: [DONE]\n\n'
       ];
 
       const responses: string[] = [];
       let extractedObservabilityTraceId: string | undefined = undefined;
 
-      chunksWithWeaveId.forEach(chunk => {
+      chunksWithTraceId.forEach(chunk => {
         // Extract responses from SSE data
         if (chunk.includes('data: ')) {
           const { frames } = extractSsePayloads(chunk);
           responses.push(...frames);
         }
 
-        // Extract weave call ID tags
+        // Extract trace ID tags
         const observabilityTraceIdMatches = chunk.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
         for (const match of observabilityTraceIdMatches) {
           try {
@@ -542,7 +542,7 @@ data: {"value": "another valid"}
       });
 
       expect(responses).toContain('{"value": "Response text"}');
-      expect(extractedObservabilityTraceId).toBe('weave-abc-123');
+      expect(extractedObservabilityTraceId).toBe('trace-abc-123');
     });
 
     /**
@@ -552,7 +552,7 @@ data: {"value": "another valid"}
     test('handles incomplete observabilitytraceid tags across chunks', () => {
       const incompleteChunks = [
         'data: {"value": "start"}\n\n',
-        '<observabilitytraceid>weave-def-',  // Incomplete
+        '<observabilitytraceid>trace-def-',  // Incomplete
         '456</observabilitytraceid>',  // Completion
         'data: {"value": "end"}\n\n'
       ];
@@ -568,7 +568,7 @@ data: {"value": "another valid"}
           responses.push(...frames);
         }
 
-        // Buffer potential partial weave call ID tags
+        // Buffer potential partial trace ID tags
         if (chunk.includes('<observabilitytraceid>') || buffer.includes('<observabilitytraceid>')) {
           buffer += chunk;
 
@@ -589,7 +589,7 @@ data: {"value": "another valid"}
       });
 
       expect(responses).toHaveLength(2);
-      expect(extractedObservabilityTraceId).toBe('weave-def-456');
+      expect(extractedObservabilityTraceId).toBe('trace-def-456');
     });
 
     /**
@@ -599,8 +599,8 @@ data: {"value": "another valid"}
     test('extracts only first observabilitytraceid when multiple present', () => {
       const chunksWithMultiple = [
         'data: {"value": "Response"}\n\n',
-        '<observabilitytraceid>weave-first-123</observabilitytraceid>',
-        '<observabilitytraceid>weave-second-456</observabilitytraceid>',
+        '<observabilitytraceid>trace-first-123</observabilitytraceid>',
+        '<observabilitytraceid>trace-second-456</observabilitytraceid>',
         'data: [DONE]\n\n'
       ];
 
@@ -619,7 +619,7 @@ data: {"value": "another valid"}
         }
       });
 
-      expect(extractedObservabilityTraceId).toBe('weave-first-123');
+      expect(extractedObservabilityTraceId).toBe('trace-first-123');
     });
 
     /**
@@ -631,7 +631,7 @@ data: {"value": "another valid"}
         'data: {"value": "Response"}\n\n',
         '<observabilitytraceid></observabilitytraceid>',  // Empty tag
         '<observabilitytraceid>   </observabilitytraceid>',  // Whitespace only
-        '<observabilitytraceid>weave-valid-123</observabilitytraceid>',  // Valid
+        '<observabilitytraceid>trace-valid-123</observabilitytraceid>',  // Valid
         'data: [DONE]\n\n'
       ];
 
@@ -650,7 +650,7 @@ data: {"value": "another valid"}
         }
       });
 
-      expect(extractedObservabilityTraceId).toBe('weave-valid-123');
+      expect(extractedObservabilityTraceId).toBe('trace-valid-123');
     });
 
     /**
@@ -658,9 +658,9 @@ data: {"value": "another valid"}
      * Success: Tags are stripped from content so they don't appear in the UI
      */
     test('removes observabilitytraceid tags from chunk content', () => {
-      let chunkValue = 'Response text <observabilitytraceid>weave-123</observabilitytraceid> more text';
+      let chunkValue = 'Response text <observabilitytraceid>trace-123</observabilitytraceid> more text';
 
-      // Extract weave call ID
+      // Extract trace ID
       const observabilityTraceIdMatches = chunkValue.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
       let extractedObservabilityTraceId: string | undefined = undefined;
 
@@ -679,7 +679,7 @@ data: {"value": "another valid"}
         chunkValue = chunkValue.replace(/<observabilitytraceid>[\s\S]*?<\/observabilitytraceid>/g, '');
       }
 
-      expect(extractedObservabilityTraceId).toBe('weave-123');
+      expect(extractedObservabilityTraceId).toBe('trace-123');
       expect(chunkValue).toBe('Response text  more text');
       expect(chunkValue).not.toContain('<observabilitytraceid>');
     });
@@ -692,7 +692,7 @@ data: {"value": "another valid"}
       const interleavedChunks = [
         'data: {"value": "Start"}\n\n',
         '<intermediatestep>{"id": "step-1", "type": "system_intermediate"}</intermediatestep>',
-        '<observabilitytraceid>weave-interleaved-789</observabilitytraceid>',
+        '<observabilitytraceid>trace-interleaved-789</observabilitytraceid>',
         '<intermediatestep>{"id": "step-2", "type": "system_intermediate"}</intermediatestep>',
         'data: {"value": " end"}\n\n'
       ];
@@ -718,7 +718,7 @@ data: {"value": "another valid"}
           steps.push(jsonString);
         });
 
-        // Process weave call ID
+        // Process trace ID
         const observabilityTraceIdMatches = chunk.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
         for (const match of observabilityTraceIdMatches) {
           const idString = match
@@ -733,7 +733,7 @@ data: {"value": "another valid"}
 
       expect(responses).toHaveLength(2);
       expect(steps).toHaveLength(2);
-      expect(extractedObservabilityTraceId).toBe('weave-interleaved-789');
+      expect(extractedObservabilityTraceId).toBe('trace-interleaved-789');
     });
 
     /**
@@ -742,10 +742,10 @@ data: {"value": "another valid"}
      */
     test('handles observabilitytraceid with special characters', () => {
       const specialChars = [
-        '<observabilitytraceid>weave-with-dashes-123</observabilitytraceid>',
-        '<observabilitytraceid>weave_with_underscores_456</observabilitytraceid>',
-        '<observabilitytraceid>weave:with:colons:789</observabilitytraceid>',
-        '<observabilitytraceid>weave.with.dots.012</observabilitytraceid>'
+        '<observabilitytraceid>trace-with-dashes-123</observabilitytraceid>',
+        '<observabilitytraceid>trace_with_underscores_456</observabilitytraceid>',
+        '<observabilitytraceid>trace:with:colons:789</observabilitytraceid>',
+        '<observabilitytraceid>trace.with.dots.012</observabilitytraceid>'
       ];
 
       const extractedIds: string[] = [];
@@ -764,10 +764,10 @@ data: {"value": "another valid"}
       });
 
       expect(extractedIds).toHaveLength(4);
-      expect(extractedIds[0]).toBe('weave-with-dashes-123');
-      expect(extractedIds[1]).toBe('weave_with_underscores_456');
-      expect(extractedIds[2]).toBe('weave:with:colons:789');
-      expect(extractedIds[3]).toBe('weave.with.dots.012');
+      expect(extractedIds[0]).toBe('trace-with-dashes-123');
+      expect(extractedIds[1]).toBe('trace_with_underscores_456');
+      expect(extractedIds[2]).toBe('trace:with:colons:789');
+      expect(extractedIds[3]).toBe('trace.with.dots.012');
     });
   });
 });

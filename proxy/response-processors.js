@@ -45,6 +45,20 @@ function processIntermediateData(line, res) {
   }
 }
 
+function processObservabilityTrace(line, res) {
+  try {
+    const data = line.split('observability_trace: ')[1];
+    const payload = JSON.parse(data);
+    if (payload?.observability_trace_id) {
+      res.write(
+        `<observabilitytraceid>${payload.observability_trace_id}</observabilitytraceid>`,
+      );
+    }
+  } catch (e) {
+    // Ignore parse errors
+  }
+}
+
 /**
  * Processes /chat/stream responses (SSE format)
  * Backend format: Stream with "data:" lines containing chat completion chunks
@@ -67,7 +81,6 @@ async function processChatStream(backendRes, res) {
   const reader = backendRes.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
-  let observabilityTraceIdSent = false;
 
   try {
     while (true) {
@@ -97,16 +110,13 @@ async function processChatStream(backendRes, res) {
             if (content) {
               res.write(content);
             }
-            // Extract and send observability_trace_id once if present
-            if (!observabilityTraceIdSent && parsed.observability_trace_id) {
-              res.write(`<observabilitytraceid>${parsed.observability_trace_id}</observabilitytraceid>`);
-              observabilityTraceIdSent = true;
-            }
           } catch (e) {
             // Ignore parse errors
           }
         } else if (line.startsWith('intermediate_data: ')) {
           processIntermediateData(line, res);
+        } else if (line.startsWith('observability_trace: ')) {
+          processObservabilityTrace(line, res);
         }
       }
     }
@@ -205,6 +215,8 @@ async function processGenerateStream(backendRes, res) {
           }
         } else if (line.startsWith('intermediate_data: ')) {
           processIntermediateData(line, res);
+        } else if (line.startsWith('observability_trace: ')) {
+          processObservabilityTrace(line, res);
         }
       }
     }

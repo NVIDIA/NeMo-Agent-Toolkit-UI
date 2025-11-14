@@ -512,6 +512,30 @@ describe('Proxy Request Transformers and Response Processors', () => {
         expect(mockRes.writeHead).toHaveBeenCalledWith(500, expect.any(Object));
         expect(mockRes.end).toHaveBeenCalledWith('Internal Server Error');
       });
+
+      it('should forward observability-trace-id header from backend', async () => {
+        const mockBackendRes = {
+          ok: true,
+          text: jest.fn().mockResolvedValue('{"value":"Test response"}'),
+          headers: {
+            get: jest.fn((name) => {
+              if (name === 'observability-trace-id') return 'trace-header-123';
+              return null;
+            }),
+          },
+        };
+        
+        const mockRes = {
+          writeHead: jest.fn(),
+          end: jest.fn(),
+        };
+
+        await processGenerate(mockBackendRes, mockRes);
+
+        expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
+          'Observability-Trace-Id': 'trace-header-123',
+        }));
+      });
     });
 
     describe('processChat', () => {
@@ -552,6 +576,30 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
         expect(mockRes.end).toHaveBeenCalledWith('Bad Request');
+      });
+
+      it('should forward observability-trace-id header from backend', async () => {
+        const mockBackendRes = {
+          ok: true,
+          text: jest.fn().mockResolvedValue('{"choices":[{"message":{"content":"Chat response"}}]}'),
+          headers: {
+            get: jest.fn((name) => {
+              if (name === 'observability-trace-id') return 'trace-chat-456';
+              return null;
+            }),
+          },
+        };
+        
+        const mockRes = {
+          writeHead: jest.fn(),
+          end: jest.fn(),
+        };
+
+        await processChat(mockBackendRes, mockRes);
+
+        expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
+          'Observability-Trace-Id': 'trace-chat-456',
+        }));
       });
     });
 
@@ -613,6 +661,25 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('<intermediatestep>'));
         expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('Test Step'));
+      });
+
+      it('should process observability_trace lines separately', async () => {
+        const mockBackendRes = createStreamingResponse([
+          'data: {"choices":[{"delta":{"content":"Response"}}]}\n',
+          'observability_trace: {"observability_trace_id":"trace-abc-123"}\n',
+        ]);
+        
+        const mockRes = {
+          writeHead: jest.fn(),
+          write: jest.fn(),
+          end: jest.fn(),
+        };
+
+        await processChatStream(mockBackendRes, mockRes);
+
+        // Should write both content and trace ID tag
+        expect(mockRes.write).toHaveBeenCalledWith('Response');
+        expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('<observabilitytraceid>trace-abc-123</observabilitytraceid>'));
       });
 
       it('should handle non-ok response', async () => {
@@ -692,6 +759,24 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('<intermediatestep>'));
         expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('Generation Step'));
+      });
+
+      it('should process observability_trace lines separately', async () => {
+        const mockBackendRes = createStreamingResponse([
+          'data: {"value":"Generated text"}\n',
+          'observability_trace: {"observability_trace_id":"trace-def-456"}\n',
+        ]);
+        
+        const mockRes = {
+          writeHead: jest.fn(),
+          write: jest.fn(),
+          end: jest.fn(),
+        };
+
+        await processGenerateStream(mockBackendRes, mockRes);
+
+        // Should process trace ID separately from content
+        expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('<observabilitytraceid>trace-def-456</observabilitytraceid>'));
       });
 
       it('should handle non-ok response', async () => {

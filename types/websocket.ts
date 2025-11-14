@@ -10,7 +10,6 @@ export interface WebSocketMessageBase {
   parent_id?: string;
   timestamp?: string;
   status?: string;
-  observability_trace_id?: string;
 }
 
 // System response message types
@@ -47,6 +46,14 @@ export interface SystemInteractionMessage extends WebSocketMessageBase {
   thread_id?: string;
 }
 
+// Observability trace message
+export interface ObservabilityTraceMessage extends WebSocketMessageBase {
+  type: 'observability_trace_message';
+  content?: {
+    observability_trace_id?: string;
+  };
+}
+
 // Error message
 export interface ErrorMessage extends WebSocketMessageBase {
   type: 'error';
@@ -61,6 +68,7 @@ export type WebSocketInbound =
   | SystemResponseMessage 
   | SystemIntermediateMessage 
   | SystemInteractionMessage 
+  | ObservabilityTraceMessage
   | ErrorMessage;
 
 // Intermediate step structure
@@ -104,6 +112,10 @@ export function isErrorMessage(message: any): message is ErrorMessage {
   return message?.type === 'error';
 }
 
+export function isObservabilityTraceMessage(message: any): message is ObservabilityTraceMessage {
+  return message?.type === 'observability_trace_message';
+}
+
 export function isOAuthConsentMessage(message: any): message is SystemInteractionMessage {
   return (
     isSystemInteractionMessage(message) &&
@@ -140,6 +152,7 @@ export function validateWebSocketMessage(message: any): message is WebSocketInbo
       'system_response_message',
       'system_intermediate_message', 
       'system_interaction_message',
+      'observability_trace_message',
       'error'
     ].includes(message.type)
   );

@@ -138,14 +138,12 @@ export function createAssistantMessage(
 export function updateAssistantMessage(
   message: Message,
   newContent?: string,
-  newIntermediateSteps?: IntermediateStep[],
-  observabilityTraceId?: string,
+  newIntermediateSteps?: IntermediateStep[]
 ): Message {
   return {
     ...message,
     content: newContent !== undefined ? newContent : message.content || '',
     intermediateSteps: newIntermediateSteps || message.intermediateSteps || [],
-    observabilityTraceId: observabilityTraceId || message.observabilityTraceId,
     timestamp: Date.now()
   };
 }

@@ -262,63 +262,29 @@ describe('chatTransform', () => {
       expect(result.content).toBe('');
     });
 
-    it('preserves existing observabilityTraceId when not provided', () => {
-      const messageWithWeaveId = { ...baseMessage, observabilityTraceId: 'weave-123' };
-      const result = updateAssistantMessage(messageWithWeaveId, 'New content');
+    it('preserves existing observabilityTraceId', () => {
+      const messageWithTraceId = { ...baseMessage, observabilityTraceId: 'trace-123' };
+      const result = updateAssistantMessage(messageWithTraceId, 'New content');
 
-      expect(result.observabilityTraceId).toBe('weave-123');
+      expect(result.observabilityTraceId).toBe('trace-123');
       expect(result.content).toBe('New content');
     });
 
-    it('updates observabilityTraceId when provided', () => {
-      const messageWithWeaveId = { ...baseMessage, observabilityTraceId: 'weave-123' };
-      const result = updateAssistantMessage(
-        messageWithWeaveId,
-        'New content',
-        undefined,
-        'weave-456'
-      );
+    it('preserves undefined observabilityTraceId', () => {
+      const result = updateAssistantMessage(baseMessage, 'New content');
 
-      expect(result.observabilityTraceId).toBe('weave-456');
+      expect(result.observabilityTraceId).toBeUndefined();
       expect(result.content).toBe('New content');
     });
 
-    it('sets observabilityTraceId when message does not have one', () => {
-      const result = updateAssistantMessage(
-        baseMessage,
-        'New content',
-        undefined,
-        'weave-789'
-      );
-
-      expect(result.observabilityTraceId).toBe('weave-789');
-      expect(result.content).toBe('New content');
-    });
-
-    it('preserves observabilityTraceId with undefined parameter', () => {
-      const messageWithWeaveId = { ...baseMessage, observabilityTraceId: 'weave-123' };
-      const result = updateAssistantMessage(
-        messageWithWeaveId,
-        'New content',
-        undefined,
-        undefined
-      );
-
-      expect(result.observabilityTraceId).toBe('weave-123');
-    });
-
-    it('updates all fields including observabilityTraceId together', () => {
+    it('preserves observabilityTraceId when updating intermediate steps', () => {
+      const messageWithTraceId = { ...baseMessage, observabilityTraceId: 'trace-123' };
       const newSteps: IntermediateStep[] = [{ id: 'step-1' }];
-      const result = updateAssistantMessage(
-        baseMessage,
-        'Updated content',
-        newSteps,
-        'weave-new'
-      );
+      const result = updateAssistantMessage(messageWithTraceId, 'Updated content', newSteps);
 
       expect(result.content).toBe('Updated content');
       expect(result.intermediateSteps).toBe(newSteps);
-      expect(result.observabilityTraceId).toBe('weave-new');
+      expect(result.observabilityTraceId).toBe('trace-123');
       expect(result.timestamp).toBeGreaterThan(baseMessage.timestamp!);
     });
   });
