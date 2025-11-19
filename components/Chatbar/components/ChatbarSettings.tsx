@@ -1,4 +1,4 @@
-import { IconFileExport, IconSettings, IconPlug } from '@tabler/icons-react';
+import { IconFileExport, IconSettings, IconPlug, IconVideo } from '@tabler/icons-react';
 import { useContext, useState } from 'react';
 
 import { useTranslation } from 'next-i18next';
@@ -7,6 +7,7 @@ import HomeContext from '@/pages/api/home/home.context';
 
 import { SettingDialog } from '@/components/Settings/SettingDialog';
 import { MCPModal } from '@/components/MCP/MCPModal';
+import { VideoLibraryModal } from '@/components/Media/VideoLibraryModal';
 
 import { Import } from '../../Settings/Import';
 import { SidebarButton } from '../../Sidebar/SidebarButton';
@@ -17,6 +18,7 @@ export const ChatbarSettings = () => {
   const { t } = useTranslation('sidebar');
   const [isSettingDialogOpen, setIsSettingDialog] = useState<boolean>(false);
   const [isMCPModalOpen, setIsMCPModalOpen] = useState<boolean>(false);
+  const [isVideoLibraryOpen, setIsVideoLibraryOpen] = useState<boolean>(false);
 
   const {
     state: { lightMode, conversations },
@@ -35,6 +37,12 @@ export const ChatbarSettings = () => {
         text="MCP"
         icon={<IconPlug size={18} />}
         onClick={() => setIsMCPModalOpen(true)}
+      />
+
+      <SidebarButton
+        text={'Video Library'}
+        icon={<IconVideo size={18} />}
+        onClick={() => setIsVideoLibraryOpen(true)}
       />
 
       {conversations.length > 0 ? (
@@ -66,6 +74,13 @@ export const ChatbarSettings = () => {
         open={isMCPModalOpen}
         onClose={() => {
           setIsMCPModalOpen(false);
+        }}
+      />
+
+      <VideoLibraryModal
+        open={isVideoLibraryOpen}
+        onClose={() => {
+          setIsVideoLibraryOpen(false);
         }}
       />
     </div>

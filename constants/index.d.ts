@@ -31,6 +31,9 @@ export const CHAT_CA_RAG: string;
 export const UPDATE_DATA_STREAM: string;
 export const MCP_CLIENTS: string;
 export const MCP_CLIENT_TOOL_LIST: string;
+export const VIDEO_UPLOAD: string;
+export const VIDEO_LIST: string;
+export const VIDEO_DELETE: string;
 
 // =============================================================================
 // Route Collections
@@ -51,6 +54,9 @@ export const EXTENDED_ROUTES: {
   readonly CA_RAG_INIT: string;
   readonly CHAT_CA_RAG: string;
   readonly UPDATE_DATA_STREAM: string;
+  readonly VIDEO_UPLOAD: string;
+  readonly VIDEO_LIST: string;
+  readonly VIDEO_DELETE: string;
 };
 
 // =============================================================================

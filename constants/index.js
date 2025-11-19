@@ -32,6 +32,9 @@ const CA_RAG_INIT = '/init';
 const CHAT_CA_RAG = '/call';
 const UPDATE_DATA_STREAM = '/update-data-stream';
 const MCP_CLIENT_TOOL_LIST = '/mcp/client/tool/list';
+const VIDEO_UPLOAD = '/videos';
+const VIDEO_LIST = '/videos';
+const VIDEO_DELETE = '/videos';
 
 // =============================================================================
 // Route Collections
@@ -49,6 +52,9 @@ const EXTENDED_ROUTES = {
   CA_RAG_INIT,
   CHAT_CA_RAG,
   UPDATE_DATA_STREAM,
+  VIDEO_UPLOAD,
+  VIDEO_LIST,
+  VIDEO_DELETE,
 };
 
 // =============================================================================
@@ -136,6 +142,9 @@ module.exports = {
   CHAT_CA_RAG,
   UPDATE_DATA_STREAM,
   MCP_CLIENT_TOOL_LIST,
+  VIDEO_UPLOAD,
+  VIDEO_LIST,
+  VIDEO_DELETE,
   CORE_ROUTES,
   CORE_ROUTE_OPTIONS,
   DEFAULT_CORE_ROUTE,
