@@ -63,20 +63,8 @@ const UPSTREAM_WS_ORIGIN = `${UPSTREAM_WS_SCHEME}://${upstream.host}`;
 
 // Gateway and Next.js configuration
 const GATEWAY_PORT = parseInt(process.env.PORT || '3000', 10);
-const NEXT_DEV_TARGET =
-  process.env.NEXT_INTERNAL_URL || 'http://localhost:3001';
-
-// Validate NEXT_INTERNAL_URL format
-try {
-  new URL(NEXT_DEV_TARGET);
-} catch (err) {
-  console.error('ERROR: Invalid NEXT_INTERNAL_URL format:', NEXT_DEV_TARGET);
-  console.error(
-    'Expected format: http://hostname:port or https://hostname:port',
-  );
-  console.error('Example: http://localhost:3001');
-  process.exit(1);
-}
+// Next.js dev server runs on port 3099
+const NEXT_DEV_TARGET = 'http://localhost:3099';
 // --- Create Proxy Instances ---
 
 // Proxy for Next.js dev server
@@ -333,7 +321,13 @@ detectPort(GATEWAY_PORT)
     }
 
     server.listen(port, () => {
-      console.log(`\n Ready on http://localhost:${port}\n`);
+      console.log('\n' + '='.repeat(65));
+      console.log('');
+      console.log(' NeMo Agent Toolkit UI is ready!');
+      console.log('');
+      console.log(` Open in browser: http://localhost:${port}`);
+      console.log('');
+      console.log('='.repeat(65) + '\n');
     });
 
     // Graceful shutdown handler
