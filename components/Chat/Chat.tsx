@@ -900,7 +900,16 @@ export const Chat = () => {
           if (!response?.ok) {
             homeDispatch({ field: 'loading', value: false });
             homeDispatch({ field: 'messageIsStreaming', value: false });
-            toast.error(response.statusText);
+            
+            const currentPort = window.location.port;
+            const expectedPort = process.env.PORT || '3000';
+
+            let errorMsg = response.statusText;
+            if (currentPort !== expectedPort && response.status === 404) {
+              errorMsg = `Please access the application at ${window.location.protocol}//${window.location.hostname}:${expectedPort}`;
+            }
+
+            toast.error(errorMsg, { duration: 8000 });
             return;
           }
 
