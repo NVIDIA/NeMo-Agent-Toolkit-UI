@@ -51,7 +51,9 @@ npm ci
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`
+**Access the application at: `http://localhost:3000`**
+
+> **Important:** Always use port 3000. The application uses a proxy architecture where port 3000 handles all communication. Do not access other ports directly as API and WebSocket features will not work.
 
 #### Docker Deployment
 

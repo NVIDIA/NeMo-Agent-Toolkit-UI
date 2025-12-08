@@ -385,7 +385,16 @@ export const Chat = () => {
           homeDispatch({ field: 'loading', value: false });
           homeDispatch({ field: 'messageIsStreaming', value: false });
           if (websocketLoadingToastId) toast.dismiss(websocketLoadingToastId);
-          toast.error('WebSocket connection failed.', {
+          
+          const currentPort = window.location.port;
+          const expectedPort = process.env.PORT || '3000';
+          
+          let errorMsg = 'WebSocket connection failed.';
+          if (currentPort !== expectedPort) {
+            errorMsg = `Please access the application at ${window.location.protocol}//${window.location.hostname}:${expectedPort}`;
+          }
+          
+          toast.error(errorMsg, {
             id: 'websocketErrorToastId',
           });
           resolve(false);
@@ -905,7 +914,7 @@ export const Chat = () => {
             const expectedPort = process.env.PORT || '3000';
 
             let errorMsg = response.statusText;
-            if (currentPort !== expectedPort && response.status === 404) {
+            if (currentPort !== expectedPort) {
               errorMsg = `Please access the application at ${window.location.protocol}//${window.location.hostname}:${expectedPort}`;
             }
 
