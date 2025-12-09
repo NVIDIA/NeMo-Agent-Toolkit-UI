@@ -74,7 +74,9 @@ try {
   console.error(
     'Expected format: http://hostname:port or https://hostname:port',
   );
-  console.error('Example: http://localhost:3099');
+  console.error(
+    'Example: http://localhost:3099 (internal port, not for browser access)',
+  );
   process.exit(1);
 }
 // --- Create Proxy Instances ---
