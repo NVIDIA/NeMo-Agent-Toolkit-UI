@@ -386,15 +386,7 @@ export const Chat = () => {
           homeDispatch({ field: 'messageIsStreaming', value: false });
           if (websocketLoadingToastId) toast.dismiss(websocketLoadingToastId);
           
-          const currentPort = window.location.port;
-          const expectedPort = process.env.PORT || '3000';
-          
-          let errorMsg = 'WebSocket connection failed.';
-          if (currentPort !== expectedPort) {
-            errorMsg = `Please access the application at ${window.location.protocol}//${window.location.hostname}:${expectedPort}`;
-          }
-          
-          toast.error(errorMsg, {
+          toast.error('WebSocket connection failed. Ensure the backend server is running.', {
             id: 'websocketErrorToastId',
           });
           resolve(false);
@@ -910,13 +902,9 @@ export const Chat = () => {
             homeDispatch({ field: 'loading', value: false });
             homeDispatch({ field: 'messageIsStreaming', value: false });
             
-            const currentPort = window.location.port;
-            const expectedPort = process.env.PORT || '3000';
-
-            let errorMsg = response.statusText;
-            if (currentPort !== expectedPort) {
-              errorMsg = `Please access the application at ${window.location.protocol}//${window.location.hostname}:${expectedPort}`;
-            }
+            const errorMsg = response.status === 404
+              ? 'API communication not available at this URL. Access the application at the default URL http://localhost:3000 (or check terminal startup logs for the correct web application URL).'
+              : response.statusText;
 
             toast.error(errorMsg, { duration: 8000 });
             return;

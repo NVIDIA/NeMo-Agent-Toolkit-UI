@@ -51,9 +51,9 @@ npm ci
 npm run dev
 ```
 
-**Access the application at: `http://localhost:3000`**
+The application will be available at the proxy port configured in your `PORT` environment variable (default: `http://localhost:3000`)
 
-> **Important:** Always use port 3000. The application uses a proxy architecture where port 3000 handles all communication. Do not access other ports directly as API and WebSocket features will not work.
+> **Important:** Check terminal startup logs for the actual web application URL (e.g., `http://localhost:3000`). If the configured port conflicts, an alternate port will be assigned. Do not access the internal Next.js port directly (default: 3099) as API and WebSocket communication will fail.
 
 #### Docker Deployment
 
