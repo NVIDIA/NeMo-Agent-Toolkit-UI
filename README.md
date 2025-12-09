@@ -95,6 +95,7 @@ The application uses a unified proxy architecture for improved security. All con
 
 **Proxy Configuration**
 - `PORT` - Public gateway port that the browser connects to (default: 3000, auto-detects if busy)
+- `NEXT_INTERNAL_URL` - Internal Next.js dev server URL (default: `http://localhost:3099`). Must match the port in `package.json`.
 - `HTTP_PUBLIC_PATH` - Public HTTP path prefix for API requests (default: `/api`)
 - `WS_PUBLIC_PATH` - Public WebSocket path (default: `/ws`)
 

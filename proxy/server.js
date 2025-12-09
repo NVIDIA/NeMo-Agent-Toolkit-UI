@@ -63,8 +63,20 @@ const UPSTREAM_WS_ORIGIN = `${UPSTREAM_WS_SCHEME}://${upstream.host}`;
 
 // Gateway and Next.js configuration
 const GATEWAY_PORT = parseInt(process.env.PORT || '3000', 10);
-// Next.js dev server runs on port 3099
-const NEXT_DEV_TARGET = 'http://localhost:3099';
+const NEXT_DEV_TARGET =
+  process.env.NEXT_INTERNAL_URL || 'http://localhost:3099';
+
+// Validate NEXT_INTERNAL_URL format
+try {
+  new URL(NEXT_DEV_TARGET);
+} catch (err) {
+  console.error('ERROR: Invalid NEXT_INTERNAL_URL format:', NEXT_DEV_TARGET);
+  console.error(
+    'Expected format: http://hostname:port or https://hostname:port',
+  );
+  console.error('Example: http://localhost:3099');
+  process.exit(1);
+}
 // --- Create Proxy Instances ---
 
 // Proxy for Next.js dev server
