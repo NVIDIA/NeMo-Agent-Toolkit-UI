@@ -3,9 +3,9 @@
   "version": "0.1.1",
   "private": true,
   "scripts": {
-    "dev": "concurrently --kill-others --names \"PROXY,UI\" -c \"bgBlue.bold,bgMagenta.bold\" \"npm run dev:gateway\" \"npm run dev:next\"",
+    "dev": "concurrently --kill-others --names \"UI\" -c \"bgBlue.bold\" --hide 1 \"npm run --silent dev:gateway\" \"npm run --silent dev:next\"",
     "dev:gateway": "node proxy/server.js",
-    "dev:next": "NEXT_TELEMETRY_DISABLED=1 next dev -p 3001",
+    "dev:next": "NEXT_TELEMETRY_DISABLED=1 next dev -p 3099",
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx",

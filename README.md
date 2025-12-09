@@ -51,7 +51,9 @@ npm ci
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`
+The application will be available at the proxy port configured in your `PORT` environment variable (default: `http://localhost:3000`)
+
+> **Important:** Check terminal startup logs for the actual web application URL (e.g., `http://localhost:3000`). If the configured port conflicts, an alternate port will be assigned. Do not access the internal Next.js port directly (default: 3099) as API and WebSocket communication will fail.
 
 #### Docker Deployment
 
@@ -93,7 +95,7 @@ The application uses a unified proxy architecture for improved security. All con
 
 **Proxy Configuration**
 - `PORT` - Public gateway port that the browser connects to (default: 3000, auto-detects if busy)
-- `NEXT_INTERNAL_URL` - Internal Next.js dev server URL (default: `http://localhost:3001`)
+- `NEXT_INTERNAL_URL` - Internal Next.js dev server URL (default: `http://localhost:3099`). Must match the port in `package.json`.
 - `HTTP_PUBLIC_PATH` - Public HTTP path prefix for API requests (default: `/api`)
 - `WS_PUBLIC_PATH` - Public WebSocket path (default: `/ws`)
 

@@ -385,7 +385,8 @@ export const Chat = () => {
           homeDispatch({ field: 'loading', value: false });
           homeDispatch({ field: 'messageIsStreaming', value: false });
           if (websocketLoadingToastId) toast.dismiss(websocketLoadingToastId);
-          toast.error('WebSocket connection failed.', {
+          
+          toast.error('WebSocket connection failed. Ensure the backend server is running.', {
             id: 'websocketErrorToastId',
           });
           resolve(false);
@@ -900,7 +901,12 @@ export const Chat = () => {
           if (!response?.ok) {
             homeDispatch({ field: 'loading', value: false });
             homeDispatch({ field: 'messageIsStreaming', value: false });
-            toast.error(response.statusText);
+            
+            const errorMsg = response.status === 404
+              ? 'API communication not available at this URL. Access the application at the default URL http://localhost:3000 (or check terminal startup logs for the correct web application URL).'
+              : response.statusText;
+
+            toast.error(errorMsg, { duration: 8000 });
             return;
           }
 
