@@ -127,7 +127,7 @@ The UI supports two communication modes:
 - Enables server-initiated messages and interruptions
 - Best for: Interactive workflows, multi-turn conversations, HITL scenarios
 
-For detailed WebSocket integration and message formats, refer to the [WebSocket Documentation](https://docs.nvidia.com/nemo/agent-toolkit/latest/reference/websockets.html) in the NeMo Agent Toolkit documentation.
+For detailed WebSocket integration and message formats, refer to the [WebSocket Documentation](https://docs.nvidia.com/nemo/agent-toolkit/latest/reference/rest-api/websockets.html) in the NeMo Agent Toolkit documentation.
 
 ### Settings Options
 
@@ -176,7 +176,7 @@ This example demonstrates an agent workflow using HTTP streaming with intermedia
 
 #### 1. Backend Setup
 
-First, install and configure [NeMo Agent Toolkit](https://docs.nvidia.com/nemo/agent-toolkit/latest/quick-start/installing.html), then start the simple calculator workflow:
+First, install and configure [NeMo Agent Toolkit](https://docs.nvidia.com/nemo/agent-toolkit/latest/get-started/installation.html), then start the simple calculator workflow:
 
 ```bash
 # Start the NeMo Agent Toolkit backend with the calculator example
