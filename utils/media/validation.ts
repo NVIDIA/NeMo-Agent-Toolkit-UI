@@ -6,10 +6,12 @@
 export function isValidMediaURL(url: string): boolean {
   // Block empty or non-string URLs
   if (!url || typeof url !== 'string') return false;
-  
-  // Block excessively long URLs to prevent DoS
-  if (url.length > 2048) return false;
-  
+
+  // Block excessively long URLs to prevent DoS, but allow embedded data URLs
+  if (url.length > 2048 && !url.startsWith("data:")) {
+    return false;
+  }
+
   // Block control characters that can confuse parsers
   for (let i = 0; i < url.length; i++) {
     const charCode = url.charCodeAt(i);
@@ -27,7 +29,7 @@ export function isValidMediaURL(url: string): boolean {
   }
   
   // Only allow HTTP/HTTPS protocols for images/videos
-  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'data:') {
     return false;
   }
   
