@@ -13,12 +13,12 @@ const {
 
 describe('URL Validation Tests', () => {
   const originalEnv = process.env.NODE_ENV;
-  
+
   beforeAll(() => {
     // @ts-ignore - Modifying NODE_ENV for test purposes
     process.env.NODE_ENV = 'development';
   });
-  
+
   afterAll(() => {
     // @ts-ignore - Restoring NODE_ENV after test
     process.env.NODE_ENV = originalEnv;
@@ -34,7 +34,10 @@ describe('URL Validation Tests', () => {
           'https://cdn.example.com/image.jpg',
           'https://images.unsplash.com/photo.png',
           'https://static.website.com/video.mp4',
-          'https://media.company.org/assets/logo.svg'
+          'https://media.company.org/assets/logo.svg',
+          // truncated
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA',
+          'data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAABXg'
         ];
 
         validUrls.forEach(url => {
@@ -67,6 +70,10 @@ describe('URL Validation Tests', () => {
         const dangerousUrls = [
           'javascript:alert("xss")',
           'data:image/svg+xml,<svg><script>alert("xss")</script></svg>',
+          'data:image/svg+xml,<svg><SCRIPT>alert("xss")</SCRIPT></svg>',
+          'data:image/svg+xml,<svg onload="alert(1)"></svg>',
+          // temorary, add to allowed list when we add support for SVG
+          'data:image/svg+xml,<svg><text>Hello World</text></svg>',
           'file:///etc/passwd',
           'ftp://evil.com/image.jpg'
         ];
