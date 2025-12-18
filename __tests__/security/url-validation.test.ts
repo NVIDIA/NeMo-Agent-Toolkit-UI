@@ -35,7 +35,6 @@ describe('URL Validation Tests', () => {
           'https://images.unsplash.com/photo.png',
           'https://static.website.com/video.mp4',
           'https://media.company.org/assets/logo.svg',
-          'data:image/svg+xml,<svg><text>Hello World</text></svg>',
           // truncated
           'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA',
           'data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAABXg'
@@ -71,6 +70,10 @@ describe('URL Validation Tests', () => {
         const dangerousUrls = [
           'javascript:alert("xss")',
           'data:image/svg+xml,<svg><script>alert("xss")</script></svg>',
+          'data:image/svg+xml,<svg><SCRIPT>alert("xss")</SCRIPT></svg>',
+          'data:image/svg+xml,<svg onload="alert(1)"></svg>',
+          // temorary, add to allowed list when we add support for SVG
+          'data:image/svg+xml,<svg><text>Hello World</text></svg>',
           'file:///etc/passwd',
           'ftp://evil.com/image.jpg'
         ];

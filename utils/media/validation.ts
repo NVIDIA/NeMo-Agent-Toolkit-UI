@@ -9,7 +9,7 @@ export function isValidMediaURL(url: string): boolean {
 
   if (url.startsWith("data:")) {
     // Allow data URLs for images/videos
-    if (url.search("<script") !== -1) {
+    if (! /^data:image\/(png|jpeg);base64,/.test(url)) {
       return false;
     }
   } else {
