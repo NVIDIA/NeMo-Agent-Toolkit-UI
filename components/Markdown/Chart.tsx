@@ -54,8 +54,12 @@ const Chart = (props: any) => {
   const data = props?.payload;
   const {
     Label = '',
+    SeriesLabel = '',
+    SeriesLabelMap = {},
     ChartType = '',
+    ChartHeight = 300,
     Data = [],
+    LegendProps = {},
     XAxisKey = '',
     YAxisKey = '',
     ValueKey = '',
@@ -77,6 +81,25 @@ const Chart = (props: any) => {
     fill: '#76b900',
     stroke: 'black',
   };
+
+  const defaultContainerProps = {
+    width: '100%',
+    height: ChartHeight,
+    className: 'p-2',
+  };
+
+  const defaultXAxisProps = {
+    dataKey: XAxisKey,
+    angle: 25,
+    textAnchor: 'start',
+    height: 100,
+    tickFormatter: (label: string) => {
+        // truncate long xAxis labels with ellipsis
+      const maxLength = 20;
+      return label.length > maxLength ? `${label.substring(0, maxLength)}...` : label;
+    },
+  };
+
 
   const handleDownload = async () => {
     try {
@@ -106,38 +129,38 @@ const Chart = (props: any) => {
     switch (ChartType) {
       case 'BarChart':
         return (
-          <ResponsiveContainer width="100%" height={300} className={'p-2'}>
+          <ResponsiveContainer {...defaultContainerProps}>
             <BarChart id={`chart-BarChart-${Label}`} data={Data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={XAxisKey} />
+              <XAxis {...defaultXAxisProps} />
               <YAxis />
               <Tooltip />
-              <Legend />
-              <Bar dataKey={YAxisKey} fill={colors.fill} />
+              <Legend {...LegendProps} />
+              <Bar dataKey={YAxisKey} name={SeriesLabel} fill={colors.fill} />
             </BarChart>
           </ResponsiveContainer>
         );
 
       case 'LineChart':
         return (
-          <ResponsiveContainer width="100%" height={300} className={'p-2'}>
+          <ResponsiveContainer {...defaultContainerProps}>
             <LineChart id={`chart-LineChart-${Label}`} data={Data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={XAxisKey} />
+              <XAxis {...defaultXAxisProps} />
               <YAxis />
               <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey={YAxisKey} stroke={colors.fill} />
+              <Legend {...LegendProps} />
+              <Line type="monotone" dataKey={YAxisKey} name={SeriesLabel} stroke={colors.fill}  />
             </LineChart>
           </ResponsiveContainer>
         );
 
       case 'PieChart':
         return (
-          <ResponsiveContainer width="100%" height={300} className={'p-2'}>
+          <ResponsiveContainer {...defaultContainerProps}>
             <PieChart id={`chart-PieChart-${Label}`}>
               <Tooltip />
-              <Legend />
+              <Legend {...LegendProps} />
               <Pie
                 data={Data}
                 dataKey={ValueKey}
@@ -155,16 +178,17 @@ const Chart = (props: any) => {
 
       case 'AreaChart':
         return (
-          <ResponsiveContainer width="100%" height={300} className={'p-2'}>
+          <ResponsiveContainer {...defaultContainerProps}>
             <AreaChart id={`chart-AreaChart-${Label}`} data={Data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={XAxisKey} />
+              <XAxis {...defaultXAxisProps} />
               <YAxis />
               <Tooltip />
-              <Legend />
+              <Legend {...LegendProps} />
               <Area
                 type="monotone"
                 dataKey={YAxisKey}
+                name={SeriesLabel}
                 stroke={colors.stroke}
                 fill={colors.fill}
               />
@@ -174,48 +198,48 @@ const Chart = (props: any) => {
 
       case 'RadarChart':
         return (
-          <ResponsiveContainer width="100%" height={300} className={'p-2'}>
+          <ResponsiveContainer {...defaultContainerProps}>
             <RadarChart id={`chart-RadarChart-${Label}`} data={Data}>
               <PolarGrid />
               <PolarAngleAxis dataKey={PolarAngleKey} />
               <PolarRadiusAxis />
               <Radar
-                name="Metrics"
+                name={SeriesLabel}
                 dataKey={PolarValueKey}
                 stroke={colors.stroke}
                 fill={colors.fill}
                 fillOpacity={0.6}
               />
-              <Legend />
+              <Legend {...LegendProps} />
             </RadarChart>
           </ResponsiveContainer>
         );
 
       case 'ScatterChart':
         return (
-          <ResponsiveContainer width="100%" height={300} className={'p-2'}>
+          <ResponsiveContainer {...defaultContainerProps}>
             <ScatterChart id={`chart-ScatterChart-${Label}`}>
               <CartesianGrid />
-              <XAxis type="number" dataKey={XAxisKey} name={XAxisKey} />
+              <XAxis type="number" {...defaultXAxisProps} />
               <YAxis type="number" dataKey={YAxisKey} name={YAxisKey} />
               <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-              <Legend />
-              <Scatter name="Sales vs Profit" data={Data} fill={colors.fill} />
+              <Legend {...LegendProps} />
+              <Scatter data={Data} name={SeriesLabel} fill={colors.fill} />
             </ScatterChart>
           </ResponsiveContainer>
         );
 
       case 'ComposedChart':
         return (
-          <ResponsiveContainer width="100%" height={300} className={'p-2'}>
+          <ResponsiveContainer {...defaultContainerProps}>
             <ComposedChart id={`chart-ComposedChart-${Label}`} data={Data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={XAxisKey} />
+              <XAxis {...defaultXAxisProps} />
               <YAxis />
               <Tooltip />
-              <Legend />
-              <Bar dataKey={BarKey} fill={colors.fill} />
-              <Line type="monotone" dataKey={LineKey} stroke={colors.stroke} />
+              <Legend {...LegendProps} />
+              <Bar dataKey={BarKey} name={SeriesLabelMap.bar} fill={colors.fill} />
+              <Line dataKey={LineKey} name={SeriesLabelMap.line} stroke={colors.stroke} type="monotone" />
             </ComposedChart>
           </ResponsiveContainer>
         );
@@ -267,7 +291,7 @@ const Chart = (props: any) => {
         onClick={handleDownload}
       />
       <div className="pt-4" id={`chart-${Label}`}>
-        <div className="pl-4">{Label}</div>
+        <div className="pl-4 font-bold">{Label}</div>
         {renderChart()}
       </div>
     </div>
