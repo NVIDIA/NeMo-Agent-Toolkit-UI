@@ -1,2 +1,7 @@
 # Default Approval rule
-* @nvidia/aiqtoolkit-developers
+* @nvidia/nat-developers
+
+# Dependency changes
+package.json @nvidia/nat-dep-approvers
+package-lock.json @nvidia/nat-dep-approvers
+
