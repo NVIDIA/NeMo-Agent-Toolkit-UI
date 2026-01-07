@@ -266,12 +266,10 @@ export const ChatMessage: FC<Props> = memo(
                     </div>
                   </div>
                 ) : (
-                  <div className="prose whitespace-pre-wrap dark:prose-invert flex-1 w-full overflow-x-auto">
+                  <div className="prose dark:prose-invert flex-1 w-full flex-grow max-w-full whitespace-pre-wrap overflow-x-auto">
                     <ReactMarkdown
-                      className="prose dark:prose-invert flex-1 w-full flex-grow max-w-full whitespace-normal"
                       remarkPlugins={[remarkGfm, remarkMath]}
                       rehypePlugins={[rehypeRaw] as any}
-                      linkTarget="_blank"
                       components={markdownComponents}
                     >
                       {prepareContent({ message, role: 'user' })}
@@ -313,7 +311,6 @@ export const ChatMessage: FC<Props> = memo(
                           },
                         ],
                       ]}
-                      linkTarget="_blank"
                       components={markdownComponents}
                     >
                       {prepareContent({
@@ -325,9 +322,8 @@ export const ChatMessage: FC<Props> = memo(
                     </MemoizedReactMarkdown>
                   </div>
                   {/* for response content */}
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto prose dark:prose-invert flex-1 w-full flex-grow max-w-full whitespace-normal">
                     <MemoizedReactMarkdown
-                      className="prose dark:prose-invert flex-1 w-full flex-grow max-w-full whitespace-normal"
                       rehypePlugins={[rehypeRaw] as any}
                       remarkPlugins={[
                         remarkGfm,
@@ -338,7 +334,6 @@ export const ChatMessage: FC<Props> = memo(
                           },
                         ],
                       ]}
-                      linkTarget="_blank"
                       components={markdownComponents}
                     >
                       {prepareContent({
