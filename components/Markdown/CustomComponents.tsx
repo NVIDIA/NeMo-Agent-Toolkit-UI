@@ -103,6 +103,8 @@ export const getReactMarkDownCustomComponents = (
           <a
             href={href}
             className="text-[#76b900] no-underline hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
             {...props}
           >
             {children}
