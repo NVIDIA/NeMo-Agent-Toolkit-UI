@@ -1239,4 +1239,94 @@ describe('WebSocket Functionality', () => {
       fail('Expected early return when conversation is undefined');
     });
   });
+
+  describe('Observability Trace Handling', () => {
+    it('should attach trace ID from separate observability_trace_message', () => {
+      const messages: any[] = [];
+      
+      // First, receive response message
+      const responseMessage = {
+        type: 'system_response_message',
+        conversation_id: 'conv-123',
+        content: { text: 'AI response' },
+        status: 'complete'
+      };
+      
+      messages.push({
+        role: 'assistant',
+        content: responseMessage.content.text
+      });
+      
+      // Then, receive separate trace message
+      const traceMessage = {
+        type: 'observability_trace_message',
+        conversation_id: 'conv-123',
+        content: { 
+          observability_trace_id: 'trace-abc-123' 
+        }
+      };
+      
+      // Simulate attaching trace to last message
+      const lastMessage = messages[messages.length - 1];
+      const updatedMessage = {
+        ...lastMessage,
+        observabilityTraceId: traceMessage.content.observability_trace_id
+      };
+      messages[messages.length - 1] = updatedMessage;
+      
+      expect(messages[0].observabilityTraceId).toBe('trace-abc-123');
+      expect(messages[0].content).toBe('AI response');
+    });
+
+    it('should handle observability_trace_message without assistant message', () => {
+      const messages: any[] = [];
+      
+      const traceMessage = {
+        type: 'observability_trace_message',
+        conversation_id: 'conv-123',
+        content: { 
+          observability_trace_id: 'trace-early-123' 
+        }
+      };
+      
+      // If there's no assistant message, trace message should be ignored
+      const lastMessage = messages[messages.length - 1];
+      const isLastAssistant = lastMessage?.role === 'assistant';
+      
+      if (!isLastAssistant) {
+        // Don't create a new message, just skip
+        expect(messages.length).toBe(0);
+      }
+    });
+
+    it('should handle trace message with various ID formats', () => {
+      const testCases = [
+        'trace-abc-123',
+        'trace_underscore_456',
+        'trace:colon:789',
+        'trace.dot.012',
+        '12345678-1234-1234-1234-123456789abc'
+      ];
+
+      testCases.forEach(traceId => {
+        const messages = [{
+          role: 'assistant',
+          content: 'Test response'
+        }];
+        
+        const traceMessage = {
+          type: 'observability_trace_message',
+          conversation_id: 'conv-123',
+          content: { observability_trace_id: traceId }
+        };
+        
+        messages[0] = {
+          ...messages[0],
+          observabilityTraceId: traceMessage.content.observability_trace_id
+        };
+        
+        expect(messages[0].observabilityTraceId).toBe(traceId);
+      });
+    });
+  });
 });

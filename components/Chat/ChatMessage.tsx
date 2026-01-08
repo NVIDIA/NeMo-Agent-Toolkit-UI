@@ -5,6 +5,8 @@ import {
   IconCopy,
   IconEdit,
   IconPlayerPause,
+  IconThumbDown,
+  IconThumbUp,
   IconTrash,
   IconUser,
   IconVolume2,
@@ -21,6 +23,7 @@ import {
 } from '@/utils/app/helper';
 
 import { Message } from '@/types/chat';
+import { useFeedback } from '@/hooks/useFeedback';
 
 import HomeContext from '@/pages/api/home/home.context';
 
@@ -55,6 +58,7 @@ export const ChatMessage: FC<Props> = memo(
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
+    const {submitFeedback} = useFeedback();
 
     // Memoize the markdown components to prevent recreation on every render
     const markdownComponents = useMemo(() => {
@@ -379,6 +383,25 @@ export const ChatMessage: FC<Props> = memo(
                             <IconVolume2 size={20} />
                           )}
                         </button>
+                        {message.observabilityTraceId &&  (
+                          <>
+                            <button
+                              className={"text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300"}
+                              onClick={() => submitFeedback(message.observabilityTraceId, '👍')}
+                              title="Give thumbs up"
+                            >
+                              <IconThumbUp size={20}/>
+                            </button>
+                            <button
+                              className={"text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300"}
+                              onClick={() => submitFeedback(message.observabilityTraceId, '👎')}
+                              title="Give thumbs down"
+                            >
+                              <IconThumbDown size={20}/>
+                            </button>
+                          </>
+                        )}
+
                       </>
                     )}
                   </div>

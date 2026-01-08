@@ -261,6 +261,32 @@ describe('chatTransform', () => {
 
       expect(result.content).toBe('');
     });
+
+    it('preserves existing observabilityTraceId', () => {
+      const messageWithTraceId = { ...baseMessage, observabilityTraceId: 'trace-123' };
+      const result = updateAssistantMessage(messageWithTraceId, 'New content');
+
+      expect(result.observabilityTraceId).toBe('trace-123');
+      expect(result.content).toBe('New content');
+    });
+
+    it('preserves undefined observabilityTraceId', () => {
+      const result = updateAssistantMessage(baseMessage, 'New content');
+
+      expect(result.observabilityTraceId).toBeUndefined();
+      expect(result.content).toBe('New content');
+    });
+
+    it('preserves observabilityTraceId when updating intermediate steps', () => {
+      const messageWithTraceId = { ...baseMessage, observabilityTraceId: 'trace-123' };
+      const newSteps: IntermediateStep[] = [{ id: 'step-1' }];
+      const result = updateAssistantMessage(messageWithTraceId, 'Updated content', newSteps);
+
+      expect(result.content).toBe('Updated content');
+      expect(result.intermediateSteps).toBe(newSteps);
+      expect(result.observabilityTraceId).toBe('trace-123');
+      expect(result.timestamp).toBeGreaterThan(baseMessage.timestamp!);
+    });
   });
 
   describe('shouldRenderAssistantMessage', () => {

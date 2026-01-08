@@ -501,4 +501,273 @@ data: {"value": "another valid"}
       expect(orderedItems[4].type).toBe('response');
     });
   });
+
+  describe('Observability Trace ID Tag Processing', () => {
+    /**
+     * Description: Verifies that complete observability trace ID tags are extracted correctly from streaming responses
+     * Success: Trace ID is extracted and tags are removed from response content
+     */
+    test('extracts complete observabilitytraceid tags from stream', () => {
+      const chunksWithTraceId = [
+        'data: {"value": "Response text"}\n\n',
+        '<observabilitytraceid>trace-abc-123</observabilitytraceid>',
+        'data: [DONE]\n\n'
+      ];
+
+      const responses: string[] = [];
+      let extractedObservabilityTraceId: string | undefined = undefined;
+
+      chunksWithTraceId.forEach(chunk => {
+        // Extract responses from SSE data
+        if (chunk.includes('data: ')) {
+          const { frames } = extractSsePayloads(chunk);
+          responses.push(...frames);
+        }
+
+        // Extract trace ID tags
+        const observabilityTraceIdMatches = chunk.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
+        for (const match of observabilityTraceIdMatches) {
+          try {
+            const idString = match
+              .replace('<observabilitytraceid>', '')
+              .replace('</observabilitytraceid>', '')
+              .trim();
+            if (idString && !extractedObservabilityTraceId) {
+              extractedObservabilityTraceId = idString;
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        }
+      });
+
+      expect(responses).toContain('{"value": "Response text"}');
+      expect(extractedObservabilityTraceId).toBe('trace-abc-123');
+    });
+
+    /**
+     * Description: Verifies that incomplete trace ID tags are handled without breaking processing
+     * Success: Incomplete tags are buffered appropriately, processing continues when complete
+     */
+    test('handles incomplete observabilitytraceid tags across chunks', () => {
+      const incompleteChunks = [
+        'data: {"value": "start"}\n\n',
+        '<observabilitytraceid>trace-def-',  // Incomplete
+        '456</observabilitytraceid>',  // Completion
+        'data: {"value": "end"}\n\n'
+      ];
+
+      let buffer = '';
+      let extractedObservabilityTraceId: string | undefined = undefined;
+      const responses: string[] = [];
+
+      incompleteChunks.forEach(chunk => {
+        // Handle SSE data
+        if (chunk.includes('data: ')) {
+          const { frames } = extractSsePayloads(chunk);
+          responses.push(...frames);
+        }
+
+        // Buffer potential partial trace ID tags
+        if (chunk.includes('<observabilitytraceid>') || buffer.includes('<observabilitytraceid>')) {
+          buffer += chunk;
+
+          // Check for complete tags
+          const observabilityTraceIdMatches = buffer.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
+          observabilityTraceIdMatches.forEach(match => {
+            const idString = match
+              .replace('<observabilitytraceid>', '')
+              .replace('</observabilitytraceid>', '')
+              .trim();
+            if (idString && !extractedObservabilityTraceId) {
+              extractedObservabilityTraceId = idString;
+            }
+            // Remove processed tag from buffer
+            buffer = buffer.replace(match, '');
+          });
+        }
+      });
+
+      expect(responses).toHaveLength(2);
+      expect(extractedObservabilityTraceId).toBe('trace-def-456');
+    });
+
+    /**
+     * Description: Verifies that only the first trace ID is extracted when multiple are present
+     * Success: Only the first trace ID is captured, subsequent ones are ignored
+     */
+    test('extracts only first observabilitytraceid when multiple present', () => {
+      const chunksWithMultiple = [
+        'data: {"value": "Response"}\n\n',
+        '<observabilitytraceid>trace-first-123</observabilitytraceid>',
+        '<observabilitytraceid>trace-second-456</observabilitytraceid>',
+        'data: [DONE]\n\n'
+      ];
+
+      let extractedObservabilityTraceId: string | undefined = undefined;
+
+      chunksWithMultiple.forEach(chunk => {
+        const observabilityTraceIdMatches = chunk.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
+        for (const match of observabilityTraceIdMatches) {
+          const idString = match
+            .replace('<observabilitytraceid>', '')
+            .replace('</observabilitytraceid>', '')
+            .trim();
+          if (idString && !extractedObservabilityTraceId) {
+            extractedObservabilityTraceId = idString;
+          }
+        }
+      });
+
+      expect(extractedObservabilityTraceId).toBe('trace-first-123');
+    });
+
+    /**
+     * Description: Verifies that malformed trace ID tags are ignored gracefully
+     * Success: Malformed tags don't break processing, valid tags are still extracted
+     */
+    test('ignores malformed observabilitytraceid tags', () => {
+      const chunksWithMalformed = [
+        'data: {"value": "Response"}\n\n',
+        '<observabilitytraceid></observabilitytraceid>',  // Empty tag
+        '<observabilitytraceid>   </observabilitytraceid>',  // Whitespace only
+        '<observabilitytraceid>trace-valid-123</observabilitytraceid>',  // Valid
+        'data: [DONE]\n\n'
+      ];
+
+      let extractedObservabilityTraceId: string | undefined = undefined;
+
+      chunksWithMalformed.forEach(chunk => {
+        const observabilityTraceIdMatches = chunk.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
+        for (const match of observabilityTraceIdMatches) {
+          const idString = match
+            .replace('<observabilitytraceid>', '')
+            .replace('</observabilitytraceid>', '')
+            .trim();
+          if (idString && !extractedObservabilityTraceId) {
+            extractedObservabilityTraceId = idString;
+          }
+        }
+      });
+
+      expect(extractedObservabilityTraceId).toBe('trace-valid-123');
+    });
+
+    /**
+     * Description: Verifies that observabilitytraceid tags are removed from chunk content
+     * Success: Tags are stripped from content so they don't appear in the UI
+     */
+    test('removes observabilitytraceid tags from chunk content', () => {
+      let chunkValue = 'Response text <observabilitytraceid>trace-123</observabilitytraceid> more text';
+
+      // Extract trace ID
+      const observabilityTraceIdMatches = chunkValue.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
+      let extractedObservabilityTraceId: string | undefined = undefined;
+
+      for (const match of observabilityTraceIdMatches) {
+        const idString = match
+          .replace('<observabilitytraceid>', '')
+          .replace('</observabilitytraceid>', '')
+          .trim();
+        if (idString && !extractedObservabilityTraceId) {
+          extractedObservabilityTraceId = idString;
+        }
+      }
+
+      // Remove tags from content
+      if (observabilityTraceIdMatches.length > 0) {
+        chunkValue = chunkValue.replace(/<observabilitytraceid>[\s\S]*?<\/observabilitytraceid>/g, '');
+      }
+
+      expect(extractedObservabilityTraceId).toBe('trace-123');
+      expect(chunkValue).toBe('Response text  more text');
+      expect(chunkValue).not.toContain('<observabilitytraceid>');
+    });
+
+    /**
+     * Description: Verifies that observabilitytraceid tags interleaved with intermediate steps maintain order
+     * Success: Both trace IDs and intermediate steps are processed in correct order
+     */
+    test('handles observabilitytraceid tags interleaved with intermediate steps', () => {
+      const interleavedChunks = [
+        'data: {"value": "Start"}\n\n',
+        '<intermediatestep>{"id": "step-1", "type": "system_intermediate"}</intermediatestep>',
+        '<observabilitytraceid>trace-interleaved-789</observabilitytraceid>',
+        '<intermediatestep>{"id": "step-2", "type": "system_intermediate"}</intermediatestep>',
+        'data: {"value": " end"}\n\n'
+      ];
+
+      let extractedObservabilityTraceId: string | undefined = undefined;
+      const steps: string[] = [];
+      const responses: string[] = [];
+
+      interleavedChunks.forEach(chunk => {
+        // Process responses
+        if (chunk.includes('data: ')) {
+          const { frames } = extractSsePayloads(chunk);
+          responses.push(...frames);
+        }
+
+        // Process intermediate steps
+        const stepMatches = chunk.match(/<intermediatestep>([\s\S]*?)<\/intermediatestep>/g) || [];
+        stepMatches.forEach(match => {
+          const jsonString = match
+            .replace('<intermediatestep>', '')
+            .replace('</intermediatestep>', '')
+            .trim();
+          steps.push(jsonString);
+        });
+
+        // Process trace ID
+        const observabilityTraceIdMatches = chunk.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
+        for (const match of observabilityTraceIdMatches) {
+          const idString = match
+            .replace('<observabilitytraceid>', '')
+            .replace('</observabilitytraceid>', '')
+            .trim();
+          if (idString && !extractedObservabilityTraceId) {
+            extractedObservabilityTraceId = idString;
+          }
+        }
+      });
+
+      expect(responses).toHaveLength(2);
+      expect(steps).toHaveLength(2);
+      expect(extractedObservabilityTraceId).toBe('trace-interleaved-789');
+    });
+
+    /**
+     * Description: Verifies that observabilitytraceid tags with special characters are handled correctly
+     * Success: Special characters in trace IDs are preserved without corruption
+     */
+    test('handles observabilitytraceid with special characters', () => {
+      const specialChars = [
+        '<observabilitytraceid>trace-with-dashes-123</observabilitytraceid>',
+        '<observabilitytraceid>trace_with_underscores_456</observabilitytraceid>',
+        '<observabilitytraceid>trace:with:colons:789</observabilitytraceid>',
+        '<observabilitytraceid>trace.with.dots.012</observabilitytraceid>'
+      ];
+
+      const extractedIds: string[] = [];
+
+      specialChars.forEach(chunk => {
+        const observabilityTraceIdMatches = chunk.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
+        observabilityTraceIdMatches.forEach(match => {
+          const idString = match
+            .replace('<observabilitytraceid>', '')
+            .replace('</observabilitytraceid>', '')
+            .trim();
+          if (idString) {
+            extractedIds.push(idString);
+          }
+        });
+      });
+
+      expect(extractedIds).toHaveLength(4);
+      expect(extractedIds[0]).toBe('trace-with-dashes-123');
+      expect(extractedIds[1]).toBe('trace_with_underscores_456');
+      expect(extractedIds[2]).toBe('trace:with:colons:789');
+      expect(extractedIds[3]).toBe('trace.with.dots.012');
+    });
+  });
 });
