@@ -5,6 +5,7 @@ const nextConfig = {
     ...configureRuntimeEnv(),
   },
   output: 'standalone',
+  transpilePackages: ['react-syntax-highlighter'],
   typescript: {
     // !! WARN !!
     // Dangerously allow production builds to successfully complete even if
