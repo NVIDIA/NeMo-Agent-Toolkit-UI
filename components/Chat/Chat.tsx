@@ -277,11 +277,6 @@ export const Chat = () => {
     selectedConversationRef.current = selectedConversation;
   }, [selectedConversation]);
 
-  // Keep conversations ref up to date to avoid stale closure
-  useEffect(() => {
-    conversationsRef.current = conversations;
-  }, [conversations]);
-
   // Reset WebSocket state when conversation changes to prevent stale message display
   useEffect(() => {
     if (selectedConversation?.id) {
@@ -804,6 +799,11 @@ export const Chat = () => {
               }
               return conversation;
             });
+          
+          // Update ref immediately to prevent stale reads
+          conversationsRef.current = updatedConversations;
+          selectedConversationRef.current = updatedConversation;
+          
           // Removed fallback block that was wiping conversations
           homeDispatch({
             field: 'conversations',
