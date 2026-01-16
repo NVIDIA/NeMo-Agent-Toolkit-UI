@@ -9,8 +9,14 @@ import { isValidMediaURL } from '@/utils/media/validation';
 
 import Loading from './Loading';
 
+interface ImageProps {
+  src?: string;
+  alt?: string;
+  [key: string]: any;
+}
+
 export const Image = memo(
-  ({ src, alt, ...props }) => {
+  ({ src, alt, ...props }: ImageProps) => {
     const imgRef = useRef(null);
     const [error, setError] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -25,13 +31,25 @@ export const Image = memo(
     }, []);
 
     const imageElement = useMemo(() => {
+      // Handle missing src
+      if (!src || typeof src !== 'string') {
+        return (
+          <div className="flex items-center justify-center p-4 bg-red-50 rounded-lg border border-red-200">
+            <IconExclamationCircle className="w-5 h-5 text-red-500 mr-2" />
+            <p className="text-red-600 text-sm">
+              Image source is missing or invalid
+            </p>
+          </div>
+        );
+      }
+
       if (src === 'loading') {
         return <Loading message="Loading..." type="image" />;
       }
 
       // Validate URL before rendering to prevent SSRF and privacy leaks
       // Allow same-origin relative paths (starting with '/') without validation
-      if (!(typeof src === 'string' && src.length > 0 && src.startsWith('/')) && !isValidMediaURL(src)) {
+      if (!(src.length > 0 && src.startsWith('/')) && !isValidMediaURL(src)) {
         return (
           <div className="flex items-center justify-center p-4 bg-red-50 rounded-lg border border-red-200">
             <IconExclamationCircle className="w-5 h-5 text-red-500 mr-2" />
@@ -90,5 +108,5 @@ export const Image = memo(
 
     return imageElement;
   },
-  (prevProps, nextProps) => prevProps.src === nextProps.src,
+  (prevProps: ImageProps, nextProps: ImageProps) => prevProps.src === nextProps.src,
 );
