@@ -25,6 +25,7 @@ import {
   isSystemResponseInProgress,
   isSystemResponseComplete,
   isOAuthConsentMessage,
+  isObservabilityTraceMessage,
   extractOAuthUrl,
   shouldAppendResponseContent,
 } from '@/types/websocket';
@@ -560,6 +561,7 @@ export const Chat = () => {
           ? {
               ...m,
               errorMessages: [...(m.errorMessages || []), message],
+              observabilityTraceId: m.observabilityTraceId,
               timestamp: Date.now(),
             }
           : m
@@ -578,6 +580,32 @@ export const Chat = () => {
         ),
       ];
     }
+  };
+
+  /**
+   * Processes observability trace messages by attaching trace ID to last assistant message
+   */
+  const processObservabilityTraceMessage = (
+    message: WebSocketInbound,
+    messages: Message[]
+  ): Message[] => {
+    if (!isObservabilityTraceMessage(message)) return messages;
+
+    const traceId = message.content?.observability_trace_id;
+    if (!traceId) {
+      return messages;
+    }
+
+    // Attach trace ID to last assistant message
+    return messages.map((m, idx) =>
+      idx === messages.length - 1
+        ? {
+            ...m,
+            observabilityTraceId: traceId,
+            timestamp: Date.now(),
+          }
+        : m
+    );
   };
 
   /**
@@ -691,6 +719,7 @@ export const Chat = () => {
     updatedMessages = processSystemResponseMessage(message, updatedMessages);
     updatedMessages = processIntermediateStepMessage(message, updatedMessages);
     updatedMessages = processErrorMessage(message, updatedMessages);
+    updatedMessages = processObservabilityTraceMessage(message, updatedMessages);
 
     // Update conversation with new messages and title using pure helper
     const updatedConversation = applyMessageUpdate(
@@ -917,6 +946,10 @@ export const Chat = () => {
             toast.error('Error: No data received from server');
             return;
           }
+          
+          // Extract Observability-Trace-Id from response headers
+          const observabilityTraceId = response.headers.get('Observability-Trace-Id') || undefined;
+          
           if (!false) {
             if (updatedConversation.messages.length === 1) {
               const { content } = message;
@@ -943,6 +976,7 @@ export const Chat = () => {
             const isGenerateStream = selectedEndpoint.includes('/generate/stream');
             let sseBuffer = '';
             let ndjsonBuffer = '';
+            let extractedObservabilityTraceId: string | undefined = undefined;
 
             while (!done) {
               const { value, done: doneReading } = await reader.read();
@@ -1007,6 +1041,33 @@ export const Chat = () => {
               if (partialIntermediateStep) {
                 chunkValue = partialIntermediateStep + chunkValue;
                 partialIntermediateStep = '';
+              }
+
+              // Process complete observability_trace_id tags
+              let observabilityTraceIdMatches =
+                chunkValue.match(
+                  /<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g
+                ) || [];
+              for (const match of observabilityTraceIdMatches) {
+                try {
+                  const idString = match
+                    .replace('<observabilitytraceid>', '')
+                    .replace('</observabilitytraceid>', '')
+                    .trim();
+                  if (idString && !extractedObservabilityTraceId) {
+                    extractedObservabilityTraceId = idString;
+                  }
+                } catch (error) {
+                  // Ignore parse errors
+                }
+              }
+
+              // if the received chunk contains observabilityTraceId then remove them from the chunkValue
+              if (observabilityTraceIdMatches.length > 0) {
+                chunkValue = chunkValue.replace(
+                  /<observabilitytraceid>[\s\S]*?<\/observabilitytraceid>/g,
+                  ''
+                );
               }
 
               // Check for incomplete tags
@@ -1080,6 +1141,7 @@ export const Chat = () => {
                     role: 'assistant',
                     content: text, // main response content without intermediate steps
                     intermediateSteps: [...processedIntermediateSteps], // intermediate steps
+                    observabilityTraceId: extractedObservabilityTraceId || observabilityTraceId, // Trace ID from stream or headers
                   },
                 ];
 
@@ -1119,6 +1181,7 @@ export const Chat = () => {
                         ...message,
                         content: text, // main response content
                         intermediateSteps: updatedIntermediateSteps, // intermediate steps
+                        observabilityTraceId: extractedObservabilityTraceId || observabilityTraceId, // Trace ID from stream or headers
                       };
                       return msg;
                     }
@@ -1161,7 +1224,7 @@ export const Chat = () => {
             const { answer } = await response?.json();
             const updatedMessages: Message[] = [
               ...updatedConversation.messages,
-              { role: 'assistant', content: answer },
+              { role: 'assistant', content: answer, observabilityTraceId },
             ];
             updatedConversation = {
               ...updatedConversation,

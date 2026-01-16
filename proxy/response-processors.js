@@ -45,6 +45,20 @@ function processIntermediateData(line, res) {
   }
 }
 
+function processObservabilityTrace(line, res) {
+  try {
+    const data = line.split('observability_trace: ')[1];
+    const payload = JSON.parse(data);
+    if (payload?.observability_trace_id) {
+      res.write(
+        `<observabilitytraceid>${payload.observability_trace_id}</observabilitytraceid>`,
+      );
+    }
+  } catch (e) {
+    // Ignore parse errors
+  }
+}
+
 /**
  * Processes /chat/stream responses (SSE format)
  * Backend format: Stream with "data:" lines containing chat completion chunks
@@ -101,6 +115,8 @@ async function processChatStream(backendRes, res) {
           }
         } else if (line.startsWith('intermediate_data: ')) {
           processIntermediateData(line, res);
+        } else if (line.startsWith('observability_trace: ')) {
+          processObservabilityTrace(line, res);
         }
       }
     }
@@ -122,6 +138,16 @@ async function processChat(backendRes, res) {
   }
 
   const data = await backendRes.text();
+  
+  // Construct response headers
+  const observabilityTraceId = backendRes.headers.get('observability-trace-id');
+  const responseHeaders = {
+    'Content-Type': 'text/plain; charset=utf-8',
+    'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
+    'Access-Control-Allow-Credentials': 'true',
+    ...(observabilityTraceId ? { 'Observability-Trace-Id': observabilityTraceId } : {}),
+  };
+  
   try {
     const parsed = JSON.parse(data);
     const content =
@@ -130,18 +156,10 @@ async function processChat(backendRes, res) {
       parsed?.answer ||
       parsed?.value;
 
-    res.writeHead(200, {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
-      'Access-Control-Allow-Credentials': 'true',
-    });
+    res.writeHead(200, responseHeaders);
     res.end(typeof content === 'string' ? content : JSON.stringify(content));
   } catch (e) {
-    res.writeHead(200, {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
-      'Access-Control-Allow-Credentials': 'true',
-    });
+    res.writeHead(200, responseHeaders);
     res.end(data);
   }
 }
@@ -197,6 +215,8 @@ async function processGenerateStream(backendRes, res) {
           }
         } else if (line.startsWith('intermediate_data: ')) {
           processIntermediateData(line, res);
+        } else if (line.startsWith('observability_trace: ')) {
+          processObservabilityTrace(line, res);
         }
       }
     }
@@ -219,11 +239,16 @@ async function processGenerate(backendRes, res) {
 
   const data = await backendRes.text();
 
-  res.writeHead(200, {
+  // Construct response headers
+  const observabilityTraceId = backendRes.headers.get('observability-trace-id');
+  const responseHeaders = {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
     'Access-Control-Allow-Credentials': 'true',
-  });
+    ...(observabilityTraceId ? { 'Observability-Trace-Id': observabilityTraceId } : {}),
+  };
+
+  res.writeHead(200, responseHeaders);
   res.end(data);
 }
 
