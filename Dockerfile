@@ -1,46 +1,29 @@
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 FROM node:18-alpine AS base
+RUN apk add --no-cache libc6-compat
 
 # Install dependencies only when needed
 FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
-
-
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml*  ./
+COPY package.json package-lock.json ./
+RUN npm ci
 
-
-RUN npm i
-
-# Rebuild the source code only when needed
+# Build the application
 FROM base AS builder
 WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-RUN apk update
-
-# Set working directory
-WORKDIR /app
-# install node modules
-COPY package.json /app/package.json
-RUN npm install
-# Copy all files from current directory to working dir in image
-COPY . .
-# Build the assets
-RUN yarn build
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
 # Disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED=1
 
+COPY . .
+COPY --from=deps /app/node_modules ./node_modules
+
 RUN npm run build
 
-# Production image, copy all the files and run next
+# Production image, minimal runtime image with standalone build and proxy server
 FROM base AS runner
 WORKDIR /app
 
@@ -48,23 +31,15 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME="0.0.0.0"
 ENV NEXT_INTERNAL_URL="http://127.0.0.1:3099"
+ENV PORT 3000
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
-
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/next.config.js ./
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+# Copy standalone Next.js build
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 # Copy proxy server and related files
 COPY --from=builder --chown=nextjs:nodejs /app/proxy ./proxy
@@ -78,8 +53,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 USER nextjs
 
 EXPOSE 3000
-
-ENV PORT 3000
 
 # Start both Next.js server and proxy gateway
 # server.js is created by next build from the standalone output
