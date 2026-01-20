@@ -64,4 +64,6 @@ EXPOSE 3000
 # Start both Next.js server and proxy gateway
 # server.js is created by next build from the standalone output
 # Next.js runs on port 3099, proxy gateway listens on PORT (default 3000)
-CMD ["sh", "-c", "PORT=3099 node server.js & sleep 5 && PORT=${PORT:-3000} node proxy/server.js"]
+CMD ["npx", "concurrently", "--kill-others", "--raw", \
+     "PORT=3099 node server.js", \
+     "PORT=${PORT:-3000} node proxy/server.js"]
