@@ -17,7 +17,6 @@ export const getReactMarkDownCustomComponents = (
       code: memo(
         ({
           node,
-          inline,
           className,
           children,
           ...props
@@ -25,8 +24,14 @@ export const getReactMarkDownCustomComponents = (
           children: React.ReactNode;
           [key: string]: any;
         }) => {
-          // Handle inline code (single backticks)
-          if (inline) {
+          // Check for language class - only code blocks (triple backticks) have language-xxx
+          // In react-markdown v10+, the `inline` prop was removed, so we detect inline code
+          // by checking for absence of a language class
+          const match = /language-(\w+)/.exec(className || '');
+          const isInline = !match;
+
+          // Handle inline code (single backticks) - no language class
+          if (isInline) {
             return (
               <code
                 className="bg-gray-200 dark:bg-gray-800 text-[#76b900] px-1 py-0.5 rounded before:content-none after:content-none"
@@ -37,13 +42,11 @@ export const getReactMarkDownCustomComponents = (
             );
           }
 
-          // Handle code blocks (triple backticks)
-          const match = /language-(\w+)/.exec(className || '');
-
+          // Handle code blocks (triple backticks) - has language class
           return (
             <CodeBlock
               key={Math.random()}
-              language={(match && match.length > 1 && match[1]) || ''}
+              language={match[1] || ''}
               value={String(children).replace(/\n$/, '')}
               {...props}
             />
