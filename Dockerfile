@@ -9,6 +9,13 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
+# Production dependencies only (excluding dev dependencies)
+FROM base AS prod-deps
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
 # Build the application
 FROM base AS builder
 WORKDIR /app
@@ -47,8 +54,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/constants ./constants
 COPY --from=builder --chown=nextjs:nodejs /app/utils ./utils
 
 # Copy node_modules for proxy server dependencies
-# The standalone Next.js build doesn't include proxy server dependencies
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+# Use production-only dependencies to reduce image size
+COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 USER nextjs
 
