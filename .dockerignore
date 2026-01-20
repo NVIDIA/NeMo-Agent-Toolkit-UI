@@ -1,4 +1,6 @@
 Dockerfile
+node_modules
+.next
 .gitignore
 .git
 tests/
