@@ -31,7 +31,7 @@
     "i18next": "^22.4.13",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "lucide-react": "^0.454.0",
     "next": "^14.2.35",
     "next-auth": "^4.24.13",
