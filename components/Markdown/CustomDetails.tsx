@@ -100,15 +100,15 @@ export const CustomDetails = ({ children, id, messageIndex, index }) => {
         ref={detailsRef}
         open={isOpen}
         className={`
-                    m-2 bg-neutral-100 dark:bg-zinc-700 shadow border border-neutral-300 dark:border-zinc-600 rounded-lg p-2 
-                    transition-[max-height,opacity,scale] duration-500 ease-in-out overflow-auto
+                    intermediate-step-details m-2 w-full max-w-full min-w-0 bg-neutral-100 dark:bg-zinc-700 shadow border border-neutral-300 dark:border-zinc-600 rounded-lg p-2
+                    transition-[max-height,opacity] duration-500 ease-in-out overflow-auto
                     ${
                       isOpen
-                        ? `opacity-100 h-auto scale-100`
+                        ? `opacity-100 h-auto`
                         : `${
                             messageIsStreaming &&
                             isLastMessage &&
-                            'opacity-60 scale-95'
+                            'opacity-60'
                           }`
                     }
                     ${

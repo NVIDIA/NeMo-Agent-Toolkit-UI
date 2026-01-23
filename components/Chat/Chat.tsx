@@ -1422,7 +1422,7 @@ export const Chat = () => {
     <div className="relative flex-1 overflow-hidden bg-white dark:bg-[#343541] transition-all duration-300 ease-in-out">
       <>
         <div
-          className="max-h-full overflow-x-hidden"
+          className="max-h-full overflow-x-hidden overflow-y-auto"
           ref={chatContainerRef}
           onScroll={handleScroll}
         >
