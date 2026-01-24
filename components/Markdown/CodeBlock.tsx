@@ -103,8 +103,7 @@ export const CodeBlock: FC<Props> = memo(({ language, value }) => {
         style={oneDark}
         customStyle={{
           margin: 0,
-          // width: 'max-content',
-          maxWidth: '200ch',
+          maxWidth: '100%',
           maxHeight: '50vh',
           display: 'block',
           boxSizing: 'border-box',
