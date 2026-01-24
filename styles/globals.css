@@ -43,6 +43,22 @@ pre:has(div.codeblock) {
   padding: 0;
 }
 
+details.intermediate-step-details {
+  max-width: 100%;
+}
+
+details.intermediate-step-details pre {
+  max-width: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+
+details.intermediate-step-details code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* add the code bellow */
 @layer utilities {
   /* Hide scrollbar for Chrome, Safari and Opera */

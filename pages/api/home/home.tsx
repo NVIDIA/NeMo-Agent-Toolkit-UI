@@ -299,8 +299,8 @@ const Home = (props: any) => {
           <div className="flex h-full w-full sm:pt-0">
             <Chatbar />
 
-            <main className="flex flex-col w-full pt-0 relative border-l md:pt-0 dark:border-white/20 transition-width">
-              <div className="flex flex-1 flex-col min-h-screen dark:bg-black">
+            <main className="flex flex-col w-full min-w-0 max-w-full overflow-x-hidden pt-0 relative border-l md:pt-0 dark:border-white/20 transition-width">
+              <div className="flex flex-1 flex-col min-h-screen min-w-0 max-w-full dark:bg-black">
                 <ChatHeader webSocketModeRef={webSocketModeRef} />
                 {enableStreamingRagVizOptions && (
                   <DataStreamManager
