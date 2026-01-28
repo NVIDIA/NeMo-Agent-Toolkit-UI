@@ -117,9 +117,29 @@ export const getReactMarkDownCustomComponents = (
           isEqual(prevProps.children, nextProps.children),
       ),
 
+      ol: memo(
+        ({ children, ...props }) => (
+          <ol className="list-decimal" {...props}>
+            {children}
+          </ol>
+        ),
+        (prevProps, nextProps) =>
+          isEqual(prevProps.children, nextProps.children),
+      ),
+
+      ul: memo(
+        ({ children, ...props }) => (
+          <ul className="list-disc" {...props}>
+            {children}
+          </ul>
+        ),
+        (prevProps, nextProps) =>
+          isEqual(prevProps.children, nextProps.children),
+      ),
+
       li: memo(
         ({ children, ...props }) => (
-          <li className="leading-[1.35rem] mb-1 list-disc" {...props}>
+          <li className="leading-[1.35rem]" {...props}>
             {children}
           </li>
         ),
