@@ -60,7 +60,7 @@ export const getReactMarkDownCustomComponents = (
       chart: memo(
         ({ children }) => {
           try {
-            const payload = JSON.parse(children[0].replaceAll('\n', ''));
+            const payload = JSON.parse(children.replaceAll('\n', ''));
             return payload ? <Chart payload={payload} /> : null;
           } catch (error) {
             console.error(error);
