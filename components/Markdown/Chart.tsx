@@ -93,6 +93,7 @@ const Chart = (props: any) => {
     angle: 25,
     textAnchor: 'start',
     height: 100,
+    interval: 0, // disable auto-hiding of labels
     tickFormatter: (label: string) => {
         // truncate long xAxis labels with ellipsis
       const maxLength = 20;
