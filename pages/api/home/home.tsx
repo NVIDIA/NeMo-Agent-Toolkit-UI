@@ -216,6 +216,21 @@ const Home = (props: any) => {
       dispatch({ field: 'showChatbar', value: showChatbar === 'true' });
     }
 
+    const enableIntermediateSteps = sessionStorage.getItem('enableIntermediateSteps');
+    if (enableIntermediateSteps !== null) {
+      dispatch({ field: 'enableIntermediateSteps', value: enableIntermediateSteps === 'true' });
+    }
+
+    const expandIntermediateSteps = sessionStorage.getItem('expandIntermediateSteps');
+    if (expandIntermediateSteps !== null) {
+      dispatch({ field: 'expandIntermediateSteps', value: expandIntermediateSteps === 'true' });
+    }
+
+    const intermediateStepOverride = sessionStorage.getItem('intermediateStepOverride');
+    if (intermediateStepOverride !== null) {
+      dispatch({ field: 'intermediateStepOverride', value: intermediateStepOverride === 'true' });
+    }
+
     const folders = sessionStorage.getItem('folders');
     if (folders) {
       dispatch({ field: 'folders', value: JSON.parse(folders) });

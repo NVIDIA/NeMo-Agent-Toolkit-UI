@@ -218,6 +218,11 @@ export const Chat = () => {
 
       // Set active user message ID to null to ignore subsequent messages
       activeUserMessageId.current = null;
+      // Clear from sessionStorage
+      const conversationId = selectedConversationRef.current?.id;
+      if (conversationId) {
+        sessionStorage.removeItem(`activeUserMessageId_${conversationId}`);
+      }
 
       // Reset UI state
       homeDispatch({ field: 'loading', value: false });
@@ -280,10 +285,7 @@ export const Chat = () => {
   // Reset WebSocket state when conversation changes to prevent stale message display
   useEffect(() => {
     if (selectedConversation?.id) {
-      // Clear any pending WebSocket message tracking
       activeUserMessageId.current = null;
-
-      // Clear streaming states to ensure clean conversation switch
       homeDispatch({ field: 'messageIsStreaming', value: false });
       homeDispatch({ field: 'loading', value: false });
     }
@@ -325,6 +327,13 @@ export const Chat = () => {
       if (sessionCookie) {
         wsUrl += `?session=${encodeURIComponent(sessionCookie)}`;
       }
+
+      // Add conversation_id for reconnection support (HITL state restoration)
+      const conversationId = selectedConversationRef.current?.id;
+      if (conversationId) {
+        wsUrl += `${wsUrl.includes('?') ? '&' : '?'}conversation_id=${encodeURIComponent(conversationId)}`;
+      }
+
       const ws = new WebSocket(wsUrl);
 
       websocketLoadingToastId = toast.loading(
@@ -347,6 +356,16 @@ export const Chat = () => {
         webSocketConnectedRef.current = true;
         homeDispatch({ field: 'webSocketConnected', value: true });
         webSocketRef.current = ws;
+        
+        // Restore activeUserMessageId from sessionStorage on reconnect
+        const conversationId = selectedConversationRef.current?.id;
+        if (conversationId) {
+          const storedMessageId = sessionStorage.getItem(`activeUserMessageId_${conversationId}`);
+          if (storedMessageId) {
+            activeUserMessageId.current = storedMessageId;
+          }
+        }
+        
         resolve(true); // Resolve true only when connected
       };
 
@@ -640,6 +659,8 @@ export const Chat = () => {
         homeDispatch({ field: 'messageIsStreaming', value: false });
         // Clear active tracking when response is complete
         activeUserMessageId.current = null;
+        // Clear from sessionStorage
+        sessionStorage.removeItem(`activeUserMessageId_${message.conversation_id}`);
       }, 200);
     }
 
@@ -741,6 +762,10 @@ export const Chat = () => {
 
       // Set the active user message ID for WebSocket message tracking
       activeUserMessageId.current = message.id;
+      // Persist to sessionStorage for reconnection recovery
+      if (selectedConversation?.id) {
+        sessionStorage.setItem(`activeUserMessageId_${selectedConversation.id}`, message.id);
+      }
       // chat with bot
       if (selectedConversation) {
         let updatedConversation: Conversation;

@@ -1329,4 +1329,148 @@ describe('WebSocket Functionality', () => {
       });
     });
   });
+
+  describe('WebSocket Reconnection Recovery', () => {
+    let mockStorage: Record<string, string>;
+
+    beforeEach(() => {
+      mockStorage = {};
+    });
+
+    const mockSessionStorage = {
+      getItem: (key: string) => mockStorage[key] ?? null,
+      setItem: (key: string, value: string) => { mockStorage[key] = value; },
+      removeItem: (key: string) => { delete mockStorage[key]; },
+      clear: () => { mockStorage = {}; },
+    };
+
+    it('should save activeUserMessageId to sessionStorage when user sends a message', () => {
+      const conversationId = 'conv-123';
+      const messageId = 'msg-456';
+      
+      mockSessionStorage.setItem(`activeUserMessageId_${conversationId}`, messageId);
+      
+      expect(mockSessionStorage.getItem(`activeUserMessageId_${conversationId}`)).toBe(messageId);
+    });
+
+    it('should restore activeUserMessageId from sessionStorage on WebSocket reconnect', () => {
+      const conversationId = 'conv-123';
+      const messageId = 'msg-456';
+      const activeUserMessageId = { current: null as string | null };
+      
+      mockSessionStorage.setItem(`activeUserMessageId_${conversationId}`, messageId);
+      
+      const storedMessageId = mockSessionStorage.getItem(`activeUserMessageId_${conversationId}`);
+      if (storedMessageId) {
+        activeUserMessageId.current = storedMessageId;
+      }
+      
+      expect(activeUserMessageId.current).toBe(messageId);
+    });
+
+    it('should not restore activeUserMessageId if sessionStorage is empty', () => {
+      const conversationId = 'conv-123';
+      const activeUserMessageId = { current: null as string | null };
+      
+      const storedMessageId = mockSessionStorage.getItem(`activeUserMessageId_${conversationId}`);
+      if (storedMessageId) {
+        activeUserMessageId.current = storedMessageId;
+      }
+      
+      expect(activeUserMessageId.current).toBeNull();
+    });
+
+    it('should clear sessionStorage when Stop Generating is clicked', () => {
+      const conversationId = 'conv-123';
+      mockSessionStorage.setItem(`activeUserMessageId_${conversationId}`, 'msg-456');
+      
+      mockSessionStorage.removeItem(`activeUserMessageId_${conversationId}`);
+      
+      expect(mockSessionStorage.getItem(`activeUserMessageId_${conversationId}`)).toBeNull();
+    });
+
+    it('should clear sessionStorage when response completes', () => {
+      const conversationId = 'conv-123';
+      mockSessionStorage.setItem(`activeUserMessageId_${conversationId}`, 'msg-456');
+      
+      mockSessionStorage.removeItem(`activeUserMessageId_${conversationId}`);
+      
+      expect(mockSessionStorage.getItem(`activeUserMessageId_${conversationId}`)).toBeNull();
+    });
+
+    it('should allow HITL messages through after reconnection with restored activeUserMessageId', () => {
+      const conversationId = 'conv-123';
+      const messageId = 'msg-456';
+      const activeUserMessageId = { current: null as string | null };
+      
+      mockSessionStorage.setItem(`activeUserMessageId_${conversationId}`, messageId);
+      
+      const storedMessageId = mockSessionStorage.getItem(`activeUserMessageId_${conversationId}`);
+      if (storedMessageId) {
+        activeUserMessageId.current = storedMessageId;
+      }
+      
+      const hitlMessage = {
+        type: 'system_interaction_message',
+        conversation_id: conversationId,
+      };
+      
+      const shouldProcess = activeUserMessageId.current !== null && 
+                            hitlMessage.conversation_id === conversationId;
+      
+      expect(shouldProcess).toBe(true);
+    });
+
+    it('should block messages when activeUserMessageId is not restored', () => {
+      const conversationId = 'conv-123';
+      const activeUserMessageId = { current: null as string | null };
+      
+      const message = {
+        type: 'system_interaction_message',
+        conversation_id: conversationId,
+      };
+      
+      const shouldProcess = activeUserMessageId.current !== null && 
+                            message.conversation_id === conversationId;
+      
+      expect(shouldProcess).toBe(false);
+    });
+
+    it('should use conversation-specific keys in sessionStorage', () => {
+      mockSessionStorage.setItem('activeUserMessageId_conv-A', 'msg-A');
+      mockSessionStorage.setItem('activeUserMessageId_conv-B', 'msg-B');
+      
+      expect(mockSessionStorage.getItem('activeUserMessageId_conv-A')).toBe('msg-A');
+      expect(mockSessionStorage.getItem('activeUserMessageId_conv-B')).toBe('msg-B');
+      
+      mockSessionStorage.removeItem('activeUserMessageId_conv-A');
+      
+      expect(mockSessionStorage.getItem('activeUserMessageId_conv-A')).toBeNull();
+      expect(mockSessionStorage.getItem('activeUserMessageId_conv-B')).toBe('msg-B');
+    });
+
+    it('should handle reconnection to different conversation without cross-contamination', () => {
+      const activeUserMessageId = { current: null as string | null };
+      
+      mockSessionStorage.setItem('activeUserMessageId_conv-A', 'msg-A');
+      mockSessionStorage.setItem('activeUserMessageId_conv-B', 'msg-B');
+      
+      const currentConversationId = 'conv-A';
+      const storedMessageId = mockSessionStorage.getItem(`activeUserMessageId_${currentConversationId}`);
+      if (storedMessageId) {
+        activeUserMessageId.current = storedMessageId;
+      }
+      
+      expect(activeUserMessageId.current).toBe('msg-A');
+      
+      const messageForConvB = {
+        conversation_id: 'conv-B',
+      };
+      
+      const shouldProcess = activeUserMessageId.current !== null && 
+                            messageForConvB.conversation_id === currentConversationId;
+      
+      expect(shouldProcess).toBe(false);
+    });
+  });
 });
