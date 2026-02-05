@@ -16,6 +16,7 @@ This project builds upon the work of:
 - 🔄 Real-time streaming responses
 - 🤝 Human-in-the-loop workflow support
 - 🌙 Light/Dark theme
+- 💡 Customizable prompt suggestions
 - 🔌 WebSocket and HTTP API integration
 - 🐳 Docker support
 
@@ -87,6 +88,7 @@ The application uses a unified proxy architecture for improved security. All con
 - `NEXT_PUBLIC_NAT_GREETING_SUBTITLE` - Optional custom greeting subtitle shown on empty chat
 - `NEXT_PUBLIC_NAT_INPUT_PLACEHOLDER` - Optional custom placeholder text for the chat input field
 - `NEXT_PUBLIC_NAT_WELCOME_MESSAGE_ON` - Enable welcome message (see [Welcome Message Customization](#welcome-message-customization))
+- `NEXT_PUBLIC_NAT_PROMPT_SUGGESTIONS_ON` - Enable prompt suggestions feature (see [Prompt Suggestions Customization](#prompt-suggestions-customization))
 - `NEXT_PUBLIC_NAT_DEFAULT_ENDPOINT` - Default endpoint selection
 
 **Feature Toggles:**
@@ -130,6 +132,25 @@ This application can optionally display a welcome message on the initial chat sc
      ```
 
 
+### Prompt Suggestions Customization
+
+This application can optionally display a prompt suggestions feature that suggests prompts to users. Follow the instructions below to enable and customize it:
+
+1. Enable the prompt suggestions by setting the environment variable:
+   ```bash
+   NEXT_PUBLIC_NAT_PROMPT_SUGGESTIONS_ON=true
+   ```
+
+2. Copy the example configuration:
+   ```bash
+   cp public/content/promptSuggestions.json.example public/content/promptSuggestions.json
+   ```
+
+3. Edit `public/content/promptSuggestions.json` to add your custom categories and prompts. The file uses a simple JSON format with category names as keys and arrays of prompt strings as values.
+    - If deploying with Docker, mount your custom prompt suggestions:
+      ```bash
+      docker run -v /path/to/your/promptSuggestions.json:/app/public/content/promptSuggestions.json -p 3000:3000 nemo-agent-toolkit-ui
+      ```
 
 ### API Connection
 
