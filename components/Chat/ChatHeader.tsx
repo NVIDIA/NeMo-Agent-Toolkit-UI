@@ -10,10 +10,12 @@ import {
   IconChevronRight,
 } from '@tabler/icons-react';
 import React, { useContext, useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 import { env } from 'next-runtime-env';
 
 import { getWorkflowName } from '@/utils/app/helper';
+import { loadContentFile } from '@/utils/app/content';
 import { useTheme } from '@/contexts/ThemeContext';
 
 import HomeContext from '@/pages/api/home/home.context';
@@ -25,6 +27,7 @@ interface Props {
 }
 
 export const ChatHeader = ({ webSocketModeRef }: Props) => {
+  const [welcomeContent, setWelcomeContent] = useState<string>('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(
     env('NEXT_PUBLIC_NAT_RIGHT_MENU_OPEN') === 'true' ||
@@ -54,12 +57,32 @@ export const ChatHeader = ({ webSocketModeRef }: Props) => {
     setIsMenuOpen(false);
   };
 
+  const loadWelcomeContent = async () => {
+    try {
+      const welcomeMarkdown = await loadContentFile('welcome.md');
+      if (welcomeMarkdown) {
+        setWelcomeContent(welcomeMarkdown);
+      }
+    } catch (error) {
+      console.error('Failed to load content:', error);
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setIsMenuOpen(false);
       }
     };
+
+    // Load welcome content if enabled
+    const welcomeEnabled = 
+      env('NEXT_PUBLIC_NAT_WELCOME_MESSAGE_ON') === 'true' ||
+      process?.env?.NEXT_PUBLIC_NAT_WELCOME_MESSAGE_ON === 'true';
+    
+    if (welcomeEnabled) {
+      loadWelcomeContent();
+    }
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -91,6 +114,11 @@ export const ChatHeader = ({ webSocketModeRef }: Props) => {
               process?.env?.NEXT_PUBLIC_NAT_GREETING_SUBTITLE ||
               'How can I assist you today?'}
           </div>
+          {welcomeContent && (
+            <div className="text-sm text-left text-gray-600 dark:text-gray-300 prose prose-sm dark:prose-invert max-w-none bg-gray-100 dark:bg-gray-800 rounded-lg p-5">
+              <ReactMarkdown>{welcomeContent}</ReactMarkdown>
+            </div>
+          )}
         </div>
       )}
 
