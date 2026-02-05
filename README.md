@@ -83,6 +83,8 @@ The application uses a unified proxy architecture for improved security. All con
 
 **Application Configuration:**
 - `NEXT_PUBLIC_NAT_WORKFLOW` - Application workflow name displayed in the UI
+- `NEXT_PUBLIC_NAT_GREETING_TITLE` - Optional custom greeting title shown on empty chat
+- `NEXT_PUBLIC_NAT_GREETING_SUBTITLE` - Optional custom greeting subtitle shown on empty chat
 - `NEXT_PUBLIC_NAT_DEFAULT_ENDPOINT` - Default endpoint selection
 
 **Feature Toggles:**
