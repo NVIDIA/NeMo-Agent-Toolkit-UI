@@ -23,6 +23,7 @@ import {
 } from 'react';
 import toast from 'react-hot-toast';
 
+import { env } from 'next-runtime-env';
 import { useTranslation } from 'next-i18next';
 
 import { appConfig } from '@/utils/app/const';
@@ -399,7 +400,9 @@ export const ChatInput = ({
             placeholder={
               isRecording
                 ? 'Listening...'
-                : `Unlock ${workflow} knowledge and expertise`
+                : env('NEXT_PUBLIC_NAT_INPUT_PLACEHOLDER') ||
+                  process?.env?.NEXT_PUBLIC_NAT_INPUT_PLACEHOLDER ||
+                  `Unlock ${workflow} knowledge and expertise`
             }
             value={content}
             rows={1}
