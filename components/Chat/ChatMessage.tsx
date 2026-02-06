@@ -414,7 +414,10 @@ export const ChatMessage: FC<Props> = memo(
                             </button>
                             <button
                               className={"text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300"}
-                              onClick={() => submitFeedback(message.observabilityTraceId!, '👎')}
+                              onClick={() => {
+                                submitFeedback(message.observabilityTraceId!, '👎');
+                                setShowFeedbackInput(true);
+                              }}
                               title="Give thumbs down"
                             >
                               <IconThumbDown size={20}/>
@@ -436,7 +439,7 @@ export const ChatMessage: FC<Props> = memo(
                     <div className="mt-2 flex flex-col gap-2">
                       <textarea
                         className="w-full resize-none rounded-md border border-neutral-300 bg-white p-2 text-sm text-gray-800 dark:border-neutral-700 dark:bg-[#444654] dark:text-gray-100"
-                        placeholder="Write your feedback here..."
+                        placeholder="Please tell us what you think about this response..."
                         value={feedbackComment}
                         onChange={(e) => setFeedbackComment(e.target.value)}
                         rows={3}
