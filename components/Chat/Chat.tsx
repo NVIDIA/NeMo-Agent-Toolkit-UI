@@ -11,6 +11,7 @@ import {
   WEBSOCKET_PROXY_PATH, 
   HTTP_PROXY_PATH,
   CORE_ROUTES,
+  EXTENDED_ROUTES,
 } from '@/constants';
 import { Conversation, Message } from '@/types/chat';
 import {
@@ -62,6 +63,7 @@ import {
   buildGenerateStreamPayload,
   buildChatPayload,
   buildChatStreamPayload,
+  buildCaRagPayload,
 } from '@/proxy/request-transformers';
 
 
@@ -928,6 +930,8 @@ export const Chat = () => {
             chatHistory,
             optionalParams || ''
           );
+        } else if (httpEndpointPath === EXTENDED_ROUTES.CHAT_CA_RAG) {
+          requestPayload = buildCaRagPayload(message?.content || '');
         } else {
           // Fallback for other endpoints
           requestPayload = {

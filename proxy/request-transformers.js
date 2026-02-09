@@ -141,10 +141,28 @@ function buildChatStreamPayload(messages, useChatHistory, optionalParams) {
   return payload;
 }
 
+/**
+ * Build request payload for /call (Context-Aware RAG) endpoint
+ * Backend format: {"state": {"chat": {"question": "..."}}}
+ *
+ * @param {string} message - The user's message content
+ * @returns {Object} Backend request payload
+ */
+function buildCaRagPayload(message) {
+  return {
+    state: {
+      chat: {
+        question: message || '',
+      },
+    },
+  };
+}
+
 module.exports = {
   buildGenerateStreamPayload,
   buildGeneratePayload,
   buildChatPayload,
   buildChatStreamPayload,
+  buildCaRagPayload,
   parseOptionalParams,
 };

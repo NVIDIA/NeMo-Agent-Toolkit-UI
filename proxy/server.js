@@ -79,6 +79,12 @@ try {
   );
   process.exit(1);
 }
+// --- Context-Aware RAG Initialization Tracking ---
+// Track initialized RAG conversations to avoid redundant /init calls.
+// Key: "{ragUuid}-{conversationId}", once initialized, /init is skipped.
+const initializedCaRagConversations = new Set();
+const RAG_UUID = process.env.RAG_UUID || '123456';
+
 // --- Create Proxy Instances ---
 
 // Proxy for Next.js dev server
@@ -230,12 +236,70 @@ const server = http.createServer(async (req, res) => {
       }
     };
 
+    // Context-Aware RAG: ensure /init is called before /call
+    const doCaRagWithInit = async () => {
+      try {
+        const conversationId = req.headers['conversation-id'] || 'default';
+        const initKey = `${RAG_UUID}-${conversationId}`;
+
+        if (!initializedCaRagConversations.has(initKey)) {
+          const initUrl = new URL(
+            EXTENDED_ROUTES.CA_RAG_INIT,
+            UPSTREAM_HTTP_ORIGIN,
+          ).toString();
+
+          const initRes = await fetch(initUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uuid: RAG_UUID }),
+          });
+
+          if (!initRes.ok) {
+            const detail = await initRes.text();
+            console.error(
+              `[CA RAG] /init failed (${initRes.status}):`,
+              detail,
+            );
+            if (!res.headersSent) {
+              res.writeHead(initRes.status, {
+                'Content-Type': 'application/json',
+              });
+            }
+            res.end(
+              JSON.stringify({
+                error: 'CA RAG initialization failed',
+                detail,
+              }),
+            );
+            return;
+          }
+
+          initializedCaRagConversations.add(initKey);
+          console.log(`[CA RAG] Initialized conversation ${initKey}`);
+        }
+
+        // Proceed with the /call request
+        await doFetchAndProcess(processCaRag);
+      } catch (err) {
+        console.error('[CA RAG] Error:', err.message);
+        if (!res.headersSent) {
+          res.writeHead(502, { 'Content-Type': 'application/json' });
+        }
+        res.end(
+          JSON.stringify({
+            error: 'CA RAG request failed',
+            message: err.message,
+          }),
+        );
+      }
+    };
+
     // Route to appropriate processor
     if (isChatStream) return void doFetchAndProcess(processChatStream);
     if (isChat) return void doFetchAndProcess(processChat);
     if (isGenerateStream) return void doFetchAndProcess(processGenerateStream);
     if (isGenerate) return void doFetchAndProcess(processGenerate);
-    if (isCaRag) return void doFetchAndProcess(processCaRag);
+    if (isCaRag) return void doCaRagWithInit();
 
     // Transparent proxy for other allowed endpoints
     req.url = backendPath + (parsedUrl.search || '');

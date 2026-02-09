@@ -254,7 +254,8 @@ async function processGenerate(backendRes, res) {
 
 /**
  * Processes Context-Aware RAG responses
- * Extracts answer from state.chat.answer field
+ * Backend returns: {"status": "success", "result": "answer text"}
+ * Also handles legacy formats: state.chat.answer, answer field
  */
 async function processCaRag(backendRes, res) {
   if (!backendRes.ok) {
@@ -266,7 +267,11 @@ async function processCaRag(backendRes, res) {
   const data = await backendRes.text();
   try {
     const parsed = JSON.parse(data);
-    const answer = parsed?.state?.chat?.answer || parsed?.answer || data;
+    const answer =
+      parsed?.result ||
+      parsed?.state?.chat?.answer ||
+      parsed?.answer ||
+      data;
 
     res.writeHead(200, {
       'Content-Type': 'text/plain; charset=utf-8',
