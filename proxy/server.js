@@ -301,6 +301,16 @@ const server = http.createServer(async (req, res) => {
     if (isGenerate) return void doFetchAndProcess(processGenerate);
     if (isCaRag) return void doCaRagWithInit();
 
+    // Frontend-only API routes — serve from Next.js, not backend
+    const FRONTEND_API_ROUTES = [EXTENDED_ROUTES.UPDATE_DATA_STREAM];
+    if (FRONTEND_API_ROUTES.includes(backendPath)) {
+      nextProxy.web(req, res, {
+        target: NEXT_DEV_TARGET,
+        changeOrigin: false,
+      });
+      return;
+    }
+
     // Transparent proxy for other allowed endpoints
     req.url = backendPath + (parsedUrl.search || '');
     backendProxy.web(req, res, {
