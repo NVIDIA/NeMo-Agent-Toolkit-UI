@@ -75,6 +75,11 @@ export const compressImage = (base64: string, mimeType: string | undefined, shou
 }
 
 export const getURLQueryParam = ({ param = '' }) => {
+    // Check if running in browser environment
+    if (typeof window === 'undefined') {
+        return param ? null : {};
+    }
+
     // Get the URL query parameters safely
     const urlParams = new URLSearchParams(window?.location?.search);
 
