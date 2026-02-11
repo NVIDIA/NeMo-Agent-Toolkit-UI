@@ -71,8 +71,8 @@ describe('WebSocket Type Guards', () => {
 
     it('returns false for non-system response messages', () => {
       const message = {
-        type: 'error',
-        content: { text: 'Error' },
+        type: 'error_message',
+        content: { message: 'Error' },
       };
 
       expect(isSystemResponseInProgress(message)).toBe(false);
@@ -132,8 +132,8 @@ describe('WebSocket Type Guards', () => {
 
     it('returns false for other message types', () => {
       const message = {
-        type: 'error',
-        content: { text: 'Error' },
+        type: 'error_message',
+        content: { message: 'Error' },
       };
 
       expect(isSystemInteractionMessage(message)).toBe(false);
@@ -143,8 +143,8 @@ describe('WebSocket Type Guards', () => {
   describe('isErrorMessage', () => {
     it('returns true for error messages', () => {
       const message: ErrorMessage = {
-        type: 'error',
-        content: { text: 'Something went wrong' },
+        type: 'error_message',
+        content: { code: 'unknown_error', message: 'Something went wrong', details: 'Details here' },
       };
 
       expect(isErrorMessage(message)).toBe(true);
@@ -184,8 +184,8 @@ describe('WebSocket Type Guards', () => {
 
     it('returns false for non-interaction messages', () => {
       const message = {
-        type: 'error',
-        content: { text: 'Error' },
+        type: 'error_message',
+        content: { message: 'Error' },
       };
 
       expect(isOAuthConsentMessage(message)).toBe(false);
@@ -223,8 +223,8 @@ describe('WebSocket Type Guards', () => {
 
     it('validates error messages', () => {
       const message = {
-        type: 'error',
-        content: { text: 'Error occurred' },
+        type: 'error_message',
+        content: { code: 'unknown_error', message: 'Error occurred', details: 'Details' },
       };
 
       expect(validateWebSocketMessage(message)).toBe(true);
@@ -357,8 +357,8 @@ describe('WebSocket Type Guards', () => {
 
     it('returns false for non-system response messages', () => {
       const message: ErrorMessage = {
-        type: 'error',
-        content: { text: 'Error occurred' },
+        type: 'error_message',
+        content: { code: 'unknown_error', message: 'Error occurred' },
       };
 
       expect(shouldAppendResponseContent(message)).toBe(false);
@@ -537,7 +537,7 @@ describe('WebSocket Type Guards', () => {
         'system_response_message',
         'system_intermediate_message',
         'system_interaction_message',
-        'error'
+        'error_message'
       ];
 
       messageTypes.forEach(type => {

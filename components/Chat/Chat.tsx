@@ -124,6 +124,29 @@ function tryParseJson<T = any>(s: string): T | null {
   }
 }
 
+interface WorkflowError {
+  code: string;
+  message: string;
+  details: string;
+}
+
+function isWorkflowError(obj: unknown): obj is WorkflowError {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'code' in obj &&
+    'message' in obj &&
+    'details' in obj &&
+    typeof (obj as WorkflowError).code === 'string' &&
+    typeof (obj as WorkflowError).message === 'string' &&
+    typeof (obj as WorkflowError).details === 'string'
+  );
+}
+
+function formatWorkflowError(error: WorkflowError): string {
+  return `\n\n**Error (${error.code}):** ${error.message} — ${error.details}`;
+}
+
 function parsePossiblyConcatenatedJson(payload: string): any[] {
   // Fast path
   const single = tryParseJson(payload);
@@ -956,6 +979,46 @@ export const Chat = () => {
             homeDispatch({ field: 'loading', value: false });
             homeDispatch({ field: 'messageIsStreaming', value: false });
             
+            // Handle 422 workflow errors - display in assistant message
+            if (response.status === 422) {
+              try {
+                const errorBody = await response.json();
+                if (isWorkflowError(errorBody)) {
+                  const errorContent = formatWorkflowError(errorBody);
+                  
+                  const updatedMessages: Message[] = [
+                    ...updatedConversation.messages,
+                    {
+                      id: uuidv4(),
+                      role: 'assistant',
+                      content: errorContent,
+                    },
+                  ];
+                  
+                  updatedConversation = {
+                    ...updatedConversation,
+                    messages: updatedMessages,
+                  };
+                  
+                  homeDispatch({
+                    field: 'selectedConversation',
+                    value: updatedConversation,
+                  });
+                  
+                  saveConversation(updatedConversation);
+                  const updatedConversations = conversations.map((c) =>
+                    c.id === updatedConversation.id ? updatedConversation : c
+                  );
+                  homeDispatch({ field: 'conversations', value: updatedConversations });
+                  saveConversations(updatedConversations);
+                  return;
+                }
+              } catch {
+                // Fall through to default error handling if JSON parse fails
+              }
+            }
+            
+            // Default: show toast for other errors (404, 500, etc.)
             const errorMsg = response.status === 404
               ? 'API communication not available at this URL. Access the application at the default URL http://localhost:3000 (or check terminal startup logs for the correct web application URL).'
               : response.statusText;
@@ -1140,7 +1203,13 @@ export const Chat = () => {
                 );
               }
 
-              text = text + chunkValue;
+              // Check if chunk is a workflow error JSON and format accordingly
+              const parsed = tryParseJson<unknown>(chunkValue.trim());
+              if (isWorkflowError(parsed)) {
+                text += formatWorkflowError(parsed);
+              } else {
+                text = text + chunkValue;
+              }
 
               homeDispatch({ field: 'loading', value: false });
               if (isFirst) {

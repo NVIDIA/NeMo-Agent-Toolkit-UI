@@ -29,6 +29,21 @@ import HomeContext from '@/pages/api/home/home.context';
 
 import { BotAvatar } from '@/components/Avatar/BotAvatar';
 
+interface WebSocketError {
+  content?: {
+    code?: string;
+    message?: string;
+    details?: string;
+  };
+}
+
+function formatWebSocketError(err: WebSocketError): { title: string; details: string } {
+  return {
+    title: err.content?.message || 'Error',
+    details: err.content?.details || 'An unexpected error occurred',
+  };
+}
+
 import { getReactMarkDownCustomComponents } from '../Markdown/CustomComponents';
 import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
 
@@ -348,6 +363,19 @@ export const ChatMessage: FC<Props> = memo(
                       })}
                     </MemoizedReactMarkdown>
                   </div>
+                  {message.errorMessages?.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {message.errorMessages.map((err: WebSocketError, idx: number) => {
+                        const { title, details } = formatWebSocketError(err);
+                        return (
+                          <div key={idx} className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-2 rounded">
+                            <span className="font-semibold">{title}: </span>
+                            <span>{details}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                   <div className="mt-1 flex gap-1">
                     {!messageIsStreaming && (
                       <>

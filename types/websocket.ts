@@ -42,6 +42,8 @@ export interface SystemInteractionMessage extends WebSocketMessageBase {
     oauth_url?: string;
     redirect_url?: string;
     text?: string;
+    timeout?: number | null;
+    error?: string | null;
   };
   thread_id?: string;
 }
@@ -56,10 +58,11 @@ export interface ObservabilityTraceMessage extends WebSocketMessageBase {
 
 // Error message
 export interface ErrorMessage extends WebSocketMessageBase {
-  type: 'error';
+  type: 'error_message';
   content?: {
-    text?: string;
-    error?: string;
+    code?: string;
+    message?: string;
+    details?: string;
   };
 }
 
@@ -109,7 +112,7 @@ export function isSystemInteractionMessage(message: any): message is SystemInter
 }
 
 export function isErrorMessage(message: any): message is ErrorMessage {
-  return message?.type === 'error';
+  return message?.type === 'error_message';
 }
 
 export function isObservabilityTraceMessage(message: any): message is ObservabilityTraceMessage {
@@ -153,7 +156,7 @@ export function validateWebSocketMessage(message: any): message is WebSocketInbo
       'system_intermediate_message', 
       'system_interaction_message',
       'observability_trace_message',
-      'error'
+      'error_message'
     ].includes(message.type)
   );
 }

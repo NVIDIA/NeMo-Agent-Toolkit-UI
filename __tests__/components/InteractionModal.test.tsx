@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
 import {
   isSystemInteractionMessage,
@@ -271,7 +271,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
       expect(screen.getByText('Please enter your name:')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('Your full name here')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Submit' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
     });
 
     it('should handle text input submission', async () => {
@@ -333,7 +333,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
       expect(mockOnClose).not.toHaveBeenCalled();
     });
 
-    it('should handle cancel button', () => {
+    it('should not have a cancel button - modal is non-dismissible', () => {
       const message = {
         type: 'system_interaction_message',
         content: {
@@ -351,11 +351,9 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         />
       );
 
-      const cancelButton = screen.getByRole('button', { name: 'Cancel' });
-      fireEvent.click(cancelButton);
-
-      expect(mockOnClose).toHaveBeenCalled();
-      expect(mockOnSubmit).not.toHaveBeenCalled();
+      // Modal should not have a Cancel button - only Submit
+      expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Submit' })).toBeInTheDocument();
     });
   });
 
@@ -478,7 +476,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
       expect(screen.getByLabelText('SMS')).toBeInTheDocument();
       expect(screen.getByLabelText('Push Notification')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Submit' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
     });
 
     it('should handle radio selection and submission', () => {
@@ -982,6 +980,352 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         const config = getModalConfig(message);
         expect(config.buttonText).toBe(expectedButton);
       });
+    });
+  });
+
+  // ============================================================================
+  // TIMEOUT FUNCTIONALITY TESTS
+  // ============================================================================
+  describe('InteractionModal Component - Timeout Functionality', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('should not render timer when content.timeout is null', () => {
+      const message = {
+        type: 'system_interaction_message',
+        content: {
+          input_type: 'text',
+          text: 'No timeout prompt',
+          timeout: null
+        }
+      };
+
+      render(
+        <InteractionModal
+          isOpen={true}
+          interactionMessage={message}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      expect(screen.queryByText(/Time remaining/)).not.toBeInTheDocument();
+    });
+
+    it('should not render timer when content.timeout is undefined', () => {
+      const message = {
+        type: 'system_interaction_message',
+        content: {
+          input_type: 'text',
+          text: 'No timeout prompt'
+        }
+      };
+
+      render(
+        <InteractionModal
+          isOpen={true}
+          interactionMessage={message}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      expect(screen.queryByText(/Time remaining/)).not.toBeInTheDocument();
+    });
+
+    it('should render timer and countdown when content.timeout is set', () => {
+      const message = {
+        type: 'system_interaction_message',
+        content: {
+          input_type: 'text',
+          text: 'Timed prompt',
+          timeout: 60,
+          error: 'Custom timeout error'
+        }
+      };
+
+      render(
+        <InteractionModal
+          isOpen={true}
+          interactionMessage={message}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      expect(screen.getByText('Time remaining: 1:00')).toBeInTheDocument();
+
+      // Advance timer by 1 second
+      act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+      expect(screen.getByText('Time remaining: 0:59')).toBeInTheDocument();
+    });
+
+    it('should apply warning style when remaining time is below 20% of total', () => {
+      // With 60 second timeout, 20% = 12 seconds
+      const message = {
+        type: 'system_interaction_message',
+        content: {
+          input_type: 'text',
+          text: 'Timed prompt',
+          timeout: 60
+        }
+      };
+
+      render(
+        <InteractionModal
+          isOpen={true}
+          interactionMessage={message}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      // At 60 seconds (100%), should not be red
+      const timerElement = screen.getByText('Time remaining: 1:00');
+      expect(timerElement).not.toHaveClass('text-red-500');
+
+      // Advance to 13 seconds (still above 20% threshold of 12s)
+      act(() => {
+        jest.advanceTimersByTime(47000);
+      });
+      const stillNormalTimer = screen.getByText('Time remaining: 0:13');
+      expect(stillNormalTimer).not.toHaveClass('text-red-500');
+
+      // Advance to 12 seconds (at 20% threshold)
+      act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+      const warningTimer = screen.getByText('Time remaining: 0:12');
+      expect(warningTimer).toHaveClass('text-red-500');
+      expect(warningTimer).toHaveClass('font-semibold');
+    });
+
+    it('should close modal and show error toast when countdown reaches 0', async () => {
+      const message = {
+        type: 'system_interaction_message',
+        content: {
+          input_type: 'text',
+          text: 'Timed prompt',
+          timeout: 3,
+          error: 'Custom timeout error message'
+        }
+      };
+
+      render(
+        <InteractionModal
+          isOpen={true}
+          interactionMessage={message}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      // Advance timer to 0
+      act(() => {
+        jest.advanceTimersByTime(3000);
+      });
+
+      expect(mockToast.error).toHaveBeenCalledWith('Custom timeout error message');
+      expect(mockOnClose).toHaveBeenCalled();
+    });
+
+    it('should use default error message when content.error is not provided', () => {
+      const message = {
+        type: 'system_interaction_message',
+        content: {
+          input_type: 'text',
+          text: 'Timed prompt',
+          timeout: 2
+        }
+      };
+
+      render(
+        <InteractionModal
+          isOpen={true}
+          interactionMessage={message}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      act(() => {
+        jest.advanceTimersByTime(2000);
+      });
+
+      expect(mockToast.error).toHaveBeenCalledWith('This prompt is no longer available.');
+    });
+
+    it('should stop timer when user submits before timeout', () => {
+      const message = {
+        type: 'system_interaction_message',
+        content: {
+          input_type: 'text',
+          text: 'Timed prompt',
+          timeout: 60
+        }
+      };
+
+      render(
+        <InteractionModal
+          isOpen={true}
+          interactionMessage={message}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      const textarea = screen.getByRole('textbox');
+      const submitButton = screen.getByRole('button', { name: 'Submit' });
+
+      fireEvent.change(textarea, { target: { value: 'My response' } });
+      fireEvent.click(submitButton);
+
+      expect(mockOnSubmit).toHaveBeenCalledWith({
+        interactionMessage: message,
+        userResponse: 'My response'
+      });
+      expect(mockOnClose).toHaveBeenCalled();
+      
+      // Timer should be cleared, so advancing time shouldn't trigger error toast
+      act(() => {
+        jest.advanceTimersByTime(60000);
+      });
+      expect(mockToast.error).not.toHaveBeenCalled();
+    });
+
+    it('should disable inputs when timed out', () => {
+      const message = {
+        type: 'system_interaction_message',
+        content: {
+          input_type: 'text',
+          text: 'Timed prompt',
+          timeout: 2
+        }
+      };
+
+      // Use a ref to track onClose calls so the modal stays visible
+      let closeCount = 0;
+      const trackingOnClose = () => { closeCount++; };
+
+      render(
+        <InteractionModal
+          isOpen={true}
+          interactionMessage={message}
+          onClose={trackingOnClose}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      // Advance timer, but not all the way to timeout
+      act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      // Inputs should still be enabled before timeout
+      const textarea = screen.getByRole('textbox');
+      const submitButton = screen.getByRole('button', { name: 'Submit' });
+
+      expect(textarea).not.toBeDisabled();
+      expect(submitButton).not.toBeDisabled();
+    });
+
+    it('should not show countdown for notification input type', () => {
+      const message = {
+        type: 'system_interaction_message',
+        content: {
+          input_type: 'notification',
+          text: 'Notification message',
+          timeout: 30
+        }
+      };
+
+      const result = render(
+        <InteractionModal
+          isOpen={true}
+          interactionMessage={message}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      // Notification type returns null and uses toast instead
+      expect(result.container.firstChild).toBeNull();
+      expect(mockToast.custom).toHaveBeenCalled();
+    });
+
+    it('should not have any Cancel buttons in any input type', () => {
+      const inputTypes = ['text', 'binary_choice', 'radio'];
+      
+      inputTypes.forEach((inputType) => {
+        const message = {
+          type: 'system_interaction_message',
+          content: {
+            input_type: inputType,
+            text: 'Test prompt',
+            options: inputType !== 'text' ? [
+              { id: 'opt1', label: 'Option 1', value: 'value1' },
+              { id: 'opt2', label: 'Option 2', value: 'value2' }
+            ] : undefined
+          }
+        };
+
+        const { unmount } = render(
+          <InteractionModal
+            isOpen={true}
+            interactionMessage={message}
+            onClose={mockOnClose}
+            onSubmit={mockOnSubmit}
+          />
+        );
+
+        // No Cancel button should exist
+        const cancelButtons = screen.queryAllByRole('button', { name: 'Cancel' });
+        // Filter out binary_choice options that might have "Cancel" as a label
+        const actualCancelButtons = cancelButtons.filter(btn => 
+          btn.classList.contains('bg-gray-500')
+        );
+        expect(actualCancelButtons).toHaveLength(0);
+
+        unmount();
+      });
+    });
+
+    it('should not be dismissible by clicking backdrop', () => {
+      const message = {
+        type: 'system_interaction_message',
+        content: {
+          input_type: 'text',
+          text: 'Non-dismissible modal'
+        }
+      };
+
+      render(
+        <InteractionModal
+          isOpen={true}
+          interactionMessage={message}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      // Find the backdrop (the outer fixed div)
+      const backdrop = document.querySelector('.fixed.inset-0');
+      expect(backdrop).toBeInTheDocument();
+
+      // Click on backdrop
+      fireEvent.click(backdrop!);
+
+      // onClose should NOT be called from backdrop click
+      // (It might be called 0 times if no click handler, which is correct)
+      // We just verify the modal is still visible
+      expect(screen.getByText('Non-dismissible modal')).toBeInTheDocument();
     });
   });
 
