@@ -83,7 +83,6 @@ The application uses a unified proxy architecture for improved security. All con
 
 **Application Configuration:**
 - `NEXT_PUBLIC_NAT_WORKFLOW` - Application workflow name displayed in the UI
-- `NEXT_PUBLIC_NAT_DEFAULT_ENDPOINT` - Default endpoint selection
 
 **Feature Toggles:**
 - `NEXT_PUBLIC_NAT_WEB_SOCKET_DEFAULT_ON` - Enable WebSocket mode by default (true/false)

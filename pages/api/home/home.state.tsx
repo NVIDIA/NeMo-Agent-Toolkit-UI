@@ -51,10 +51,7 @@ export const initialState: HomeInitialState = {
     process?.env?.NEXT_PUBLIC_NAT_CHAT_HISTORY_DEFAULT_ON === 'true'
       ? true
       : false,
-  httpEndpoint:
-    CORE_ROUTE_OPTIONS.find(
-      (opt) => opt.label === process?.env?.NEXT_PUBLIC_NAT_DEFAULT_ENDPOINT,
-    )?.value || DEFAULT_CORE_ROUTE,
+  httpEndpoint: DEFAULT_CORE_ROUTE,
   httpEndpoints: CORE_ROUTE_OPTIONS,
   optionalGenerationParameters: '',
   webSocketMode:
