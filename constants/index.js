@@ -53,6 +53,13 @@ const EXTENDED_ROUTES = {
   FEEDBACK,
 };
 
+const EXTENDED_BACKEND_TARGETS = {
+  [CA_RAG_INIT]: 'NAT_BACKEND',
+  [CHAT_CA_RAG]: 'NAT_BACKEND',
+  [UPDATE_DATA_STREAM]: 'NEXTJS',
+  [FEEDBACK]: 'NAT_BACKEND',
+};
+
 // =============================================================================
 // Route UI Configuration
 // =============================================================================
@@ -143,6 +150,7 @@ module.exports = {
   CORE_ROUTE_OPTIONS,
   DEFAULT_CORE_ROUTE,
   EXTENDED_ROUTES,
+  EXTENDED_BACKEND_TARGETS,
   ALLOWED_PATHS,
   HTTP_METHOD_GET,
   HTTP_METHOD_POST,

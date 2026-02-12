@@ -53,6 +53,10 @@ export const EXTENDED_ROUTES: {
   readonly UPDATE_DATA_STREAM: string;
 };
 
+export const EXTENDED_BACKEND_TARGETS: {
+  readonly [path: string]: 'NAT_BACKEND' | 'NEXTJS';
+};
+
 // =============================================================================
 // Route UI Configuration
 // =============================================================================

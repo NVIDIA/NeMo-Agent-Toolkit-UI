@@ -14,6 +14,7 @@ const {
   WEBSOCKET_BACKEND_PATH,
   CORE_ROUTES,
   EXTENDED_ROUTES,
+  EXTENDED_BACKEND_TARGETS,
 } = constants;
 
 // SSRF validation
@@ -301,9 +302,9 @@ const server = http.createServer(async (req, res) => {
     if (isGenerate) return void doFetchAndProcess(processGenerate);
     if (isCaRag) return void doCaRagWithInit();
 
-    // Frontend-only API routes — serve from Next.js, not backend
-    const FRONTEND_API_ROUTES = [EXTENDED_ROUTES.UPDATE_DATA_STREAM];
-    if (FRONTEND_API_ROUTES.includes(backendPath)) {
+    // Route extended endpoints by target
+    const backendTarget = EXTENDED_BACKEND_TARGETS[backendPath];
+    if (backendTarget === 'NEXTJS') {
       nextProxy.web(req, res, {
         target: NEXT_DEV_TARGET,
         changeOrigin: false,
@@ -311,7 +312,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // Transparent proxy for other allowed endpoints
+    // Transparent proxy for remaining allowed endpoints
     req.url = backendPath + (parsedUrl.search || '');
     backendProxy.web(req, res, {
       target: UPSTREAM_HTTP_ORIGIN,
