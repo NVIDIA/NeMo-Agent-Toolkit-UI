@@ -49,7 +49,7 @@ const Home = (props: any) => {
     initialState,
   });
 
-  let workflow = APPLICATION_NAME;
+  const workflow = getWorkflowName();
 
   const {
     state: { folders, conversations, selectedConversation, enableStreamingRagVizOptions },
@@ -205,7 +205,6 @@ const Home = (props: any) => {
   }, [selectedConversation, dispatch]);
 
   useEffect(() => {
-    workflow = getWorkflowName();
     const settings = getSettings();
     if (settings.theme) {
       setLightMode(settings.theme);

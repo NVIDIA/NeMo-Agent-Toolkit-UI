@@ -23,14 +23,18 @@ import {
 } from 'react';
 import toast from 'react-hot-toast';
 
+import { env } from 'next-runtime-env';
 import { useTranslation } from 'next-i18next';
 
 import { appConfig } from '@/utils/app/const';
+import { loadContentFile } from '@/utils/app/content';
 import { compressImage, getWorkflowName } from '@/utils/app/helper';
 
 import { Message } from '@/types/chat';
 
 import HomeContext from '@/pages/api/home/home.context';
+
+import { PromptSuggestions } from './PromptSuggestions';
 
 interface Props {
   onSend: (message: Message) => void;
@@ -73,6 +77,7 @@ export const ChatInput = ({
     useState('');
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef(null);
+  const [promptSuggestions, setPromptSuggestions] = useState<Record<string, string[]> | null>(null);
 
   const triggerFileUpload = () => {
     fileInputRef?.current.click();
@@ -345,7 +350,26 @@ export const ChatInput = ({
     }
   }, [isRecording]);
 
+  const handlePromptSelect = (prompt: string) => {
+    setContent(prompt);
+    if (textareaRef && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  };
+
+  const loadPromptSuggestions = async () => {
+    const customSuggestions = await loadContentFile<Record<string, string[]>>('promptSuggestions.json', true);
+    if (customSuggestions) {
+      setPromptSuggestions(customSuggestions);
+    }
+  };
+
   useEffect(() => {
+    if (env('NEXT_PUBLIC_NAT_PROMPT_SUGGESTIONS_ON') === 'true' ||
+        process?.env?.NEXT_PUBLIC_NAT_PROMPT_SUGGESTIONS_ON === 'true') {
+      loadPromptSuggestions();
+    }
+
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
@@ -384,7 +408,7 @@ export const ChatInput = ({
         <div className="relative mx-2 flex w-full flex-grow flex-col rounded-md border border-black/10 bg-white shadow-[0_0_10px_rgba(0,0,0,0.10)] dark:border-gray-900/50 dark:bg-[#40414F] dark:text-white dark:shadow-[0_0_15px_rgba(0,0,0,0.10)] sm:mx-4">
           <textarea
             ref={textareaRef}
-            className="m-0 w-full resize-none border-0 sm:p-3 sm:pl-8 bg-transparent p-0 py-2 pr-8 pl-10 text-black dark:bg-transparent dark:text-white md:py-3 md:pl-10 outline-none"
+            className={`m-0 w-full resize-none border-0 sm:p-3 sm:pl-8 bg-transparent p-0 py-2 pr-8 ${promptSuggestions ? 'pl-20 md:pl-20' : 'pl-10 md:pl-10'} text-black dark:bg-transparent dark:text-white md:py-3 outline-none`}
             style={{
               resize: 'none',
               bottom: `${textareaRef?.current?.scrollHeight}px`,
@@ -399,7 +423,9 @@ export const ChatInput = ({
             placeholder={
               isRecording
                 ? 'Listening...'
-                : `Unlock ${workflow} knowledge and expertise`
+                : env('NEXT_PUBLIC_NAT_INPUT_PLACEHOLDER') ||
+                  process?.env?.NEXT_PUBLIC_NAT_INPUT_PLACEHOLDER ||
+                  `Unlock ${workflow} knowledge and expertise`
             }
             value={content}
             rows={1}
@@ -466,6 +492,15 @@ export const ChatInput = ({
               <IconMicrophone size={18} />
             )}
           </button>
+
+          {promptSuggestions && (
+            <PromptSuggestions
+              promptSuggestions={promptSuggestions}
+              messageIsStreaming={messageIsStreaming}
+              onPromptSelect={handlePromptSelect}
+            />
+          )}
+
           <button
             className="absolute right-2 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
             onClick={handleSend}

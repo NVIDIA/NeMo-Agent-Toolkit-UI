@@ -4,12 +4,14 @@ import {
   IconCheck,
   IconCopy,
   IconEdit,
+  IconMessage,
   IconPlayerPause,
   IconThumbDown,
   IconThumbUp,
   IconTrash,
   IconUser,
   IconVolume2,
+  IconX,
 } from '@tabler/icons-react';
 import { FC, memo, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -28,6 +30,21 @@ import { useFeedback } from '@/hooks/useFeedback';
 import HomeContext from '@/pages/api/home/home.context';
 
 import { BotAvatar } from '@/components/Avatar/BotAvatar';
+
+interface WebSocketError {
+  content?: {
+    code?: string;
+    message?: string;
+    details?: string;
+  };
+}
+
+function formatWebSocketError(err: WebSocketError): { title: string; details: string } {
+  return {
+    title: err.content?.message || 'Error',
+    details: err.content?.details || 'An unexpected error occurred',
+  };
+}
 
 import { getReactMarkDownCustomComponents } from '../Markdown/CustomComponents';
 import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
@@ -58,6 +75,8 @@ export const ChatMessage: FC<Props> = memo(
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
+    const [showFeedbackInput, setShowFeedbackInput] = useState(false);
+    const [feedbackComment, setFeedbackComment] = useState('');
     const {submitFeedback} = useFeedback();
 
     // Memoize the markdown components to prevent recreation on every render
@@ -185,6 +204,22 @@ export const ChatMessage: FC<Props> = memo(
         }
       };
     }, []);
+
+    const handleSubmitFeedbackComment = async () => {
+      if (!message.observabilityTraceId || !feedbackComment.trim()) return;
+      
+      try {
+        await submitFeedback(message.observabilityTraceId, undefined, feedbackComment);
+        closeFeedbackInput();
+      } catch (error) {
+        // Error is already handled in the hook
+      }
+    };
+
+    const closeFeedbackInput = () => {
+      setFeedbackComment('');
+      setShowFeedbackInput(false);
+    };
 
     const prepareContent = ({
       message = {} as Message,
@@ -348,6 +383,19 @@ export const ChatMessage: FC<Props> = memo(
                       })}
                     </MemoizedReactMarkdown>
                   </div>
+                  {message.errorMessages?.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {message.errorMessages.map((err: WebSocketError, idx: number) => {
+                        const { title, details } = formatWebSocketError(err);
+                        return (
+                          <div key={idx} className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-2 rounded">
+                            <span className="font-semibold">{title}: </span>
+                            <span>{details}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                   <div className="mt-1 flex gap-1">
                     {!messageIsStreaming && (
                       <>
@@ -387,17 +435,27 @@ export const ChatMessage: FC<Props> = memo(
                           <>
                             <button
                               className={"text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300"}
-                              onClick={() => submitFeedback(message.observabilityTraceId, '👍')}
+                              onClick={() => submitFeedback(message.observabilityTraceId!, '👍')}
                               title="Give thumbs up"
                             >
                               <IconThumbUp size={20}/>
                             </button>
                             <button
                               className={"text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300"}
-                              onClick={() => submitFeedback(message.observabilityTraceId, '👎')}
+                              onClick={() => {
+                                submitFeedback(message.observabilityTraceId!, '👎');
+                                setShowFeedbackInput(true);
+                              }}
                               title="Give thumbs down"
                             >
                               <IconThumbDown size={20}/>
+                            </button>
+                            <button
+                              className={"text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300"}
+                              onClick={() => setShowFeedbackInput(!showFeedbackInput)}
+                              title="Write feedback comment"
+                            >
+                              {showFeedbackInput ? <IconX size={20}/> : <IconMessage size={20}/>}
                             </button>
                           </>
                         )}
@@ -405,6 +463,32 @@ export const ChatMessage: FC<Props> = memo(
                       </>
                     )}
                   </div>
+                  {showFeedbackInput && message.observabilityTraceId && (
+                    <div className="mt-2 flex flex-col gap-2">
+                      <textarea
+                        className="w-full resize-none rounded-md border border-neutral-300 bg-white p-2 text-sm text-gray-800 dark:border-neutral-700 dark:bg-[#444654] dark:text-gray-100"
+                        placeholder="Please tell us what you think about this response..."
+                        value={feedbackComment}
+                        onChange={(e) => setFeedbackComment(e.target.value)}
+                        rows={3}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          className="h-[40px] rounded-md border border-neutral-300 px-4 py-1 text-sm font-medium text-neutral-700 enabled:hover:bg-[#76b900] disabled:opacity-50"
+                          onClick={handleSubmitFeedbackComment}
+                          disabled={!feedbackComment.trim()}
+                        >
+                          Submit Feedback
+                        </button>
+                        <button
+                          className="h-[40px] rounded-md border border-neutral-300 px-4 py-1 text-sm font-medium text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                          onClick={closeFeedbackInput}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

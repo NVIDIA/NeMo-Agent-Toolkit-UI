@@ -1,0 +1,17 @@
+{
+  "General Questions": [
+    "Summarize the key points from the latest data.",
+    "What are the main trends in the dataset?",
+    "Can you provide an overview of the current status?"
+  ],
+  "Analysis": [
+    "Compare the performance across different segments.",
+    "What are the top performing categories?",
+    "Show me the distribution by region."
+  ],
+  "Insights": [
+    "What patterns can you identify?",
+    "Are there any anomalies in the data?",
+    "What recommendations do you have based on this data?"
+  ]
+}

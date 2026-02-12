@@ -16,6 +16,7 @@ This project builds upon the work of:
 - 🔄 Real-time streaming responses
 - 🤝 Human-in-the-loop workflow support
 - 🌙 Light/Dark theme
+- 💡 Customizable prompt suggestions
 - 🔌 WebSocket and HTTP API integration
 - 🐳 Docker support
 
@@ -83,6 +84,11 @@ The application uses a unified proxy architecture for improved security. All con
 
 **Application Configuration:**
 - `NEXT_PUBLIC_NAT_WORKFLOW` - Application workflow name displayed in the UI
+- `NEXT_PUBLIC_NAT_GREETING_TITLE` - Optional custom greeting title shown on empty chat
+- `NEXT_PUBLIC_NAT_GREETING_SUBTITLE` - Optional custom greeting subtitle shown on empty chat
+- `NEXT_PUBLIC_NAT_INPUT_PLACEHOLDER` - Optional custom placeholder text for the chat input field
+- `NEXT_PUBLIC_NAT_WELCOME_MESSAGE_ON` - Enable welcome message (see [Welcome Message Customization](#welcome-message-customization))
+- `NEXT_PUBLIC_NAT_PROMPT_SUGGESTIONS_ON` - Enable prompt suggestions feature (see [Prompt Suggestions Customization](#prompt-suggestions-customization))
 
 **Feature Toggles:**
 - `NEXT_PUBLIC_NAT_WEB_SOCKET_DEFAULT_ON` - Enable WebSocket mode by default (true/false)
@@ -103,6 +109,47 @@ The application uses a unified proxy architecture for improved security. All con
 - `NAT_MAX_FILE_SIZE_STRING` - Maximum file upload size for all operations (e.g., '5mb', '10mb', '1gb')
 - `NEXT_TELEMETRY_DISABLED` - Disable Next.js telemetry data collection (1 to disable)
 - `NEXT_PUBLIC_MCP_PATH` - MCP client API path (defaults to `/mcp/client/tool/list`)
+
+### Welcome Message Customization
+
+This application can optionally display a welcome message on the initial chat screen. Follow the instructions below to enable and customize the message:
+
+1. Enable the welcome message by setting the environment variable:
+   ```bash
+   NEXT_PUBLIC_NAT_WELCOME_MESSAGE_ON=true
+   ```
+
+2. Copy the example file:
+   ```bash
+   cp public/content/welcome.md.example public/content/welcome.md
+   ```
+
+3. Edit `public/content/welcome.md` to customize the welcome message with your own content, features, and instructions. The message is rendered with Markdown support, allowing you to use headings, lists, bold/italic text, links, and other Markdown features.
+   - If deploying with Docker, mount your custom welcome message:
+     ```bash
+     docker run -v /path/to/your/welcome.md:/app/public/content/welcome.md -p 3000:3000 nemo-agent-toolkit-ui
+     ```
+
+
+### Prompt Suggestions Customization
+
+This application can optionally display a prompt suggestions feature that suggests prompts to users. Follow the instructions below to enable and customize it:
+
+1. Enable the prompt suggestions by setting the environment variable:
+   ```bash
+   NEXT_PUBLIC_NAT_PROMPT_SUGGESTIONS_ON=true
+   ```
+
+2. Copy the example configuration:
+   ```bash
+   cp public/content/promptSuggestions.json.example public/content/promptSuggestions.json
+   ```
+
+3. Edit `public/content/promptSuggestions.json` to add your custom categories and prompts. The file uses a simple JSON format with category names as keys and arrays of prompt strings as values.
+    - If deploying with Docker, mount your custom prompt suggestions:
+      ```bash
+      docker run -v /path/to/your/promptSuggestions.json:/app/public/content/promptSuggestions.json -p 3000:3000 nemo-agent-toolkit-ui
+      ```
 
 ### API Connection
 

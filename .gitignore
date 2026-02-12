@@ -37,3 +37,7 @@ yarn.lock
 
 # PyCharm build files
 .idea/
+
+# Content files
+/public/content/*
+!/public/content/*.*.example

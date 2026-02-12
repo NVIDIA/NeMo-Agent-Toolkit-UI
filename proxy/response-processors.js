@@ -60,6 +60,41 @@ function processObservabilityTrace(line, res) {
 }
 
 /**
+ * Processes common line types shared between chat and generate streams
+ * @param {string} line - The line to process
+ * @param {Object} res - The response object to write to
+ * @returns {boolean} true if the line was handled, false otherwise
+ */
+function processCommonLineTypes(line, res) {
+  if (line.startsWith('intermediate_data: ')) {
+    processIntermediateData(line, res);
+    return true;
+  }
+  if (line.startsWith('observability_trace: ')) {
+    processObservabilityTrace(line, res);
+    return true;
+  }
+  if (line.trim().startsWith('{')) {
+    res.write(line.trim());
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Process any remaining buffer content after stream ends
+ * Handles cases where error JSON doesn't have a trailing newline
+ * @param {string} buffer - The remaining buffer content
+ * @param {Object} res - The response object to write to
+ */
+function processRemainingBuffer(buffer, res) {
+  const remaining = buffer.trim();
+  if (remaining.startsWith('{')) {
+    res.write(remaining);
+  }
+}
+
+/**
  * Processes /chat/stream responses (SSE format)
  * Backend format: Stream with "data:" lines containing chat completion chunks
  * and "intermediate_data:" lines for progress updates
@@ -113,13 +148,13 @@ async function processChatStream(backendRes, res) {
           } catch (e) {
             // Ignore parse errors
           }
-        } else if (line.startsWith('intermediate_data: ')) {
-          processIntermediateData(line, res);
-        } else if (line.startsWith('observability_trace: ')) {
-          processObservabilityTrace(line, res);
+        } else {
+          processCommonLineTypes(line, res);
         }
       }
     }
+
+    processRemainingBuffer(buffer, res);
   } catch (err) {
     // Stream processing error
   } finally {
@@ -213,13 +248,13 @@ async function processGenerateStream(backendRes, res) {
           } catch (e) {
             // Ignore parse errors
           }
-        } else if (line.startsWith('intermediate_data: ')) {
-          processIntermediateData(line, res);
-        } else if (line.startsWith('observability_trace: ')) {
-          processObservabilityTrace(line, res);
+        } else {
+          processCommonLineTypes(line, res);
         }
       }
     }
+
+    processRemainingBuffer(buffer, res);
   } catch (err) {
     console.error('[ERROR] Stream processing error:', err.message);
   } finally {
