@@ -176,6 +176,20 @@ function parsePossiblyConcatenatedJson(payload: string): any[] {
   return objs;
 }
 
+function getWebSocketCustomPayload(): Record<string, unknown> {
+  try {
+    const raw = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('webSocketCustomParams') : null;
+    if (!raw?.trim()) return {};
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (parsed?.payload != null && typeof parsed.payload === 'object' && !Array.isArray(parsed.payload)) {
+      return parsed.payload as Record<string, unknown>;
+    }
+    return {};
+  } catch {
+    return {};
+  }
+}
+
 export const Chat = () => {
   const { t } = useTranslation('chat');
   const {
@@ -280,6 +294,7 @@ export const Chat = () => {
     }
 
     const wsMessage = {
+      ...getWebSocketCustomPayload(),
       type: webSocketMessageTypes.userInteractionMessage,
       id: uuidv4(), //new id for every new message
       conversation_id: selectedConversation.id, // Required for backend routing
@@ -357,6 +372,38 @@ export const Chat = () => {
       const conversationId = selectedConversationRef.current?.id;
       if (conversationId) {
         wsUrl += `${wsUrl.includes('?') ? '&' : '?'}conversation_id=${encodeURIComponent(conversationId)}`;
+      }
+
+      // Append custom parameters from settings (query + headers encoded for proxy)
+      const customParamsRaw = sessionStorage.getItem('webSocketCustomParams');
+      if (customParamsRaw?.trim()) {
+        try {
+          const customParams = JSON.parse(customParamsRaw) as Record<string, unknown>;
+          if (typeof customParams === 'object' && customParams !== null && !Array.isArray(customParams)) {
+            const hasStructured = 'query' in customParams || 'headers' in customParams || 'body' in customParams;
+            const queryReserved = new Set(['session', 'conversation_id']);
+
+            if (hasStructured && customParams.query != null && typeof customParams.query === 'object' && !Array.isArray(customParams.query)) {
+              for (const [key, value] of Object.entries(customParams.query as Record<string, unknown>)) {
+                if (queryReserved.has(key) || value === null || value === undefined) continue;
+                wsUrl += `${wsUrl.includes('?') ? '&' : '?'}${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`;
+              }
+            } else if (!hasStructured) {
+              for (const [key, value] of Object.entries(customParams)) {
+                if (queryReserved.has(key) || value === null || value === undefined) continue;
+                wsUrl += `${wsUrl.includes('?') ? '&' : '?'}${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`;
+              }
+            }
+
+            if (hasStructured && customParams.headers != null && typeof customParams.headers === 'object' && !Array.isArray(customParams.headers)) {
+              const headersJson = JSON.stringify(customParams.headers);
+              const encoded = btoa(unescape(encodeURIComponent(headersJson)));
+              wsUrl += `${wsUrl.includes('?') ? '&' : '?'}_ws_headers=${encodeURIComponent(encoded)}`;
+            }
+          }
+        } catch {
+          // Ignore invalid JSON
+        }
       }
 
       const ws = new WebSocket(wsUrl);
@@ -908,6 +955,7 @@ export const Chat = () => {
           }
 
                               const wsMessage = {
+            ...getWebSocketCustomPayload(),
             type: webSocketMessageTypes.userMessage,
             schema_type:
               sessionStorage.getItem('webSocketSchema') || webSocketSchema,

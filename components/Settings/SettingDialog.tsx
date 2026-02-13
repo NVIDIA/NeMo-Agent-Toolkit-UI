@@ -1,9 +1,14 @@
 import { FC, useContext, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'next-i18next';
+import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 
 import { useTheme } from '@/contexts/ThemeContext';
 import HomeContext from '@/pages/api/home/home.context';
+import {
+  validateOptionalGenerationJson,
+  validateWebSocketCustomParams,
+} from '@/utils/app/settingsValidation';
 import {
   DEFAULT_CORE_ROUTE,
   CHAT_STREAM,
@@ -57,6 +62,10 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
   const [webSocketSchema, setWebSocketSchema] = useState(
     sessionStorage.getItem('webSocketSchema') || schema || 'chat_stream',
   );
+  const [webSocketCustomParams, setWebSocketCustomParams] = useState(
+    sessionStorage.getItem('webSocketCustomParams') || '',
+  );
+  const [webSocketCustomParamsError, setWebSocketCustomParamsError] = useState<string>('');
   const [isIntermediateStepsEnabled, setIsIntermediateStepsEnabled] = useState(
     sessionStorage.getItem('enableIntermediateSteps')
       ? sessionStorage.getItem('enableIntermediateSteps') === 'true'
@@ -79,6 +88,8 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
         ? sessionStorage.getItem('enableStreamingRagVizOptions') === 'true'
         : enableStreamingRagVizOptions,
     );
+  const [showOptionalParams, setShowOptionalParams] = useState(false);
+  const [showWebSocketParams, setShowWebSocketParams] = useState(false);
 
   // Sync local theme state when the actual theme changes
   useEffect(() => {
@@ -99,47 +110,17 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
     };
   }, [open, onClose]);
 
-  // Validation function for additional JSON body
-  const validateAdditionalJson = (jsonString: string): { isValid: boolean; error: string } => {
-    if (!jsonString.trim()) {
-      return { isValid: true, error: '' }; // Empty is valid
-    }
-
-    try {
-      const parsed = JSON.parse(jsonString);
-
-      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        return { isValid: false, error: 'JSON must be a valid object (not array or null)' };
-      }
-
-      // Reserved fields that cannot be overridden (only for chat/chat stream endpoints)
-      const reservedFields = [
-        // Core system fields that will be in the final payload
-        'messages', 'stream'
-      ];
-
-      const conflictingFields = Object.keys(parsed).filter(key =>
-        reservedFields.includes(key)
-      );
-
-      if (conflictingFields.length > 0) {
-        return {
-          isValid: false,
-          error: `Cannot override reserved fields: ${conflictingFields.join(', ')}`
-        };
-      }
-
-      return { isValid: true, error: '' };
-    } catch (error) {
-      return { isValid: false, error: 'Invalid JSON format' };
-    }
-  };
-
   // Handle JSON input change with validation
   const handleJsonInputChange = (value: string) => {
     setJsonBodyInput(value);
-    const validation = validateAdditionalJson(value);
+    const validation = validateOptionalGenerationJson(value);
     setJsonValidationError(validation.error);
+  };
+
+  const handleWebSocketCustomParamsChange = (value: string) => {
+    setWebSocketCustomParams(value);
+    const validation = validateWebSocketCustomParams(value);
+    setWebSocketCustomParamsError(validation.isValid ? '' : validation.error);
   };
 
   // Handle HTTP endpoint change
@@ -164,12 +145,20 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
                            selectedHttpEndpoint === CHAT_CA_RAG;
 
     if (isChatEndpoint) {
-      const validation = validateAdditionalJson(jsonBodyInput);
+      const validation = validateOptionalGenerationJson(jsonBodyInput);
       if (!validation.isValid) {
         toast.error(`JSON Validation Error: ${validation.error}`);
         return;
       }
     }
+
+    const wsParamsValidation = validateWebSocketCustomParams(webSocketCustomParams);
+    if (!wsParamsValidation.isValid) {
+      setWebSocketCustomParamsError(wsParamsValidation.error);
+      toast.error(`WebSocket parameters: ${wsParamsValidation.error}`);
+      return;
+    }
+    setWebSocketCustomParamsError('');
 
     setLightMode(theme);
     homeDispatch({ field: 'httpEndpoint', value: selectedHttpEndpoint || DEFAULT_CORE_ROUTE });
@@ -192,6 +181,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
     sessionStorage.setItem('httpEndpoint', selectedHttpEndpoint || DEFAULT_CORE_ROUTE);
     sessionStorage.setItem('optionalGenerationParameters', jsonBodyInput);
     sessionStorage.setItem('webSocketSchema', webSocketSchema || 'chat_stream');
+    sessionStorage.setItem('webSocketCustomParams', webSocketCustomParams);
     sessionStorage.setItem('expandIntermediateSteps', String(detailsToggle));
     sessionStorage.setItem(
       'intermediateStepOverride',
@@ -249,31 +239,47 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
           ))}
         </select>
 
-        {/* Show optional generation parameters for chat endpoints */}
+        {/* Optional generation parameters (collapsible) */}
         {(selectedHttpEndpoint === CHAT || selectedHttpEndpoint === CHAT_STREAM) && (
-          <>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => setShowOptionalParams((v) => !v)}
+              className="flex items-center gap-2 w-full text-left text-sm font-medium text-gray-700 dark:text-gray-300 hover:opacity-80"
+            >
+              {showOptionalParams ? (
+                <IconChevronDown size={18} className="shrink-0" />
+              ) : (
+                <IconChevronRight size={18} className="shrink-0" />
+              )}
               {t('Optional generation parameters')}
-            </label>
-            <textarea
-              placeholder='{"custom_param": "value", "another_param": 123}'
-              value={jsonBodyInput}
-              onChange={(e) => handleJsonInputChange(e.target.value)}
-              className={`w-full mt-1 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none resize-none ${
-                jsonValidationError ? 'border-2 border-red-500' : ''
-              }`}
-              rows={4}
-            />
-            {jsonValidationError && (
-              <div className="mt-1 text-sm text-red-500 dark:text-red-400">
-                {jsonValidationError}
-              </div>
+            </button>
+            {showOptionalParams && (
+              <>
+                <textarea
+                  placeholder={`{
+  "custom_param": "value",
+  "another_param": 123
+}`}
+                  value={jsonBodyInput}
+                  onChange={(e) => handleJsonInputChange(e.target.value)}
+                  className={`w-full mt-2 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none resize-none ${
+                    jsonValidationError ? 'border-2 border-red-500' : ''
+                  }`}
+                  rows={4}
+                />
+                {jsonValidationError && (
+                  <div className="mt-1 text-sm text-red-500 dark:text-red-400">
+                    {jsonValidationError}
+                  </div>
+                )}
+                <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Optional: Add custom JSON parameters for chat/chat stream endpoints only.
+                  Cannot override: messages, stream.
+                </div>
+              </>
             )}
-            <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Optional: Add custom JSON parameters for chat/chat stream endpoints only.
-              Cannot override: messages, stream.
-            </div>
-          </>
+          </div>
         )}
 
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">
@@ -292,6 +298,50 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
             </option>
           ))}
         </select>
+
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={() => setShowWebSocketParams((v) => !v)}
+            className="flex items-center gap-2 w-full text-left text-sm font-medium text-gray-700 dark:text-gray-300 hover:opacity-80"
+          >
+            {showWebSocketParams ? (
+              <IconChevronDown size={18} className="shrink-0" />
+            ) : (
+              <IconChevronRight size={18} className="shrink-0" />
+            )}
+            {t('Connection Parameters')}
+          </button>
+          {showWebSocketParams && (
+            <>
+              <textarea
+                className="w-full mt-2 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none font-mono text-sm"
+                placeholder={`{
+  "query": {
+    "tenant_id": "acme"
+  },
+  "headers": {
+    "X-Tenant-Id": "acme"
+  },
+  "payload": {
+    "tenant_id": "acme"
+  }
+}`}
+                value={webSocketCustomParams}
+                onChange={(e) => handleWebSocketCustomParamsChange(e.target.value)}
+                rows={5}
+              />
+              {webSocketCustomParamsError && (
+                <div className="mt-1 text-sm text-red-500 dark:text-red-400">
+                  {webSocketCustomParamsError}
+                </div>
+              )}
+              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Optional: Custom connection parameters (JSON format). Supported keys: query (URL params), headers (handshake headers), payload.
+              </div>
+            </>
+          )}
+        </div>
 
         <div className="flex align-middle text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">
           <input

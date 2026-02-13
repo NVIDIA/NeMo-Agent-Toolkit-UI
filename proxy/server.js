@@ -5,6 +5,7 @@ require('dotenv').config();
 const http = require('http');
 const httpProxy = require('http-proxy');
 const url = require('url');
+const querystring = require('querystring');
 const { detectPort } = require('detect-port');
 const constants = require('../constants');
 
@@ -134,7 +135,7 @@ backendProxy.on('proxyRes', (proxyRes, req, res) => {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 });
 
-// Forward headers for backend WebSocket
+// Forward headers for backend WebSocket (including custom headers from _ws_headers)
 backendProxy.on('proxyReqWs', (proxyReq, req) => {
   if (req.headers.origin) proxyReq.setHeader('Origin', req.headers.origin);
   if (req.headers['sec-websocket-protocol']) {
@@ -145,6 +146,13 @@ backendProxy.on('proxyReqWs', (proxyReq, req) => {
   }
   if (req.headers.cookie) {
     proxyReq.setHeader('Cookie', req.headers.cookie);
+  }
+  if (req._wsCustomHeaders && typeof req._wsCustomHeaders === 'object') {
+    for (const [key, value] of Object.entries(req._wsCustomHeaders)) {
+      if (value != null && value !== '') {
+        proxyReq.setHeader(key, String(value));
+      }
+    }
   }
 });
 
@@ -335,7 +343,7 @@ server.on('upgrade', (req, socket, head) => {
   socket.setKeepAlive?.(true, 15000);
   socket.setTimeout?.(0);
 
-  const parsedUrl = url.parse(req.url);
+  const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname || '/';
 
   if (
@@ -351,8 +359,23 @@ server.on('upgrade', (req, socket, head) => {
       return;
     }
 
-    // Rewrite to backend WS path
-    req.url = WEBSOCKET_BACKEND_PATH + (parsedUrl.search || '');
+    if (parsedUrl.query && parsedUrl.query._ws_headers) {
+      try {
+        const raw = Buffer.from(parsedUrl.query._ws_headers, 'base64').toString('utf8');
+        const headers = JSON.parse(raw);
+        if (typeof headers === 'object' && headers !== null && !Array.isArray(headers)) {
+          req._wsCustomHeaders = headers;
+        }
+      } catch (e) {
+        // Ignore invalid _ws_headers
+      }
+      delete parsedUrl.query._ws_headers;
+    }
+
+    const newSearch = Object.keys(parsedUrl.query || {}).length
+      ? '?' + querystring.stringify(parsedUrl.query)
+      : '';
+    req.url = WEBSOCKET_BACKEND_PATH + newSearch;
 
     backendProxy.ws(
       req,
