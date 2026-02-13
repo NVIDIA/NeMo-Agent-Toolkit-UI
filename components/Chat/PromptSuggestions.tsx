@@ -1,8 +1,40 @@
 import { IconBulb, IconChevronRight } from '@tabler/icons-react';
 import { useEffect, useRef, useState } from 'react';
 
+/** A prompt string or a nested category: { [categoryName]: PromptItem[] } */
+type PromptItem = string | Record<string, PromptItem[]>;
+export type PromptSuggestionsData = Record<string, PromptItem[]>;
+
+
+// Returns the list of items (prompts and/or subcategories) at the given path.
+function getItemsAtPath(
+  data: PromptSuggestionsData | PromptItem[],
+  path: string[]
+): PromptItem[] {
+  // Base case: no path left — return current items if we're in an array, else []
+  if (path.length === 0) return Array.isArray(data) ? data : [];
+  
+  // Top-level record: look up category by first segment, then recurse if path continues
+  const [first, ...rest] = path; // first = next segment to follow, rest = remaining path
+  if (!Array.isArray(data)) {
+    const items = data[first];
+    if (!items) return [];
+    return rest.length === 0 ? items : getItemsAtPath(items, rest);
+  }
+  
+  // We're in an array of PromptItem; find the object whose key matches the next segment
+  const obj = data.find(
+    (item): item is Record<string, PromptItem[]> =>
+      typeof item === 'object' && item !== null && !Array.isArray(item) && first in item
+  );
+  if (!obj) return [];
+  const next = obj[first];
+  if (!Array.isArray(next)) return [];
+  return rest.length === 0 ? next : getItemsAtPath(next, rest);
+}
+
 interface Props {
-  promptSuggestions: Record<string, string[]>;
+  promptSuggestions: PromptSuggestionsData;
   messageIsStreaming: boolean;
   onPromptSelect: (prompt: string) => void;
 }
@@ -13,7 +45,8 @@ export const PromptSuggestions = ({
   onPromptSelect,
 }: Props) => {
   const [showPromptGuide, setShowPromptGuide] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  /** Breadcrumb path: [] = top level, [cat] = in category, [cat, subcat] = in subcategory, etc. */
+  const [path, setPath] = useState<string[]>([]);
   const promptGuideRef = useRef<HTMLButtonElement>(null);
 
   // Handle clicks outside prompt guide to close it
@@ -25,7 +58,7 @@ export const PromptSuggestions = ({
         !(event.target as Element).closest('.prompt-guide-menu')
       ) {
         setShowPromptGuide(false);
-        setSelectedCategory(null);
+        setPath([]);
       }
     };
 
@@ -41,15 +74,11 @@ export const PromptSuggestions = ({
   const handlePromptSelect = (prompt: string) => {
     onPromptSelect(prompt);
     setShowPromptGuide(false);
-    setSelectedCategory(null);
+    setPath([]);
   };
 
-  const handleCategorySelect = (category: string) => {
-    setSelectedCategory(category);
-  };
-
-  const handleBackToCategories = () => {
-    setSelectedCategory(null);
+  const navigateToPath = (newPath: string[]) => {
+    setPath(newPath);
   };
 
   return (
@@ -59,7 +88,7 @@ export const PromptSuggestions = ({
         onClick={() => {
           setShowPromptGuide(!showPromptGuide);
           if (showPromptGuide) {
-            setSelectedCategory(null);
+            setPath([]);
           }
         }}
         className={`absolute left-10 top-2 rounded-sm p-[5px] text-neutral-800 opacity-60 dark:bg-opacity-50 dark:text-neutral-100 ${
@@ -77,33 +106,42 @@ export const PromptSuggestions = ({
           <div className="p-4">
             <nav className="flex items-center gap-1.5 mb-3 text-sm whitespace-nowrap" aria-label="Breadcrumb">
               <button
-                onClick={handleBackToCategories}
+                onClick={() => setPath([])}
                 className={`font-semibold ${
-                  selectedCategory
+                  path.length > 0
                     ? 'text-[#76b900] hover:text-[#5a8f00] dark:hover:text-[#8fcf00]'
                     : 'text-neutral-800 dark:text-neutral-100 cursor-default'
                 }`}
               >
-                {selectedCategory ? 'All categories' : 'Prompt Suggestions'}
+                {path.length > 0 ? 'All categories' : 'Prompt Suggestions'}
               </button>
-              {selectedCategory && (
-                <>
+              {path.map((segment, i) => (
+                <span key={i} className="flex items-center gap-1.5">
                   <span className="text-neutral-400 dark:text-neutral-500" aria-hidden>
                     /
                   </span>
-                  <span className="font-semibold text-neutral-800 dark:text-neutral-100">
-                    {selectedCategory}
-                  </span>
-                </>
-              )}
+                  {i < path.length - 1 ? (
+                    <button
+                      onClick={() => setPath(path.slice(0, i + 1))}
+                      className="font-semibold text-[#76b900] hover:text-[#5a8f00] dark:hover:text-[#8fcf00]"
+                    >
+                      {segment}
+                    </button>
+                  ) : (
+                    <span className="font-semibold text-neutral-800 dark:text-neutral-100">
+                      {segment}
+                    </span>
+                  )}
+                </span>
+              ))}
             </nav>
 
-            {!selectedCategory ? (
+            {path.length === 0 ? (
               <div className="space-y-2">
                 {Object.keys(promptSuggestions).map((category) => (
                   <button
                     key={category}
-                    onClick={() => handleCategorySelect(category)}
+                    onClick={() => navigateToPath([category])}
                     className="w-full flex items-center justify-between py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-gray-700 rounded transition-colors whitespace-nowrap"
                   >
                     <span>{category}</span>
@@ -113,15 +151,28 @@ export const PromptSuggestions = ({
               </div>
             ) : (
               <div className="space-y-2">
-                {promptSuggestions[selectedCategory]?.map((prompt, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handlePromptSelect(prompt)}
-                    className="w-full text-left py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-gray-700 rounded transition-colors"
-                  >
-                    {prompt}
-                  </button>
-                ))}
+                {getItemsAtPath(promptSuggestions, path).map((item, index) =>
+                  typeof item === 'string' ? (
+                    <button
+                      key={`${index}-${item.slice(0, 20)}`}
+                      onClick={() => handlePromptSelect(item)}
+                      className="w-full text-left py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-gray-700 rounded transition-colors"
+                    >
+                      {item}
+                    </button>
+                  ) : (
+                    Object.entries(item).map(([subName, _]) => (
+                      <button
+                        key={subName}
+                        onClick={() => navigateToPath([...path, subName])}
+                        className="w-full flex items-center justify-between py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-gray-700 rounded transition-colors"
+                      >
+                        <span>{subName}</span>
+                        <IconChevronRight size={16} />
+                      </button>
+                    ))
+                  )
+                )}
               </div>
             )}
           </div>
