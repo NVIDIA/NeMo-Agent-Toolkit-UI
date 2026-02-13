@@ -1,8 +1,4 @@
-import {
-  IconBulb,
-  IconChevronLeft,
-  IconChevronRight,
-} from '@tabler/icons-react';
+import { IconBulb, IconChevronRight } from '@tabler/icons-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface Props {
@@ -77,23 +73,30 @@ export const PromptSuggestions = ({
       </button>
 
       {showPromptGuide && (
-        <div className="prompt-guide-menu absolute left-2 bottom-14 w-96 max-h-[500px] overflow-y-auto bg-white dark:bg-[#40414F] border border-neutral-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
+        <div className="prompt-guide-menu absolute bottom-12 min-w-sm w-max max-w-xl max-h-[500px] overflow-y-auto bg-white dark:bg-[#40414F] border border-neutral-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
           <div className="p-4">
-            <div className="flex items-center justify-between mb-3">
+            <nav className="flex items-center gap-1.5 mb-3 text-sm whitespace-nowrap" aria-label="Breadcrumb">
+              <button
+                onClick={handleBackToCategories}
+                className={`font-semibold ${
+                  selectedCategory
+                    ? 'text-[#76b900] hover:text-[#5a8f00] dark:hover:text-[#8fcf00]'
+                    : 'text-neutral-800 dark:text-neutral-100 cursor-default'
+                }`}
+              >
+                {selectedCategory ? 'All categories' : 'Prompt Suggestions'}
+              </button>
               {selectedCategory && (
-                <button
-                  onClick={handleBackToCategories}
-                  className="flex items-center text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
-                >
-                  <IconChevronLeft size={16} />
-                  <span>Back</span>
-                </button>
+                <>
+                  <span className="text-neutral-400 dark:text-neutral-500" aria-hidden>
+                    /
+                  </span>
+                  <span className="font-semibold text-neutral-800 dark:text-neutral-100">
+                    {selectedCategory}
+                  </span>
+                </>
               )}
-              <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
-                {selectedCategory || 'Prompt Suggestions'}
-              </h3>
-              <div className="w-12"></div>
-            </div>
+            </nav>
 
             {!selectedCategory ? (
               <div className="space-y-2">
@@ -101,7 +104,7 @@ export const PromptSuggestions = ({
                   <button
                     key={category}
                     onClick={() => handleCategorySelect(category)}
-                    className="w-full flex items-center justify-between py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-gray-700 rounded transition-colors"
+                    className="w-full flex items-center justify-between py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-gray-700 rounded transition-colors whitespace-nowrap"
                   >
                     <span>{category}</span>
                     <IconChevronRight size={16} />
