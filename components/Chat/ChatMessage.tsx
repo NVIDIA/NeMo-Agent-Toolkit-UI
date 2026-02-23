@@ -346,9 +346,26 @@ export const ChatMessage: FC<Props> = memo(
                         Thought process
                       </div>
                       <ul className="space-y-1 list-none pl-0">
-                        {thoughtSteps.map((label, idx) => (
+                        {thoughtSteps.map((thoughtStep, idx) => (
                           <li key={idx} className="flex items-start gap-2">
-                            <span>{label}</span>
+                            <span className="inline [&>p]:inline [&>p]:m-0">
+                                <MemoizedReactMarkdown
+                                  className="w-full max-w-none break-words text-gray-500 dark:text-gray-400"
+                                  rehypePlugins={[rehypeRaw] as any}
+                                  remarkPlugins={[
+                                    remarkGfm,
+                                    [
+                                      remarkMath,
+                                      {
+                                        singleDollarTextMath: false,
+                                      },
+                                    ],
+                                  ]}
+                                  components={markdownComponents}
+                                >
+                                  {thoughtStep}
+                                </MemoizedReactMarkdown>
+                            </span>
                           </li>
                         ))}
                       </ul>
