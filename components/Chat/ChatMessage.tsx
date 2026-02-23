@@ -65,7 +65,7 @@ export const ChatMessage: FC<Props> = memo(
     const { t } = useTranslation('chat');
 
     const {
-      state: { selectedConversation, conversations, messageIsStreaming },
+      state: { selectedConversation, conversations, messageIsStreaming, showThoughtProcess, enableIntermediateSteps },
       dispatch: homeDispatch,
     } = useContext(HomeContext);
 
@@ -340,7 +340,7 @@ export const ChatMessage: FC<Props> = memo(
               <div className="flex flex-col w-[90%]">
                 <div className="flex flex-col gap-2">
                   {/* Thought process (e.g. ReAct thoughts) and tool/function calls when present */}
-                  {hasThoughtProcess && (
+                  {showThoughtProcess !== false && hasThoughtProcess && (
                     <div className="rounded-lg border border-black/10 dark:border-gray-600/30 bg-black/5 dark:bg-gray-800/40 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
                       <div className="font-medium text-gray-600 dark:text-gray-400 mb-1.5">
                         Thought process
@@ -355,29 +355,31 @@ export const ChatMessage: FC<Props> = memo(
                     </div>
                   )}
                   {/* for intermediate steps content  */}
-                  <div className="w-full overflow-x-hidden overflow-y-auto">
-                    <MemoizedReactMarkdown
-                      className="prose dark:prose-invert w-full max-w-none break-words"
-                      rehypePlugins={[rehypeRaw] as any}
-                      remarkPlugins={[
-                        remarkGfm,
-                        [
-                          remarkMath,
-                          {
-                            singleDollarTextMath: false,
-                          },
-                        ],
-                      ]}
-                      components={markdownComponents}
-                    >
-                      {prepareContent({
-                        message,
-                        role: 'assistant',
-                        intermediateStepsContent: true,
-                        responseContent: false,
-                      })}
-                    </MemoizedReactMarkdown>
-                  </div>
+                  {enableIntermediateSteps && (
+                    <div className="w-full overflow-x-hidden overflow-y-auto">
+                      <MemoizedReactMarkdown
+                        className="prose dark:prose-invert w-full max-w-none break-words"
+                        rehypePlugins={[rehypeRaw] as any}
+                        remarkPlugins={[
+                          remarkGfm,
+                          [
+                            remarkMath,
+                            {
+                              singleDollarTextMath: false,
+                            },
+                          ],
+                        ]}
+                        components={markdownComponents}
+                      >
+                        {prepareContent({
+                          message,
+                          role: 'assistant',
+                          intermediateStepsContent: true,
+                          responseContent: false,
+                        })}
+                      </MemoizedReactMarkdown>
+                    </div>
+                  )}
                   {/* for response content */}
                   <div className="overflow-x-auto prose dark:prose-invert flex-1 w-full flex-grow max-w-full whitespace-normal">
                     <MemoizedReactMarkdown
