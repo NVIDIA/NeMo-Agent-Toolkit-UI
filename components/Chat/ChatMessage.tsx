@@ -20,6 +20,7 @@ import { useTranslation } from 'next-i18next';
 
 import { updateConversation } from '@/utils/app/conversation';
 import {
+  collectThoughtProcessSteps,
   fixMalformedHtml,
   generateContentIntermediate,
 } from '@/utils/app/helper';
@@ -85,8 +86,10 @@ export const ChatMessage: FC<Props> = memo(
     }, [messageIndex, message?.id]);
 
     // return if the there is nothing to show
-    // no message and no intermediate steps
-    if (message?.content === '' && message?.intermediateSteps?.length === 0) {
+    // no message, no intermediate steps, and no thought process
+    const thoughtSteps = collectThoughtProcessSteps(message?.intermediateSteps ?? []);
+    const hasThoughtProcess = thoughtSteps.length > 0;
+    if (message?.content === '' && message?.intermediateSteps?.length === 0 && !hasThoughtProcess) {
       return null;
     }
 
@@ -336,6 +339,21 @@ export const ChatMessage: FC<Props> = memo(
             ) : (
               <div className="flex flex-col w-[90%]">
                 <div className="flex flex-col gap-2">
+                  {/* Thought process (e.g. ReAct thoughts) and tool/function calls when present */}
+                  {hasThoughtProcess && (
+                    <div className="rounded-lg border border-black/10 dark:border-gray-600/30 bg-black/5 dark:bg-gray-800/40 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                      <div className="font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                        Thought process
+                      </div>
+                      <ul className="space-y-1 list-none pl-0">
+                        {thoughtSteps.map((label, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span>{label}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   {/* for intermediate steps content  */}
                   <div className="w-full overflow-x-hidden overflow-y-auto">
                     <MemoizedReactMarkdown
