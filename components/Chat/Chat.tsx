@@ -322,6 +322,10 @@ export const Chat = () => {
     selectedConversationRef.current = selectedConversation;
   }, [selectedConversation]);
 
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
+
   // Reset WebSocket state when conversation changes to prevent stale message display
   useEffect(() => {
     if (selectedConversation?.id) {
