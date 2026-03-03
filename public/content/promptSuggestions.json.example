@@ -1,31 +1,31 @@
-{
-  "General Questions": [
-    "Summarize the key points from the latest data.",
-    "What are the main trends in the dataset?",
-    "Can you provide an overview of the current status?"
-  ],
-  "Analysis": [
-    {
-      "Time Series": [
-        "How has performance changed over the last 30 days?",
-        "Show me the week-over-week growth rate.",
-        "Identify any seasonal patterns in the data."
-      ]
-    },
-    {
-      "Segmentation": [
-        "Break down the results by user demographic.",
-        "Which segment has the highest conversion rate?",
-        "Compare performance between new and returning users."
-      ]
-    },
-    "Compare the performance across different segments.",
-    "What are the top performing categories?",
-    "Show me the distribution by region."
-  ],
-  "Insights": [
-    "What patterns can you identify?",
-    "Are there any anomalies in the data?",
-    "What recommendations do you have based on this data?"
-  ]
-}
+[
+  {
+    "Analysis": [
+      {
+        "Time Series": [
+          "How has performance changed over the last 30 days?",
+          "Show me the week-over-week growth rate.",
+          "Identify any seasonal patterns in the data."
+        ]
+      },
+      {
+        "Segmentation": [
+          "Break down the results by user demographic.",
+          "Which segment has the highest conversion rate?",
+          "Compare performance between new and returning users."
+        ]
+      },
+      "Compare the performance across different segments.",
+      "What are the top performing categories?",
+      "Show me the distribution by region."
+    ],
+    "Insights": [
+      "What patterns can you identify?",
+      "Are there any anomalies in the data?",
+      "What recommendations do you have based on this data?"
+    ]
+  },
+  "Summarize the key points from the latest data.",
+  "What are the main trends in the dataset?",
+  "Can you provide an overview of the current status?"
+]

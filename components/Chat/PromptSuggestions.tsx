@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 
 /** A prompt string or a nested category: { [categoryName]: PromptItem[] } */
 type PromptItem = string | Record<string, PromptItem[]>;
-export type PromptSuggestionsData = Record<string, PromptItem[]>;
+export type PromptSuggestionsData = Record<string, PromptItem[]> | PromptItem[];
 
 
 // Returns the list of items (prompts and/or subcategories) at the given path.
@@ -152,20 +152,18 @@ export const PromptSuggestions = ({
               ))}
             </nav>
 
-            {path.length === 0 ? (
-              <div className="space-y-2">
-                {Object.keys(promptSuggestions).map((category) => (
+            <div className="space-y-2">
+              {path.length === 0 && !Array.isArray(promptSuggestions) ? (
+                Object.keys(promptSuggestions).map((category) => (
                   <MenuItem
                     key={category}
                     label={category}
                     onClick={() => navigateToPath([category])}
                     hasChevron
                   />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {getItemsAtPath(promptSuggestions, path).map((item, index) =>
+                ))
+              ) : (
+                getItemsAtPath(promptSuggestions, path).map((item, index) =>
                   typeof item === 'string' ? (
                     <MenuItem
                       key={`${index}-${item.slice(0, 20)}`}
@@ -182,9 +180,9 @@ export const PromptSuggestions = ({
                       />
                     ))
                   )
-                )}
-              </div>
-            )}
+                )
+              )}
+            </div>
           </div>
         </div>
       )}
