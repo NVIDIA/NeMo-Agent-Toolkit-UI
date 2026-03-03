@@ -5,24 +5,19 @@ import { useEffect, useRef, useState } from 'react';
 type PromptItem = string | Record<string, PromptItem[]>;
 export type PromptSuggestionsData = Record<string, PromptItem[]> | PromptItem[];
 
-
 // Returns the list of items (prompts and/or subcategories) at the given path.
-function getItemsAtPath(
-  data: PromptSuggestionsData | PromptItem[],
-  path: string[]
-): PromptItem[] {
-  // Base case: no path left — return current items if we're in an array, else []
+function getItemsAtPath(data: PromptSuggestionsData, path: string[]): PromptItem[] {
   if (path.length === 0) return Array.isArray(data) ? data : [];
-  
-  // Top-level record: look up category by first segment, then recurse if path continues
-  const [first, ...rest] = path; // first = next segment to follow, rest = remaining path
+
+  const [first, ...rest] = path;
+
   if (!Array.isArray(data)) {
     const items = data[first];
     if (!items) return [];
     return rest.length === 0 ? items : getItemsAtPath(items, rest);
   }
-  
-  // We're in an array of PromptItem; find the object whose key matches the next segment
+
+  // Find the subcategory object in the array whose key matches the next segment
   const obj = data.find(
     (item): item is Record<string, PromptItem[]> =>
       typeof item === 'object' && item !== null && !Array.isArray(item) && first in item
@@ -65,48 +60,41 @@ export const PromptSuggestions = ({
   const [path, setPath] = useState<string[]>([]);
   const promptGuideRef = useRef<HTMLButtonElement>(null);
 
-  // Handle clicks outside prompt guide to close it
+  const closeMenu = () => {
+    setShowPromptGuide(false);
+    setPath([]);
+  };
+
   useEffect(() => {
+    if (!showPromptGuide) return;
+
     const handleClickOutside = (event: MouseEvent) => {
       if (
         promptGuideRef.current &&
         !promptGuideRef.current.contains(event.target as Node) &&
         !(event.target as Element).closest('.prompt-guide-menu')
       ) {
-        setShowPromptGuide(false);
-        setPath([]);
+        closeMenu();
       }
     };
 
-    if (showPromptGuide) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showPromptGuide]);
 
   const handlePromptSelect = (prompt: string) => {
     onPromptSelect(prompt);
-    setShowPromptGuide(false);
-    setPath([]);
+    closeMenu();
   };
 
-  const navigateToPath = (newPath: string[]) => {
-    setPath(newPath);
-  };
+  const isCategorized = !Array.isArray(promptSuggestions);
+  const showCategories = path.length === 0 && isCategorized;
 
   return (
     <>
       <button
         ref={promptGuideRef}
-        onClick={() => {
-          setShowPromptGuide(!showPromptGuide);
-          if (showPromptGuide) {
-            setPath([]);
-          }
-        }}
+        onClick={() => (showPromptGuide ? closeMenu() : setShowPromptGuide(true))}
         className={`absolute left-10 top-2 rounded-sm p-[5px] text-neutral-800 opacity-60 dark:bg-opacity-50 dark:text-neutral-100 ${
           messageIsStreaming
             ? 'text-neutral-400'
@@ -133,9 +121,7 @@ export const PromptSuggestions = ({
               </button>
               {path.map((segment, i) => (
                 <span key={i} className="flex items-center gap-1.5">
-                  <span className="text-neutral-400 dark:text-neutral-500" aria-hidden>
-                    /
-                  </span>
+                  <span className="text-neutral-400 dark:text-neutral-500" aria-hidden>/</span>
                   {i < path.length - 1 ? (
                     <button
                       onClick={() => setPath(path.slice(0, i + 1))}
@@ -153,12 +139,12 @@ export const PromptSuggestions = ({
             </nav>
 
             <div className="space-y-2">
-              {path.length === 0 && !Array.isArray(promptSuggestions) ? (
+              {showCategories ? (
                 Object.keys(promptSuggestions).map((category) => (
                   <MenuItem
                     key={category}
                     label={category}
-                    onClick={() => navigateToPath([category])}
+                    onClick={() => setPath([category])}
                     hasChevron
                   />
                 ))
@@ -171,11 +157,11 @@ export const PromptSuggestions = ({
                       onClick={() => handlePromptSelect(item)}
                     />
                   ) : (
-                    Object.entries(item).map(([subName, _]) => (
+                    Object.keys(item).map((subName) => (
                       <MenuItem
                         key={subName}
                         label={subName}
-                        onClick={() => navigateToPath([...path, subName])}
+                        onClick={() => setPath([...path, subName])}
                         hasChevron
                       />
                     ))
