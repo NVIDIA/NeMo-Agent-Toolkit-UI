@@ -33,6 +33,22 @@ function getItemsAtPath(
   return rest.length === 0 ? next : getItemsAtPath(next, rest);
 }
 
+interface MenuItemProps {
+  label: string;
+  onClick: () => void;
+  hasChevron?: boolean;
+}
+
+const MenuItem = ({ label, onClick, hasChevron = false }: MenuItemProps) => (
+  <button
+    onClick={onClick}
+    className="w-full flex items-center justify-between py-2 space-x-5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-gray-700 rounded transition-colors whitespace-nowrap"
+  >
+    <span className={hasChevron ? 'font-medium' : 'font-light'}>{label}</span>
+    {hasChevron && <IconChevronRight size={16} />}
+  </button>
+);
+
 interface Props {
   promptSuggestions: PromptSuggestionsData;
   messageIsStreaming: boolean;
@@ -102,18 +118,18 @@ export const PromptSuggestions = ({
       </button>
 
       {showPromptGuide && (
-        <div className="prompt-guide-menu absolute bottom-12 min-w-sm w-max max-w-xl max-h-[500px] overflow-y-auto bg-white dark:bg-[#40414F] border border-neutral-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
+        <div className="prompt-guide-menu absolute bottom-12 w-max max-w-xl max-h-[500px] overflow-y-auto bg-white dark:bg-[#40414F] border border-neutral-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
           <div className="p-4">
             <nav className="flex items-center gap-1.5 mb-3 text-sm whitespace-nowrap" aria-label="Breadcrumb">
               <button
                 onClick={() => setPath([])}
-                className={`font-semibold ${
+                className={`font-bold ${
                   path.length > 0
                     ? 'text-[#76b900] hover:text-[#5a8f00] dark:hover:text-[#8fcf00]'
                     : 'text-neutral-800 dark:text-neutral-100 cursor-default'
                 }`}
               >
-                {path.length > 0 ? 'All categories' : 'Prompt Suggestions'}
+                {path.length > 0 ? 'All Categories' : 'Prompt Suggestions'}
               </button>
               {path.map((segment, i) => (
                 <span key={i} className="flex items-center gap-1.5">
@@ -139,37 +155,31 @@ export const PromptSuggestions = ({
             {path.length === 0 ? (
               <div className="space-y-2">
                 {Object.keys(promptSuggestions).map((category) => (
-                  <button
+                  <MenuItem
                     key={category}
+                    label={category}
                     onClick={() => navigateToPath([category])}
-                    className="w-full flex items-center justify-between py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-gray-700 rounded transition-colors whitespace-nowrap"
-                  >
-                    <span>{category}</span>
-                    <IconChevronRight size={16} />
-                  </button>
+                    hasChevron
+                  />
                 ))}
               </div>
             ) : (
               <div className="space-y-2">
                 {getItemsAtPath(promptSuggestions, path).map((item, index) =>
                   typeof item === 'string' ? (
-                    <button
+                    <MenuItem
                       key={`${index}-${item.slice(0, 20)}`}
+                      label={item}
                       onClick={() => handlePromptSelect(item)}
-                      className="w-full text-left py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-gray-700 rounded transition-colors"
-                    >
-                      {item}
-                    </button>
+                    />
                   ) : (
                     Object.entries(item).map(([subName, _]) => (
-                      <button
+                      <MenuItem
                         key={subName}
+                        label={subName}
                         onClick={() => navigateToPath([...path, subName])}
-                        className="w-full flex items-center justify-between py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-gray-700 rounded transition-colors"
-                      >
-                        <span>{subName}</span>
-                        <IconChevronRight size={16} />
-                      </button>
+                        hasChevron
+                      />
                     ))
                   )
                 )}
