@@ -13,7 +13,7 @@ import {
   IconVolume2,
   IconX,
 } from '@tabler/icons-react';
-import { FC, memo, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { FC, memo, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 import { useTranslation } from 'next-i18next';
@@ -79,6 +79,9 @@ export const ChatMessage: FC<Props> = memo(
     const [showFeedbackInput, setShowFeedbackInput] = useState(false);
     const [feedbackComment, setFeedbackComment] = useState('');
     const {submitFeedback} = useFeedback();
+    const thoughtProcessScrollRef = useRef<HTMLDivElement>(null);
+    const [showThoughtOverlayTop, setShowThoughtOverlayTop] = useState(false);
+    const [showThoughtOverlayBottom, setShowThoughtOverlayBottom] = useState(false);
 
     // Memoize the markdown components to prevent recreation on every render
     const markdownComponents = useMemo(() => {
@@ -89,6 +92,22 @@ export const ChatMessage: FC<Props> = memo(
     // no message, no intermediate steps, and no thought process
     const thoughtSteps = collectThoughtProcessSteps(message?.intermediateSteps ?? []);
     const hasThoughtProcess = thoughtSteps.length > 0;
+
+    const updateThoughtOverlayVisibility = useCallback(() => {
+      const el = thoughtProcessScrollRef.current;
+      if (!el) return;
+      const scrollable = el.scrollHeight > el.clientHeight;
+      const atTop = el.scrollTop <= 2;
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
+      setShowThoughtOverlayTop(scrollable && !atTop);
+      setShowThoughtOverlayBottom(scrollable && !atBottom);
+    }, []);
+
+    useEffect(() => {
+      if (!hasThoughtProcess) return;
+      updateThoughtOverlayVisibility();
+    }, [hasThoughtProcess, thoughtSteps.length, updateThoughtOverlayVisibility]);
+
     if (message?.content === '' && message?.intermediateSteps?.length === 0 && !hasThoughtProcess) {
       return null;
     }
@@ -341,14 +360,31 @@ export const ChatMessage: FC<Props> = memo(
                 <div className="flex flex-col gap-2">
                   {/* Thought process (e.g. ReAct thoughts) and tool/function calls when present */}
                   {showThoughtProcess !== false && hasThoughtProcess && (
-                    <div className="rounded-lg border border-black/10 dark:border-gray-600/30 bg-black/5 dark:bg-gray-800/40 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                      <div className="font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-                        Thought process
-                      </div>
-                      <ul className="space-y-1 list-none pl-0">
-                        {thoughtSteps.map((thoughtStep, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="inline [&>p]:inline [&>p]:m-0">
+                    <div className="relative w-full">
+                      {showThoughtOverlayTop && (
+                        <div
+                          className="pointer-events-none absolute top-0 left-0 right-0 z-10 h-14 bg-gradient-to-b from-gray-50 to-transparent dark:from-[#444654] dark:to-transparent"
+                          aria-hidden
+                        />
+                      )}
+                      {showThoughtOverlayBottom && (
+                        <div
+                          className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 h-14 bg-gradient-to-t from-gray-50 to-transparent dark:from-[#444654] dark:to-transparent"
+                          aria-hidden
+                        />
+                      )}
+                      <div
+                        ref={thoughtProcessScrollRef}
+                        onScroll={updateThoughtOverlayVisibility}
+                        className="max-h-80 overflow-y-auto w-full overflow-x-hidden text-sm opacity-85"
+                      >
+                        <div className="font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                          Thought process
+                        </div>
+                        <ul className="space-y-1 list-none pl-0">
+                          {thoughtSteps.map((thoughtStep, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <span className="inline [&>p]:inline [&>p]:m-0">
                                 <MemoizedReactMarkdown
                                   className="w-full max-w-none break-words text-gray-500 dark:text-gray-400"
                                   rehypePlugins={[rehypeRaw] as any}
@@ -365,10 +401,11 @@ export const ChatMessage: FC<Props> = memo(
                                 >
                                   {thoughtStep}
                                 </MemoizedReactMarkdown>
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   )}
                   {/* for intermediate steps content  */}
