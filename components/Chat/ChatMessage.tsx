@@ -13,7 +13,7 @@ import {
   IconVolume2,
   IconX,
 } from '@tabler/icons-react';
-import { FC, memo, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { FC, memo, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 import { useTranslation } from 'next-i18next';
@@ -82,6 +82,7 @@ export const ChatMessage: FC<Props> = memo(
     const thoughtProcessScrollRef = useRef<HTMLDivElement>(null);
     const [showThoughtOverlayTop, setShowThoughtOverlayTop] = useState(false);
     const [showThoughtOverlayBottom, setShowThoughtOverlayBottom] = useState(false);
+    const wasAtBottomRef = useRef(true);
 
     // Memoize the markdown components to prevent recreation on every render
     const markdownComponents = useMemo(() => {
@@ -101,12 +102,26 @@ export const ChatMessage: FC<Props> = memo(
       const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
       setShowThoughtOverlayTop(scrollable && !atTop);
       setShowThoughtOverlayBottom(scrollable && !atBottom);
+      wasAtBottomRef.current = atBottom;
     }, []);
 
     useEffect(() => {
       if (!hasThoughtProcess) return;
       updateThoughtOverlayVisibility();
     }, [hasThoughtProcess, thoughtSteps.length, updateThoughtOverlayVisibility]);
+
+    useLayoutEffect(() => {
+      const el = thoughtProcessScrollRef.current;
+      if (!hasThoughtProcess || !el) return;
+      
+      if (wasAtBottomRef.current) {
+        el.scrollTop = el.scrollHeight;
+      }
+      
+      // Re-check overlay after layout (content may have changed)
+      const t = setTimeout(updateThoughtOverlayVisibility, 0);
+      return () => clearTimeout(t);
+    }, [thoughtSteps.length, hasThoughtProcess, updateThoughtOverlayVisibility]);
 
     if (message?.content === '' && message?.intermediateSteps?.length === 0 && !hasThoughtProcess) {
       return null;
