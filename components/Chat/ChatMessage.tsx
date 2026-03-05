@@ -2,6 +2,7 @@
 
 import {
   IconCheck,
+  IconChevronDown,
   IconCopy,
   IconEdit,
   IconMessage,
@@ -80,6 +81,7 @@ export const ChatMessage: FC<Props> = memo(
     const [feedbackComment, setFeedbackComment] = useState('');
     const {submitFeedback} = useFeedback();
     const thoughtProcessScrollRef = useRef<HTMLDivElement>(null);
+    const [isThoughtProcessExpanded, setIsThoughtProcessExpanded] = useState(true);
     const [showThoughtOverlayTop, setShowThoughtOverlayTop] = useState(false);
     const [showThoughtOverlayBottom, setShowThoughtOverlayBottom] = useState(false);
     const wasAtBottomRef = useRef(true);
@@ -93,6 +95,11 @@ export const ChatMessage: FC<Props> = memo(
     // no message, no intermediate steps, and no thought process
     const thoughtSteps = collectThoughtProcessSteps(message?.intermediateSteps ?? []);
     const hasThoughtProcess = thoughtSteps.length > 0;
+
+    // Collapse thought process once the assistant response is fully displayed
+    const isLastMessage =
+      selectedConversation?.messages != null &&
+      messageIndex === selectedConversation.messages.length - 1;
 
     const updateThoughtOverlayVisibility = useCallback(() => {
       const el = thoughtProcessScrollRef.current;
@@ -109,6 +116,12 @@ export const ChatMessage: FC<Props> = memo(
       if (!hasThoughtProcess) return;
       updateThoughtOverlayVisibility();
     }, [hasThoughtProcess, thoughtSteps.length, updateThoughtOverlayVisibility]);
+
+    useEffect(() => {
+      if (hasThoughtProcess && isLastMessage && !messageIsStreaming) {
+        setIsThoughtProcessExpanded(false);
+      }
+    }, [hasThoughtProcess, isLastMessage, messageIsStreaming]);
 
     useLayoutEffect(() => {
       const el = thoughtProcessScrollRef.current;
@@ -375,52 +388,66 @@ export const ChatMessage: FC<Props> = memo(
                 <div className="flex flex-col gap-2">
                   {/* Thought process (e.g. ReAct thoughts) and tool/function calls when present */}
                   {showThoughtProcess !== false && hasThoughtProcess && (
-                    <div className="relative w-full">
-                      {showThoughtOverlayTop && (
-                        <div
-                          className="pointer-events-none absolute top-0 left-0 right-0 z-10 h-14 bg-gradient-to-b from-gray-50 to-transparent dark:from-[#444654] dark:to-transparent"
-                          aria-hidden
-                        />
-                      )}
-                      {showThoughtOverlayBottom && (
-                        <div
-                          className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 h-14 bg-gradient-to-t from-gray-50 to-transparent dark:from-[#444654] dark:to-transparent"
-                          aria-hidden
-                        />
-                      )}
-                      <div
-                        ref={thoughtProcessScrollRef}
-                        onScroll={updateThoughtOverlayVisibility}
-                        className="max-h-80 overflow-y-auto w-full overflow-x-hidden text-sm opacity-85"
+                    <div className="w-full">
+                      <button
+                        type="button"
+                        onClick={() => setIsThoughtProcessExpanded((v) => !v)}
+                        className="flex w-full cursor-pointer list-none items-center gap-2 rounded py-1 text-left text-sm font-medium text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 [&::-webkit-details-marker]:hidden"
+                        aria-expanded={isThoughtProcessExpanded}
                       >
-                        <div className="font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-                          Thought process
+                        <span>Thought process</span>
+
+                        <IconChevronDown
+                          size={18}
+                          className={`shrink-0 transition-transform duration-200 ${isThoughtProcessExpanded ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                      {isThoughtProcessExpanded && (
+                        <div className="relative w-full">
+                          {showThoughtOverlayTop && (
+                            <div
+                              className="pointer-events-none absolute top-0 left-0 right-0 z-10 h-14 bg-gradient-to-b from-gray-50 to-transparent dark:from-[#444654] dark:to-transparent"
+                              aria-hidden
+                            />
+                          )}
+                          {showThoughtOverlayBottom && (
+                            <div
+                              className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 h-14 bg-gradient-to-t from-gray-50 to-transparent dark:from-[#444654] dark:to-transparent"
+                              aria-hidden
+                            />
+                          )}
+                          <div
+                            ref={thoughtProcessScrollRef}
+                            onScroll={updateThoughtOverlayVisibility}
+                            className="max-h-80 overflow-y-auto w-full overflow-x-hidden text-sm opacity-85"
+                          >
+                            <ul className="space-y-1 list-none pl-0">
+                              {thoughtSteps.map((thoughtStep, idx) => (
+                                <li key={idx} className="flex items-start gap-2">
+                                  <span className="inline [&>p]:inline [&>p]:m-0">
+                                    <MemoizedReactMarkdown
+                                      className="w-full max-w-none break-words text-gray-500 dark:text-gray-400"
+                                      rehypePlugins={[rehypeRaw] as any}
+                                      remarkPlugins={[
+                                        remarkGfm,
+                                        [
+                                          remarkMath,
+                                          {
+                                            singleDollarTextMath: false,
+                                          },
+                                        ],
+                                      ]}
+                                      components={markdownComponents}
+                                    >
+                                      {thoughtStep}
+                                    </MemoizedReactMarkdown>
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
                         </div>
-                        <ul className="space-y-1 list-none pl-0">
-                          {thoughtSteps.map((thoughtStep, idx) => (
-                            <li key={idx} className="flex items-start gap-2">
-                              <span className="inline [&>p]:inline [&>p]:m-0">
-                                <MemoizedReactMarkdown
-                                  className="w-full max-w-none break-words text-gray-500 dark:text-gray-400"
-                                  rehypePlugins={[rehypeRaw] as any}
-                                  remarkPlugins={[
-                                    remarkGfm,
-                                    [
-                                      remarkMath,
-                                      {
-                                        singleDollarTextMath: false,
-                                      },
-                                    ],
-                                  ]}
-                                  components={markdownComponents}
-                                >
-                                  {thoughtStep}
-                                </MemoizedReactMarkdown>
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                      )}
                     </div>
                   )}
                   {/* for intermediate steps content  */}
