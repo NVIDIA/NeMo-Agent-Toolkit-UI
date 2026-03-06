@@ -32,6 +32,7 @@ function processIntermediateData(line, res) {
       content: {
         name: payload?.name || 'Step',
         payload: payload?.payload || 'No details',
+        thought_text: payload?.thought_text ?? null,
       },
       time_stamp: payload?.time_stamp || 'default',
     };

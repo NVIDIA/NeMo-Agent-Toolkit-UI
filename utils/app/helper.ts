@@ -122,6 +122,42 @@ interface IntermediateStep {
     [key: string]: any; // For any additional properties
 }
 
+/**
+ * Collects thought process labels from intermediate steps recursively (flattened in order).
+ * Used to display agent thoughts (e.g. ReAct "Thought: ...") and tool/function calls.
+ * When multiple steps have the same ID, only the last one's thought is included.
+ */
+export const collectThoughtProcessSteps = (intermediateSteps: IntermediateStep[] = []): string[] => {
+    const thoughtMap = new Map<string, string>(); // Maps step ID to thought text
+    const orderedIds: string[] = []; // Tracks order of first appearance
+    
+    const visit = (steps: IntermediateStep[]) => {
+        if (!Array.isArray(steps)) return;
+        for (const step of steps) {
+            const label = step.content?.thought_text;
+            const stepId = step.id;
+            
+            if (typeof label === 'string' && label.trim() && stepId) {
+                // Track order on first appearance
+                if (!thoughtMap.has(stepId)) {
+                    orderedIds.push(stepId);
+                }
+                // Always update to latest thought for this ID
+                thoughtMap.set(stepId, label.trim());
+            }
+            
+            if (step.intermediate_steps?.length) {
+                visit(step.intermediate_steps);
+            }
+        }
+    };
+    
+    visit(intermediateSteps);
+    
+    // Return thoughts in order of first appearance, but with latest values
+    return orderedIds.map(id => thoughtMap.get(id)!);
+};
+
 export const processIntermediateMessage = (
     existingSteps: IntermediateStep[] = [],
     newMessage: IntermediateStep = {} as IntermediateStep,
