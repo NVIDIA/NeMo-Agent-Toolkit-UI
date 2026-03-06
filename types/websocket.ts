@@ -29,6 +29,7 @@ export interface SystemIntermediateMessage extends WebSocketMessageBase {
   content?: {
     name?: string;
     payload?: string;
+    thought_text?: string;
   };
   index?: number;
   intermediate_steps?: IntermediateStep[];
