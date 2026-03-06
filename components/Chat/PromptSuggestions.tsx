@@ -37,7 +37,7 @@ interface MenuItemProps {
 const MenuItem = ({ label, onClick, hasChevron = false }: MenuItemProps) => (
   <button
     onClick={onClick}
-    className="w-full flex items-center justify-between py-2 space-x-5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-gray-700 rounded transition-colors whitespace-nowrap"
+    className="w-full flex text-left justify-between py-2 space-x-5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-gray-700 rounded transition-colors"
   >
     <span className={hasChevron ? 'font-medium' : 'font-light'}>{label}</span>
     {hasChevron && <IconChevronRight size={16} />}
