@@ -94,6 +94,7 @@ The application uses a unified proxy architecture for improved security. All con
 - `NEXT_PUBLIC_NAT_WEB_SOCKET_DEFAULT_ON` - Enable WebSocket mode by default (true/false)
 - `NEXT_PUBLIC_NAT_CHAT_HISTORY_DEFAULT_ON` - Enable chat history persistence by default (true/false)
 - `NEXT_PUBLIC_NAT_RIGHT_MENU_OPEN` - Show right menu panel by default (true/false)
+- `NEXT_PUBLIC_NAT_ENABLE_THOUGHT_PROCESS` - Show thought process by default (true/false)
 - `NEXT_PUBLIC_NAT_ENABLE_INTERMEDIATE_STEPS` - Show AI reasoning steps by default (true/false)
 - `NEXT_PUBLIC_NAT_ADDITIONAL_VIZ_DEFAULT_ON` - View settings and toggles not part of the core functionality (true/false)
 - `NEXT_PUBLIC_NAT_SHOW_DATA_STREAM_DEFAULT_ON` - Show data stream display by default (true/false)
