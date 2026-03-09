@@ -44,6 +44,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       webSocketSchema: schema,
       expandIntermediateSteps,
       intermediateStepOverride,
+      showThoughtProcess,
       enableIntermediateSteps,
       enableStreamingRagVizOptions,
       webSocketSchemas,
@@ -66,6 +67,11 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
     sessionStorage.getItem('webSocketCustomParams') || '',
   );
   const [webSocketCustomParamsError, setWebSocketCustomParamsError] = useState<string>('');
+  const [showThoughtProcessToggle, setShowThoughtProcessToggle] = useState(
+    sessionStorage.getItem('showThoughtProcess')
+      ? sessionStorage.getItem('showThoughtProcess') === 'true'
+      : showThoughtProcess,
+  );
   const [isIntermediateStepsEnabled, setIsIntermediateStepsEnabled] = useState(
     sessionStorage.getItem('enableIntermediateSteps')
       ? sessionStorage.getItem('enableIntermediateSteps') === 'true'
@@ -170,6 +176,10 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       value: intermediateStepOverrideToggle,
     });
     homeDispatch({
+      field: 'showThoughtProcess',
+      value: showThoughtProcessToggle,
+    });
+    homeDispatch({
       field: 'enableIntermediateSteps',
       value: isIntermediateStepsEnabled,
     });
@@ -186,6 +196,10 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
     sessionStorage.setItem(
       'intermediateStepOverride',
       String(intermediateStepOverrideToggle),
+    );
+    sessionStorage.setItem(
+      'showThoughtProcess',
+      String(showThoughtProcessToggle),
     );
     sessionStorage.setItem(
       'enableIntermediateSteps',
@@ -341,6 +355,24 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
               </div>
             </>
           )}
+        </div>
+
+        <div className="flex align-middle text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">
+          <input
+            type="checkbox"
+            id="showThoughtProcess"
+            checked={showThoughtProcessToggle}
+            onChange={() => {
+              setShowThoughtProcessToggle(!showThoughtProcessToggle);
+            }}
+            className="mr-2"
+          />
+          <label
+            htmlFor="showThoughtProcess"
+            className="text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
+            Show thought process
+          </label>
         </div>
 
         <div className="flex align-middle text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">

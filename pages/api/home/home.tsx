@@ -215,6 +215,11 @@ const Home = (props: any) => {
       dispatch({ field: 'showChatbar', value: showChatbar === 'true' });
     }
 
+    const showThoughtProcess = sessionStorage.getItem('showThoughtProcess');
+    if (showThoughtProcess !== null) {
+      dispatch({ field: 'showThoughtProcess', value: showThoughtProcess === 'true' });
+    }
+
     const enableIntermediateSteps = sessionStorage.getItem('enableIntermediateSteps');
     if (enableIntermediateSteps !== null) {
       dispatch({ field: 'enableIntermediateSteps', value: enableIntermediateSteps === 'true' });

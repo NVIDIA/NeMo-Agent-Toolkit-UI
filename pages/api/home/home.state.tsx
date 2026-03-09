@@ -24,6 +24,7 @@ export interface HomeInitialState {
   webSocketConnected?: boolean;
   webSocketSchema?: string;
   webSocketSchemas?: string[];
+  showThoughtProcess?: boolean;
   enableIntermediateSteps?: boolean;
   expandIntermediateSteps?: boolean;
   intermediateStepOverride?: boolean;
@@ -62,6 +63,11 @@ export const initialState: HomeInitialState = {
   webSocketConnected: false,
   webSocketSchema: 'chat_stream',
   webSocketSchemas: ['chat_stream', 'chat', 'generate_stream', 'generate'],
+  showThoughtProcess:
+    env('NEXT_PUBLIC_NAT_ENABLE_THOUGHT_PROCESS') === 'true' ||
+    process?.env?.NEXT_PUBLIC_NAT_ENABLE_THOUGHT_PROCESS === 'true'
+      ? true
+      : false,
   enableIntermediateSteps:
     env('NEXT_PUBLIC_NAT_ENABLE_INTERMEDIATE_STEPS') === 'true' ||
     process?.env?.NEXT_PUBLIC_NAT_ENABLE_INTERMEDIATE_STEPS === 'true'
