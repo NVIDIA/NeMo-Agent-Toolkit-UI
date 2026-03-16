@@ -63,6 +63,7 @@ export const ChatInput = ({
   } = useContext(HomeContext);
 
   const workflow = getWorkflowName();
+  const disclaimerMessage = env('NEXT_PUBLIC_NAT_DISCLAIMER_MESSAGE') || process?.env?.NEXT_PUBLIC_NAT_DISCLAIMER_MESSAGE;
 
   // todo add the audio file
   const recordingStartSound = new Audio('audio/recording.wav');
@@ -524,6 +525,11 @@ export const ChatInput = ({
           )}
         </div>
       </div>
+      {disclaimerMessage && (
+        <div className="pt-2 px-3 text-center text-[12px] text-neutral-400">
+          {disclaimerMessage}
+        </div>
+      )}
     </div>
   );
 };

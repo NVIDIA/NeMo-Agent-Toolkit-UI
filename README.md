@@ -87,6 +87,7 @@ The application uses a unified proxy architecture for improved security. All con
 - `NEXT_PUBLIC_NAT_GREETING_TITLE` - Optional custom greeting title shown on empty chat
 - `NEXT_PUBLIC_NAT_GREETING_SUBTITLE` - Optional custom greeting subtitle shown on empty chat
 - `NEXT_PUBLIC_NAT_INPUT_PLACEHOLDER` - Optional custom placeholder text for the chat input field
+- `NEXT_PUBLIC_NAT_DISCLAIMER_MESSAGE` - Optional custom disclaimer message shown below chat input field
 - `NEXT_PUBLIC_NAT_WELCOME_MESSAGE_ON` - Enable welcome message (see [Welcome Message Customization](#welcome-message-customization))
 - `NEXT_PUBLIC_NAT_PROMPT_SUGGESTIONS_ON` - Enable prompt suggestions feature (see [Prompt Suggestions Customization](#prompt-suggestions-customization))
 
