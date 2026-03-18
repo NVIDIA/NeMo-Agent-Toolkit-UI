@@ -322,10 +322,6 @@ export const Chat = () => {
     selectedConversationRef.current = selectedConversation;
   }, [selectedConversation]);
 
-  useEffect(() => {
-    conversationsRef.current = conversations;
-  }, [conversations]);
-
   // Reset WebSocket state when conversation changes to prevent stale message display
   useEffect(() => {
     if (selectedConversation?.id) {
@@ -892,9 +888,10 @@ export const Chat = () => {
           toast.dismiss();
 
           saveConversation(updatedConversation);
-          // Use conversationsRef.current to avoid stale closure that causes conversation wiping
+          // Use conversations from closure (it's in useCallback deps) so that
+          // conversations created via handleNewConversation are included
           const updatedConversations: Conversation[] =
-            conversationsRef.current.map(conversation => {
+            conversations.map(conversation => {
               if (conversation.id === selectedConversation.id) {
                 return updatedConversation;
               }
