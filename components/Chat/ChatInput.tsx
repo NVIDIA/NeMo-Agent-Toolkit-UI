@@ -34,7 +34,7 @@ import { Message } from '@/types/chat';
 
 import HomeContext from '@/pages/api/home/home.context';
 
-import { PromptSuggestions } from './PromptSuggestions';
+import { PromptSuggestions, type PromptSuggestionsData } from './PromptSuggestions';
 
 interface Props {
   onSend: (message: Message) => void;
@@ -78,7 +78,7 @@ export const ChatInput = ({
     useState('');
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef(null);
-  const [promptSuggestions, setPromptSuggestions] = useState<Record<string, string[]> | null>(null);
+  const [promptSuggestions, setPromptSuggestions] = useState<PromptSuggestionsData | null>(null);
 
   const triggerFileUpload = () => {
     fileInputRef?.current.click();
@@ -359,7 +359,7 @@ export const ChatInput = ({
   };
 
   const loadPromptSuggestions = async () => {
-    const customSuggestions = await loadContentFile<Record<string, string[]>>('promptSuggestions.json', true);
+    const customSuggestions = await loadContentFile<PromptSuggestionsData>('promptSuggestions.json', true);
     if (customSuggestions) {
       setPromptSuggestions(customSuggestions);
     }
