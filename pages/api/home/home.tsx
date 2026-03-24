@@ -214,6 +214,11 @@ const Home = (_props: any) => {
       dispatch({ field: 'showChatbar', value: showChatbar === 'true' });
     }
 
+    const webSocketMode = sessionStorage.getItem('webSocketMode');
+    if (webSocketMode !== null) {
+      dispatch({ field: 'webSocketMode', value: webSocketMode === 'true' });
+    }
+
     const enableIntermediateSteps = sessionStorage.getItem(
       'enableIntermediateSteps',
     );

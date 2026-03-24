@@ -548,6 +548,15 @@ export const Chat = () => {
     }
   }, [intermediateStepOverride]);
 
+  const persistOAuthPendingMessage = () => {
+    const conversation = selectedConversationRef.current;
+    if (!conversation) return;
+    const lastUserMessage = fetchLastMessage({ messages: conversation.messages, role: 'user' });
+    if (!lastUserMessage) return;
+    sessionStorage.setItem('oauth_pending_message', JSON.stringify(lastUserMessage));
+    sessionStorage.setItem('oauth_pending_conversation_id', conversation.id);
+  };
+
   /**
    * Handles OAuth consent flow by opening a popup window or navigating in the same tab
    */
@@ -567,6 +576,7 @@ export const Chat = () => {
       };
       window.addEventListener('message', handleOAuthComplete);
     } else {
+      persistOAuthPendingMessage();
       window.location.href = oauthUrl;
     }
   };
@@ -1505,6 +1515,33 @@ export const Chat = () => {
     },
     [handleSend],
   );
+
+  // After returning from the OAuth provider, resubmit the message that triggered auth.
+  useEffect(() => {
+    const pendingMessageRaw = sessionStorage.getItem('oauth_pending_message');
+    const pendingConversationId = sessionStorage.getItem('oauth_pending_conversation_id');
+    if (!pendingMessageRaw || !pendingConversationId) return;
+    if (!selectedConversation || selectedConversation.id !== pendingConversationId) return;
+
+    sessionStorage.removeItem('oauth_pending_message');
+    sessionStorage.removeItem('oauth_pending_conversation_id');
+
+    const resume = async () => {
+      let pendingMessage: Message;
+      try {
+        pendingMessage = JSON.parse(pendingMessageRaw);
+      } catch {
+        return;
+      }
+      // Ensure the WebSocket is connected before calling handleSend
+      if (webSocketModeRef.current && !webSocketConnectedRef.current) {
+        await connectWebSocket();
+      }
+      // Delete the user message + empty assistant placeholder appended during original send, then resubmit.
+      handleSend(pendingMessage, 2);
+    };
+    resume();
+  }, [selectedConversation?.id]);
 
   // Add a new effect to handle streaming state changes
   useEffect(() => {
