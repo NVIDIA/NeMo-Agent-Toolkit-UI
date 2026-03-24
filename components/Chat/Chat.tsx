@@ -207,7 +207,6 @@ export const Chat = () => {
       expandIntermediateSteps,
       intermediateStepOverride,
       enableIntermediateSteps,
-      useOAuthPopup,
     },
     handleUpdateConversation,
     dispatch: homeDispatch,
@@ -1463,8 +1462,38 @@ export const Chat = () => {
     if (!pendingMessageRaw || !pendingConversationId) return;
     if (!selectedConversation || selectedConversation.id !== pendingConversationId) return;
 
+    // The success page runs at the NAT server origin, so sessionStorage is cross-origin and
+    // unavailable here. The flag is instead passed back as a URL query parameter.
+    const urlParams = new URLSearchParams(window.location.search);
+    const authCompleted = urlParams.get('oauth_auth_completed');
+    if (authCompleted) {
+      urlParams.delete('oauth_auth_completed');
+      const cleanUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+      window.history.replaceState({}, '', cleanUrl);
+    }
+
     sessionStorage.removeItem('oauth_pending_message');
     sessionStorage.removeItem('oauth_pending_conversation_id');
+
+    // If the user pressed back without completing OAuth, show a cancellation message.
+    if (!authCompleted) {
+      const conversation = selectedConversationRef.current;
+      if (conversation) {
+        const messages = conversation.messages;
+        const lastMessage = messages.at(-1);
+        const updatedMessages = lastMessage?.role === 'assistant'
+          ? messages.map((m, idx) =>
+              idx === messages.length - 1 ? updateAssistantMessage(m, 'Authorization cancelled.') : m
+            )
+          : [...messages, createAssistantMessage(undefined, undefined, 'Authorization cancelled.')];
+        const updatedConversation = { ...conversation, messages: updatedMessages };
+        const updatedConversations = conversationsRef.current.map(c =>
+          c.id === updatedConversation.id ? updatedConversation : c
+        );
+        updateRefsAndDispatch(updatedConversations, updatedConversation, conversation);
+      }
+      return;
+    }
 
     const resume = async () => {
       let pendingMessage: Message;
