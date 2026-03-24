@@ -210,6 +210,7 @@ export const Chat = () => {
       expandIntermediateSteps,
       intermediateStepOverride,
       enableIntermediateSteps,
+      useOAuthPopup,
     },
     dispatch: homeDispatch,
   } = useContext(HomeContext);
@@ -548,6 +549,29 @@ export const Chat = () => {
   }, [intermediateStepOverride]);
 
   /**
+   * Handles OAuth consent flow by opening a popup window or navigating in the same tab
+   */
+  const openOAuthConsentUrl = (message: WebSocketInbound, oauthUrl: string) => {
+    if (!isOAuthConsentMessage(message)) return;
+
+    const shouldUsePopup = message.content?.use_popup !== undefined ? message.content.use_popup : useOAuthPopup !== false;
+    if (shouldUsePopup) {
+      const popup = window.open(
+        oauthUrl,
+        'oauth-popup',
+        'width=600,height=700,scrollbars=yes,resizable=yes,noopener,noreferrer'
+      );
+      const handleOAuthComplete = (event: MessageEvent) => {
+        if (popup && !popup.closed) popup.close();
+        window.removeEventListener('message', handleOAuthComplete);
+      };
+      window.addEventListener('message', handleOAuthComplete);
+    } else {
+      window.location.href = oauthUrl;
+    }
+  };
+
+  /**
    * Updates refs immediately before React dispatch to prevent stale reads
    */
   const updateRefsAndDispatch = (
@@ -726,7 +750,7 @@ export const Chat = () => {
       const oauthUrl = extractOAuthUrl(message);
       if (oauthUrl) {
         if (isValidConsentPromptURL(oauthUrl)) {
-          window.open(oauthUrl, '_blank', 'noopener,noreferrer');
+          openOAuthConsentUrl(message, oauthUrl);
         } else {
           console.error(
             'OAuth URL validation failed, refusing to open potentially malicious URL:',
