@@ -208,6 +208,7 @@ export const Chat = () => {
       expandIntermediateSteps,
       intermediateStepOverride,
       enableIntermediateSteps,
+      useOAuthPopup,
     },
     dispatch: homeDispatch,
   } = useContext(HomeContext);
@@ -546,6 +547,43 @@ export const Chat = () => {
   }, [intermediateStepOverride]);
 
   /**
+   * Handles OAuth consent flow by opening a popup window or navigating in the same tab
+   */
+  const handleOAuthConsent = (message: WebSocketInbound) => {
+    if (!isSystemInteractionMessage(message)) return false;
+
+    if (message.content?.input_type === 'oauth_consent') {
+      const oauthUrl = extractOAuthUrl(message);
+      if (oauthUrl) {
+        // Validate URL before opening
+        if (!isValidConsentPromptURL(oauthUrl)) {
+          console.error('OAuth URL validation failed in popup handler, refusing to open potentially malicious URL.');
+          toast.error('OAuth URL validation failed.');
+          return false;
+        }
+
+        const shouldUsePopup = message.content?.use_popup !== undefined ? message.content.use_popup : useOAuthPopup !== false;
+        if (shouldUsePopup) {
+          const popup = window.open(
+            oauthUrl,
+            'oauth-popup',
+            'width=600,height=700,scrollbars=yes,resizable=yes,noopener,noreferrer'
+          );
+          const handleOAuthComplete = (event: MessageEvent) => {
+            if (popup && !popup.closed) popup.close();
+            window.removeEventListener('message', handleOAuthComplete);
+          };
+          window.addEventListener('message', handleOAuthComplete);
+        } else {
+          window.location.href = oauthUrl;
+        }
+      }
+      return true;
+    }
+    return false;
+  };
+
+  /**
    * Updates refs immediately before React dispatch to prevent stale reads
    */
   const updateRefsAndDispatch = (
@@ -774,8 +812,13 @@ export const Chat = () => {
         if (oauthUrl) {
           // Validate URL before opening to prevent Open Redirect attacks
           if (isValidConsentPromptURL(oauthUrl)) {
-            // Open the validated OAuth URL in a new tab
-            window.open(oauthUrl, '_blank', 'noopener,noreferrer');
+            const shouldUsePopup = message?.content?.use_popup !== undefined ? message.content.use_popup : useOAuthPopup !== false;
+            if (shouldUsePopup) {
+              // Open the validated OAuth URL in a new tab
+              window.open(oauthUrl, '_blank', 'noopener,noreferrer');
+            } else {
+              window.location.href = oauthUrl;
+            }
           } else {
             console.error(
               'OAuth URL validation failed, refusing to open potentially malicious URL:',
