@@ -375,6 +375,16 @@ export const Chat = () => {
         wsUrl += `${wsUrl.includes('?') ? '&' : '?'}conversation_id=${encodeURIComponent(conversationId)}`;
       }
 
+      // Skip pre-auth if the user previously declined it OR is returning from a cancelled OAuth
+      // right now. The oauth_auth_error param is checked directly because the cleanup effect
+      // (which sets oauth_pre_auth_declined) runs after this effect due to declaration order.
+      const currentUrlParams = new URLSearchParams(window.location.search);
+      const preAuthDeclined = sessionStorage.getItem('oauth_pre_auth_declined') === 'true'
+        || (!!currentUrlParams.get('oauth_auth_error') && !sessionStorage.getItem('oauth_pending_message'));
+      if (preAuthDeclined) {
+        wsUrl += `${wsUrl.includes('?') ? '&' : '?'}skip_pre_auth=true`;
+      }
+
       // Append custom parameters from settings (query + headers encoded for proxy)
       const customParamsRaw = sessionStorage.getItem('webSocketCustomParams');
       if (customParamsRaw?.trim()) {
@@ -1514,11 +1524,26 @@ export const Chat = () => {
 
     const pendingMessageRaw = sessionStorage.getItem('oauth_pending_message');
     const pendingConversationId = sessionStorage.getItem('oauth_pending_conversation_id');
-    if (!pendingMessageRaw || !pendingConversationId) return;
+    if (!pendingMessageRaw || !pendingConversationId) {
+      // No pending message means this was a page-load pre-auth.
+      if (authError) {
+        // User declined pre-auth; skip it on reconnect to avoid a redirect loop.
+        sessionStorage.setItem('oauth_pre_auth_declined', 'true');
+      } else if (authCompleted) {
+        // Successful auth clears any prior decline so pre-auth resumes on future connections.
+        sessionStorage.removeItem('oauth_pre_auth_declined');
+      }
+      return;
+    }
     if (!selectedConversation || selectedConversation.id !== pendingConversationId) return;
 
     sessionStorage.removeItem('oauth_pending_message');
     sessionStorage.removeItem('oauth_pending_conversation_id');
+
+    // Successful mid-workflow auth clears any pre-auth decline flag.
+    if (authCompleted) {
+      sessionStorage.removeItem('oauth_pre_auth_declined');
+    }
 
     // If the user pressed back without completing OAuth, show a cancellation message.
     if (!authCompleted) {
