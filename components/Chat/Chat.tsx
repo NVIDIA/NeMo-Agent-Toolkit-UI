@@ -230,6 +230,7 @@ export const Chat = () => {
   const [interactionMessage, setInteractionMessage] = useState(null);
   const webSocketRef = useRef<WebSocket | null>(null);
   const webSocketConnectedRef = useRef(false);
+  const oauthPopupCancelledRef = useRef(false);
   const webSocketModeRef = useRef(
     sessionStorage.getItem('webSocketMode') === 'false' ? false : webSocketMode,
   );
@@ -564,6 +565,7 @@ export const Chat = () => {
 
     const shouldUsePopup = message.content?.use_popup !== undefined ? message.content.use_popup : useOAuthPopup !== false;
     if (shouldUsePopup) {
+      if (oauthPopupCancelledRef.current) return;
       const popup = window.open(
         oauthUrl,
         'oauth-popup',
@@ -572,6 +574,9 @@ export const Chat = () => {
       const handleOAuthComplete = (event: MessageEvent) => {
         if (popup && !popup.closed) popup.close();
         window.removeEventListener('message', handleOAuthComplete);
+        if (event.data?.type === 'AUTH_CANCELLED') {
+          oauthPopupCancelledRef.current = true;
+        }
       };
       window.addEventListener('message', handleOAuthComplete);
     } else {
@@ -890,6 +895,7 @@ export const Chat = () => {
   const handleSend = useCallback(
     async (message: Message, deleteCount = 0, _retry = false) => {
       message.id = uuidv4();
+      oauthPopupCancelledRef.current = false;
 
       // Set the active user message ID for WebSocket message tracking
       activeUserMessageId.current = message.id;
