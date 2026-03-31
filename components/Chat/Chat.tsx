@@ -228,6 +228,7 @@ export const Chat = () => {
   const [interactionMessage, setInteractionMessage] = useState(null);
   const webSocketRef = useRef<WebSocket | null>(null);
   const webSocketConnectedRef = useRef(false);
+  const oauthPopupCancelledRef = useRef(false);
   const webSocketModeRef = useRef(
     sessionStorage.getItem('webSocketMode') === 'false' ? false : webSocketMode,
   );
@@ -575,7 +576,7 @@ export const Chat = () => {
           const popup = window.open(
             oauthUrl,
             'oauth-popup',
-            'width=600,height=700,scrollbars=yes,resizable=yes,noopener,noreferrer'
+            'noopener,noreferrer'
           );
           const handleOAuthComplete = (event: MessageEvent) => {
             if (popup && !popup.closed) popup.close();
@@ -823,8 +824,17 @@ export const Chat = () => {
           if (isValidConsentPromptURL(oauthUrl)) {
             const shouldUsePopup = message?.content?.use_popup !== false;
             if (shouldUsePopup) {
+              if (oauthPopupCancelledRef.current) return;
               // Open the validated OAuth URL in a new tab
-              window.open(oauthUrl, '_blank', 'noopener,noreferrer');
+              const popup = window.open(oauthUrl, 'oauth-popup', 'noopener,noreferrer');
+              const handleOAuthComplete = (event: MessageEvent) => {
+                if (popup && !popup.closed) popup.close();
+                window.removeEventListener('message', handleOAuthComplete);
+                if (event.data?.type === 'AUTH_CANCELLED') {
+                  oauthPopupCancelledRef.current = true;
+                }
+              };
+              window.addEventListener('message', handleOAuthComplete);
             } else {
               persistOAuthPendingMessage();
               window.location.href = oauthUrl;
@@ -916,6 +926,7 @@ export const Chat = () => {
   const handleSend = useCallback(
     async (message: Message, deleteCount = 0, _retry = false) => {
       message.id = uuidv4();
+      oauthPopupCancelledRef.current = false;
 
       // Set the active user message ID for WebSocket message tracking
       activeUserMessageId.current = message.id;
