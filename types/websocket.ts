@@ -173,7 +173,13 @@ export function validateWebSocketMessageWithConversationId(message: any): messag
       `Invalid WebSocket message structure. Expected message with valid 'type' field, got: ${JSON.stringify(message)}`
     );
   }
-  
+
+  // OAuth consent messages sent at connection time (pre-auth) have no conversation yet.
+  // Allow them through without a conversation_id.
+  if (message.type === 'system_interaction_message' && message.content?.input_type === 'oauth_consent') {
+    return true;
+  }
+
   // Then check conversation ID
   if (!validateConversationId(message)) {
     throw new Error(

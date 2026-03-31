@@ -736,6 +736,38 @@ export const Chat = () => {
     const messageConversationId = message.conversation_id;
     const currentConversationId = selectedConversationRef.current?.id;
 
+    // OAuth consent messages from pre-auth have no conversation_id and no active message.
+    // Handle them before the conversation filter so they are never dropped.
+    if (isSystemInteractionMessage(message) && message?.content?.input_type === 'oauth_consent') {
+      const oauthUrl =
+        message?.content?.oauth_url ||
+        message?.content?.redirect_url ||
+        message?.content?.text;
+      if (oauthUrl) {
+        if (isValidConsentPromptURL(oauthUrl)) {
+          const shouldUsePopup = !message?.content?.use_redirect;
+          if (shouldUsePopup) {
+            const popup = window.open(oauthUrl, 'oauth-popup', 'noopener,noreferrer');
+            const handleOAuthComplete = (event: MessageEvent) => {
+              if (popup && !popup.closed) popup.close();
+              window.removeEventListener('message', handleOAuthComplete);
+            };
+            window.addEventListener('message', handleOAuthComplete);
+          } else {
+            persistOAuthPendingMessage();
+            window.location.href = oauthUrl;
+          }
+        } else {
+          console.error('OAuth URL validation failed, refusing to open potentially malicious URL:', oauthUrl);
+          toast.error('Invalid OAuth URL received. Please contact support.');
+        }
+      } else {
+        console.error('OAuth consent message received but no URL found in content:', message?.content);
+        toast.error('OAuth URL not found in message content');
+      }
+      return;
+    }
+
     if (activeUserMessageId.current === null || messageConversationId !== currentConversationId) {
       return;
     }
@@ -1468,20 +1500,22 @@ export const Chat = () => {
 
   // After returning from the OAuth provider, resubmit the message that triggered auth.
   useEffect(() => {
+    // Always clean OAuth query params from the URL, regardless of whether there is a pending message.
+    // This handles both mid-workflow auth (user had a pending message) and page-load auth (no pending message).
+    const urlParams = new URLSearchParams(window.location.search);
+    const authCompleted = urlParams.get('oauth_auth_completed');
+    const authError = urlParams.get('oauth_auth_error');
+    if (authCompleted || authError) {
+      urlParams.delete('oauth_auth_completed');
+      urlParams.delete('oauth_auth_error');
+      const cleanUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+      window.history.replaceState({}, '', cleanUrl);
+    }
+
     const pendingMessageRaw = sessionStorage.getItem('oauth_pending_message');
     const pendingConversationId = sessionStorage.getItem('oauth_pending_conversation_id');
     if (!pendingMessageRaw || !pendingConversationId) return;
     if (!selectedConversation || selectedConversation.id !== pendingConversationId) return;
-
-    // The success page runs at the NAT server origin, so sessionStorage is cross-origin and
-    // unavailable here. The flag is instead passed back as a URL query parameter.
-    const urlParams = new URLSearchParams(window.location.search);
-    const authCompleted = urlParams.get('oauth_auth_completed');
-    if (authCompleted) {
-      urlParams.delete('oauth_auth_completed');
-      const cleanUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-      window.history.replaceState({}, '', cleanUrl);
-    }
 
     sessionStorage.removeItem('oauth_pending_message');
     sessionStorage.removeItem('oauth_pending_conversation_id');
@@ -1513,9 +1547,24 @@ export const Chat = () => {
       } catch {
         return;
       }
-      // Ensure the WebSocket is connected before calling handleSend
+      // Ensure the WebSocket is connected before calling handleSend.
+      // useEffect([webSocketMode]) has already called connectWebSocket() by the time this runs,
+      // so wait for that in-progress connection rather than starting a second one.
       if (webSocketModeRef.current && !webSocketConnectedRef.current) {
-        await connectWebSocket();
+        if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.CONNECTING) {
+          await new Promise<void>(resolve => {
+            const interval = setInterval(() => {
+              if (webSocketConnectedRef.current ||
+                  !webSocketRef.current ||
+                  webSocketRef.current.readyState !== WebSocket.CONNECTING) {
+                clearInterval(interval);
+                resolve();
+              }
+            }, 50);
+          });
+        } else {
+          await connectWebSocket();
+        }
       }
       // Delete the user message + empty assistant placeholder appended during original send, then resubmit.
       handleSend(pendingMessage, 2);
