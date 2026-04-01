@@ -93,10 +93,10 @@ describe('Proxy Request Transformers and Response Processors', () => {
           { role: 'user', content: 'How are you?' }
         ];
         const result = buildChatPayload(messages, true, '');
-        
+
         expect(result.stream).toBe(false);
         expect(result.messages).toEqual(messages);
-        expect(result.model).toBe('nvidia/nemotron');
+        expect(result.model).toBe('placeholder');
         expect(result.temperature).toBe(0.7);
       });
 
@@ -107,14 +107,14 @@ describe('Proxy Request Transformers and Response Processors', () => {
           { role: 'user', content: 'How are you?' }
         ];
         const result = buildChatPayload(messages, false, '');
-        
+
         expect(result.messages).toEqual([{ role: 'user', content: 'How are you?' }]);
       });
 
       it('should merge optional parameters', () => {
         const messages = [{ role: 'user', content: 'Test' }];
         const result = buildChatPayload(messages, true, '{"max_tokens": 500, "top_p": 0.9}');
-        
+
         expect(result.max_tokens).toBe(500);
         expect(result.top_p).toBe(0.9);
         expect(result.stream).toBe(false);
@@ -123,7 +123,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
       it('should use key=value format for optional params', () => {
         const messages = [{ role: 'user', content: 'Test' }];
         const result = buildChatPayload(messages, true, 'max_tokens=300,top_p=0.95');
-        
+
         expect(result.max_tokens).toBe(300);
         expect(result.top_p).toBe(0.95);
       });
@@ -132,10 +132,10 @@ describe('Proxy Request Transformers and Response Processors', () => {
         // Server-side enforcement: Even if UI validation is bypassed, the server
         // filters out reserved fields (messages, stream) from optionalParams
         const messages = [{ role: 'user', content: 'Test' }];
-        
+
         // Attempt to override reserved field 'stream' via optionalParams
         const result = buildChatPayload(messages, true, '{"stream": true, "max_tokens": 100}');
-        
+
         // Server enforces: 'stream' is filtered out, remains false
         expect(result.stream).toBe(false);
         // Non-reserved fields are still merged
@@ -147,14 +147,14 @@ describe('Proxy Request Transformers and Response Processors', () => {
           { role: 'user', content: 'Hello' },
           { role: 'assistant', content: 'Hi' },
         ];
-        
+
         // Attempt to override 'messages' via optionalParams
         const result = buildChatPayload(
           messages,
           true,
           '{"messages": [{"role": "system", "content": "Override"}], "temperature": 0.9}'
         );
-        
+
         // Server enforces: 'messages' is filtered out, original messages preserved
         expect(result.messages).toEqual(messages);
         // Non-reserved fields are still merged
@@ -163,12 +163,12 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
       it('should handle parse errors in optionalParams gracefully', () => {
         const messages = [{ role: 'user', content: 'Test' }];
-        
+
         // Invalid JSON should not crash, just use defaults
         const result = buildChatPayload(messages, true, '{invalid json}');
-        
+
         expect(result.stream).toBe(false);
-        expect(result.model).toBe('nvidia/nemotron');
+        expect(result.model).toBe('placeholder');
         expect(result.temperature).toBe(0.7);
       });
     });
@@ -181,10 +181,10 @@ describe('Proxy Request Transformers and Response Processors', () => {
           { role: 'user', content: 'How are you?' }
         ];
         const result = buildChatStreamPayload(messages, true, '');
-        
+
         expect(result.stream).toBe(true);
         expect(result.messages).toEqual(messages);
-        expect(result.model).toBe('nvidia/nemotron');
+        expect(result.model).toBe('placeholder');
         expect(result.temperature).toBe(0.7);
       });
 
@@ -195,14 +195,14 @@ describe('Proxy Request Transformers and Response Processors', () => {
           { role: 'user', content: 'How are you?' }
         ];
         const result = buildChatStreamPayload(messages, false, '');
-        
+
         expect(result.messages).toEqual([{ role: 'user', content: 'How are you?' }]);
       });
 
       it('should merge optional parameters', () => {
         const messages = [{ role: 'user', content: 'Test' }];
         const result = buildChatStreamPayload(messages, true, '{"max_tokens": 500, "top_p": 0.9}');
-        
+
         expect(result.max_tokens).toBe(500);
         expect(result.top_p).toBe(0.9);
         expect(result.stream).toBe(true);
@@ -211,7 +211,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
       it('should use key=value format for optional params', () => {
         const messages = [{ role: 'user', content: 'Test' }];
         const result = buildChatStreamPayload(messages, true, 'max_tokens=300,top_p=0.95');
-        
+
         expect(result.max_tokens).toBe(300);
         expect(result.top_p).toBe(0.95);
       });
@@ -220,10 +220,10 @@ describe('Proxy Request Transformers and Response Processors', () => {
         // Server-side enforcement: Even if UI validation is bypassed, the server
         // filters out reserved fields (messages, stream) from optionalParams
         const messages = [{ role: 'user', content: 'Test' }];
-        
+
         // Attempt to override reserved field 'stream' via optionalParams
         const result = buildChatStreamPayload(messages, true, '{"stream": false, "max_tokens": 100}');
-        
+
         // Server enforces: 'stream' is filtered out, remains true (critical fix)
         expect(result.stream).toBe(true);
         // Non-reserved fields are still merged
@@ -235,14 +235,14 @@ describe('Proxy Request Transformers and Response Processors', () => {
           { role: 'user', content: 'Hello' },
           { role: 'assistant', content: 'Hi' },
         ];
-        
+
         // Attempt to override 'messages' via optionalParams
         const result = buildChatStreamPayload(
           messages,
           true,
           '{"messages": [{"role": "system", "content": "Override"}], "temperature": 0.8}'
         );
-        
+
         // Server enforces: 'messages' is filtered out, original messages preserved
         expect(result.messages).toEqual(messages);
         // Non-reserved fields are still merged
@@ -252,19 +252,19 @@ describe('Proxy Request Transformers and Response Processors', () => {
       it('should always have stream: true (critical fix)', () => {
         const messages = [{ role: 'user', content: 'Test' }];
         const result = buildChatStreamPayload(messages, true, '');
- 
+
         // Critical: buildChatStreamPayload MUST always set stream: true for SSE
         expect(result.stream).toBe(true);
       });
 
       it('should handle parse errors in optionalParams gracefully', () => {
         const messages = [{ role: 'user', content: 'Test' }];
-        
+
         // Invalid JSON should not crash, just use defaults
         const result = buildChatStreamPayload(messages, true, '{invalid json}');
-        
+
         expect(result.stream).toBe(true);
-        expect(result.model).toBe('nvidia/nemotron');
+        expect(result.model).toBe('placeholder');
         expect(result.temperature).toBe(0.7);
       });
     });
@@ -480,7 +480,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
             get: jest.fn().mockReturnValue(null),
           },
         };
-        
+
         const mockRes = {
           writeHead: jest.fn(),
           end: jest.fn(),
@@ -501,7 +501,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
           statusText: 'Internal Server Error',
           text: jest.fn().mockResolvedValue('Internal Server Error'),
         };
-        
+
         const mockRes = {
           writeHead: jest.fn(),
           end: jest.fn(),
@@ -524,7 +524,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
             }),
           },
         };
-        
+
         const mockRes = {
           writeHead: jest.fn(),
           end: jest.fn(),
@@ -547,7 +547,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
             get: jest.fn().mockReturnValue(null),
           },
         };
-        
+
         const mockRes = {
           writeHead: jest.fn(),
           end: jest.fn(),
@@ -566,7 +566,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
           statusText: 'Bad Request',
           text: jest.fn().mockResolvedValue('Bad Request'),
         };
-        
+
         const mockRes = {
           writeHead: jest.fn(),
           end: jest.fn(),
@@ -589,7 +589,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
             }),
           },
         };
-        
+
         const mockRes = {
           writeHead: jest.fn(),
           end: jest.fn(),
@@ -607,7 +607,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
       function createStreamingResponse(chunks) {
         const encoder = new TextEncoder();
         let chunkIndex = 0;
-        
+
         return {
           ok: true,
           body: {
@@ -629,7 +629,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
           'data: {"choices":[{"delta":{"content":"Hello"}}]}\n',
           'data: {"choices":[{"delta":{"content":" world"}}]}\n',
         ]);
-        
+
         const mockRes = {
           writeHead: jest.fn(),
           write: jest.fn(),
@@ -650,7 +650,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const mockBackendRes = createStreamingResponse([
           'intermediate_data: {"id":"step1","name":"Test Step","payload":"data"}\n',
         ]);
-        
+
         const mockRes = {
           writeHead: jest.fn(),
           write: jest.fn(),
@@ -668,7 +668,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
           'data: {"choices":[{"delta":{"content":"Response"}}]}\n',
           'observability_trace: {"observability_trace_id":"trace-abc-123"}\n',
         ]);
-        
+
         const mockRes = {
           writeHead: jest.fn(),
           write: jest.fn(),
@@ -689,7 +689,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
           statusText: 'Bad Gateway',
           text: jest.fn().mockResolvedValue('Bad Gateway'),
         };
-        
+
         const mockRes = {
           writeHead: jest.fn(),
           end: jest.fn(),
@@ -706,7 +706,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
       function createStreamingResponse(chunks) {
         const encoder = new TextEncoder();
         let chunkIndex = 0;
-        
+
         return {
           ok: true,
           body: {
@@ -728,7 +728,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
           'data: {"value":"Stream"}\n',
           'data: {"value":" content"}\n',
         ]);
-        
+
         const mockRes = {
           writeHead: jest.fn(),
           write: jest.fn(),
@@ -748,7 +748,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const mockBackendRes = createStreamingResponse([
           'intermediate_data: {"id":"gen-step","name":"Generation Step"}\n',
         ]);
-        
+
         const mockRes = {
           writeHead: jest.fn(),
           write: jest.fn(),
@@ -766,7 +766,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
           'data: {"value":"Generated text"}\n',
           'observability_trace: {"observability_trace_id":"trace-def-456"}\n',
         ]);
-        
+
         const mockRes = {
           writeHead: jest.fn(),
           write: jest.fn(),
@@ -786,7 +786,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
           statusText: 'Service Unavailable',
           text: jest.fn().mockResolvedValue('Service Unavailable'),
         };
-        
+
         const mockRes = {
           writeHead: jest.fn(),
           end: jest.fn(),
@@ -805,7 +805,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
           ok: true,
           text: jest.fn().mockResolvedValue('{"result":"RAG response"}'),
         };
-        
+
         const mockRes = {
           writeHead: jest.fn(),
           end: jest.fn(),
@@ -824,7 +824,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
           statusText: 'Not Found',
           text: jest.fn().mockResolvedValue('Not Found'),
         };
-        
+
         const mockRes = {
           writeHead: jest.fn(),
           end: jest.fn(),

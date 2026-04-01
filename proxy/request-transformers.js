@@ -78,7 +78,7 @@ function buildChatPayload(messages, useChatHistory, optionalParams) {
 
   const payload = {
     messages: useChatHistory ? messages : [messages[messages.length - 1]],
-    model: 'nvidia/nemotron',
+    model: 'placeholder',
     stream: false,
     temperature: 0.7,
   };
@@ -117,7 +117,7 @@ function buildChatStreamPayload(messages, useChatHistory, optionalParams) {
 
   const payload = {
     messages: useChatHistory ? messages : [messages[messages.length - 1]],
-    model: 'nvidia/nemotron',
+    model: 'placeholder',
     stream: true,
     temperature: 0.7,
   };
