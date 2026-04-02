@@ -518,7 +518,7 @@ export const Chat = () => {
           return false;
         }
 
-        const shouldUsePopup = message.content?.use_popup !== false;
+        const shouldUsePopup = !message.content?.use_redirect;
         if (shouldUsePopup) {
           const popup = window.open(
             oauthUrl,
@@ -764,7 +764,7 @@ export const Chat = () => {
         if (oauthUrl) {
           // Validate URL before opening to prevent Open Redirect attacks
           if (isValidConsentPromptURL(oauthUrl)) {
-            const shouldUsePopup = message?.content?.use_popup !== false;
+            const shouldUsePopup = !message?.content?.use_redirect;
             if (shouldUsePopup) {
               if (oauthPopupCancelledRef.current) return;
               // Open the validated OAuth URL in a new tab
