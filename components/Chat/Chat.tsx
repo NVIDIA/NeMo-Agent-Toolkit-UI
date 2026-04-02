@@ -563,7 +563,7 @@ export const Chat = () => {
   const openOAuthConsentUrl = (message: WebSocketInbound, oauthUrl: string) => {
     if (!isOAuthConsentMessage(message)) return;
 
-    const shouldUsePopup = message.content?.use_popup !== undefined ? message.content.use_popup : useOAuthPopup !== false;
+    const shouldUsePopup = !message.content?.use_redirect;
     if (shouldUsePopup) {
       if (oauthPopupCancelledRef.current) return;
       const popup = window.open(
