@@ -375,14 +375,14 @@ export const Chat = () => {
         wsUrl += `${wsUrl.includes('?') ? '&' : '?'}conversation_id=${encodeURIComponent(conversationId)}`;
       }
 
-      // Skip pre-auth if the user previously declined it OR is returning from a cancelled OAuth
+      // Skip eager auth if the user previously declined it OR is returning from a cancelled OAuth
       // right now. The oauth_auth_error param is checked directly because the cleanup effect
-      // (which sets oauth_pre_auth_declined) runs after this effect due to declaration order.
+      // (which sets oauth_eager_auth_declined) runs after this effect due to declaration order.
       const currentUrlParams = new URLSearchParams(window.location.search);
-      const preAuthDeclined = sessionStorage.getItem('oauth_pre_auth_declined') === 'true'
+      const eagerAuthDeclined = sessionStorage.getItem('oauth_eager_auth_declined') === 'true'
         || (!!currentUrlParams.get('oauth_auth_error') && !sessionStorage.getItem('oauth_pending_message'));
-      if (preAuthDeclined) {
-        wsUrl += `${wsUrl.includes('?') ? '&' : '?'}skip_pre_auth=true`;
+      if (eagerAuthDeclined) {
+        wsUrl += `${wsUrl.includes('?') ? '&' : '?'}skip_eager_auth=true`;
       }
 
       // Append custom parameters from settings (query + headers encoded for proxy)
@@ -746,7 +746,7 @@ export const Chat = () => {
     const messageConversationId = message.conversation_id;
     const currentConversationId = selectedConversationRef.current?.id;
 
-    // OAuth consent messages from pre-auth have no conversation_id and no active message.
+    // OAuth consent messages from eager auth have no conversation_id and no active message.
     // Handle them before the conversation filter so they are never dropped.
     if (isSystemInteractionMessage(message) && message?.content?.input_type === 'oauth_consent') {
       const oauthUrl =
@@ -1525,13 +1525,13 @@ export const Chat = () => {
     const pendingMessageRaw = sessionStorage.getItem('oauth_pending_message');
     const pendingConversationId = sessionStorage.getItem('oauth_pending_conversation_id');
     if (!pendingMessageRaw || !pendingConversationId) {
-      // No pending message means this was a page-load pre-auth.
+      // No pending message means this was a page-load eager auth.
       if (authError) {
-        // User declined pre-auth; skip it on reconnect to avoid a redirect loop.
-        sessionStorage.setItem('oauth_pre_auth_declined', 'true');
+        // User declined eager auth; skip it on reconnect to avoid a redirect loop.
+        sessionStorage.setItem('oauth_eager_auth_declined', 'true');
       } else if (authCompleted) {
-        // Successful auth clears any prior decline so pre-auth resumes on future connections.
-        sessionStorage.removeItem('oauth_pre_auth_declined');
+        // Successful auth clears any prior decline so eager auth resumes on future connections.
+        sessionStorage.removeItem('oauth_eager_auth_declined');
       }
       return;
     }
@@ -1540,9 +1540,9 @@ export const Chat = () => {
     sessionStorage.removeItem('oauth_pending_message');
     sessionStorage.removeItem('oauth_pending_conversation_id');
 
-    // Successful mid-workflow auth clears any pre-auth decline flag.
+    // Successful mid-workflow auth clears any eager auth decline flag.
     if (authCompleted) {
-      sessionStorage.removeItem('oauth_pre_auth_declined');
+      sessionStorage.removeItem('oauth_eager_auth_declined');
     }
 
     // If the user pressed back without completing OAuth, show a cancellation message.

@@ -174,7 +174,7 @@ export function validateWebSocketMessageWithConversationId(message: any): messag
     );
   }
 
-  // OAuth consent messages sent at connection time (pre-auth) have no conversation yet.
+  // OAuth consent messages sent at connection time (eager auth) have no conversation yet.
   // Allow them through without a conversation_id.
   if (message.type === 'system_interaction_message' && message.content?.input_type === 'oauth_consent') {
     return true;
