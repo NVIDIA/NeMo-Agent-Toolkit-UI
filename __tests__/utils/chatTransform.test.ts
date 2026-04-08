@@ -58,7 +58,7 @@ describe('chatTransform', () => {
       expect(shouldAppendResponse(message)).toBe(false);
     });
 
-    it('returns false for system_response_message with whitespace-only text', () => {
+    it('returns true for system_response_message with whitespace-only text', () => {
       const message: SystemResponseMessage = {
         type: 'system_response_message',
         status: 'in_progress',
@@ -66,7 +66,18 @@ describe('chatTransform', () => {
         conversation_id: 'test',
       };
 
-      expect(shouldAppendResponse(message)).toBe(false);
+      expect(shouldAppendResponse(message)).toBe(true);
+    });
+
+    it('returns true for system_response_message with space-prefixed token', () => {
+      const message: SystemResponseMessage = {
+        type: 'system_response_message',
+        status: 'in_progress',
+        content: { text: ' world' },
+        conversation_id: 'test',
+      };
+
+      expect(shouldAppendResponse(message)).toBe(true);
     });
 
     it('returns false for non-system_response_message types', () => {
@@ -103,7 +114,17 @@ describe('chatTransform', () => {
 
     it('returns previous content when new text is whitespace only', () => {
       const result = appendAssistantText('Existing content', '   \n  ');
-      expect(result).toBe('Existing content');
+      expect(result).toBe('Existing content   \n  ');
+    });
+
+    it('preserves leading space on space-prefixed tokens', () => {
+      const result = appendAssistantText('', ' Hello');
+      expect(result).toBe(' Hello');
+    });
+
+    it('preserves spaces in space-prefixed tokens appended to existing content', () => {
+      const result = appendAssistantText('Hello', ' world');
+      expect(result).toBe('Hello world');
     });
 
     it('handles null/undefined inputs gracefully', () => {

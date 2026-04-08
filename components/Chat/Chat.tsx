@@ -564,7 +564,7 @@ export const Chat = () => {
     }
 
     const incomingText = isSystemResponseMessage(message)
-      ? message.content?.text?.trim() || ''
+      ? message.content?.text || ''
       : '';
     const lastMessage = messages.at(-1);
     const isLastAssistant = lastMessage?.role === 'assistant';

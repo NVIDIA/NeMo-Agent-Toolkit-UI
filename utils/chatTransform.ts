@@ -26,7 +26,7 @@ export function shouldAppendResponse(message: WebSocketInbound): boolean {
   
   return (
     systemResponse.status === 'in_progress' &&
-    Boolean(text && text.trim())
+    text != null && text !== ''
   );
 }
 
@@ -43,17 +43,16 @@ export function appendAssistantText(previousContent: string, newText: string): s
     newText = '';
   }
   
-  const trimmedNew = newText.trim();
   const trimmedPrev = previousContent.trim();
   
   // If no new text, return previous
-  if (!trimmedNew) {
+  if (newText === '') {
     return previousContent;
   }
   
   // Replace empty string or placeholder content
   if (!trimmedPrev || trimmedPrev === 'FAIL') {
-    return trimmedNew;
+    return newText;
   }
   
   // Concatenate to existing content
