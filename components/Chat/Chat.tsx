@@ -229,6 +229,7 @@ export const Chat = () => {
   const [interactionMessage, setInteractionMessage] = useState(null);
   const webSocketRef = useRef<WebSocket | null>(null);
   const webSocketConnectedRef = useRef(false);
+  const oauthPopupCancelledRef = useRef(false);
   const webSocketModeRef = useRef(
     sessionStorage.getItem('webSocketMode') === 'false' ? false : webSocketMode
   );
@@ -374,6 +375,16 @@ export const Chat = () => {
         wsUrl += `${wsUrl.includes('?') ? '&' : '?'}conversation_id=${encodeURIComponent(conversationId)}`;
       }
 
+      // Skip eager auth if the user previously declined it OR is returning from a cancelled OAuth
+      // right now. The oauth_auth_error param is checked directly because the cleanup effect
+      // (which sets oauth_eager_auth_declined) runs after this effect due to declaration order.
+      const currentUrlParams = new URLSearchParams(window.location.search);
+      const eagerAuthDeclined = sessionStorage.getItem('oauth_eager_auth_declined') === 'true'
+        || (!!currentUrlParams.get('oauth_auth_error') && !sessionStorage.getItem('oauth_pending_message'));
+      if (eagerAuthDeclined) {
+        wsUrl += `${wsUrl.includes('?') ? '&' : '?'}skip_eager_auth=true`;
+      }
+
       // Append custom parameters from settings (query + headers encoded for proxy)
       const customParamsRaw = sessionStorage.getItem('webSocketCustomParams');
       if (customParamsRaw?.trim()) {
@@ -492,8 +503,17 @@ export const Chat = () => {
     }
   }, [intermediateStepOverride]);
 
+  const persistOAuthPendingMessage = () => {
+    const conversation = selectedConversationRef.current;
+    if (!conversation) return;
+    const lastUserMessage = fetchLastMessage({ messages: conversation.messages, role: 'user' });
+    if (!lastUserMessage) return;
+    sessionStorage.setItem('oauth_pending_message', JSON.stringify(lastUserMessage));
+    sessionStorage.setItem('oauth_pending_conversation_id', conversation.id);
+  };
+
   /**
-   * Handles OAuth consent flow by opening popup window
+   * Handles OAuth consent flow by opening a popup window or navigating in the same tab
    */
   const handleOAuthConsent = (message: WebSocketInbound) => {
     if (!isSystemInteractionMessage(message)) return false;
@@ -507,17 +527,23 @@ export const Chat = () => {
           toast.error('OAuth URL validation failed.');
           return false;
         }
-        
-        const popup = window.open(
-          oauthUrl,
-          'oauth-popup',
-          'width=600,height=700,scrollbars=yes,resizable=yes,noopener,noreferrer'
-        );
-        const handleOAuthComplete = (event: MessageEvent) => {
-          if (popup && !popup.closed) popup.close();
-          window.removeEventListener('message', handleOAuthComplete);
-        };
-        window.addEventListener('message', handleOAuthComplete);
+
+        const shouldUsePopup = !message.content?.use_redirect;
+        if (shouldUsePopup) {
+          const popup = window.open(
+            oauthUrl,
+            'oauth-popup',
+            'noopener,noreferrer'
+          );
+          const handleOAuthComplete = (event: MessageEvent) => {
+            if (popup && !popup.closed) popup.close();
+            window.removeEventListener('message', handleOAuthComplete);
+          };
+          window.addEventListener('message', handleOAuthComplete);
+        } else {
+          persistOAuthPendingMessage();
+          window.location.href = oauthUrl;
+        }
       }
       return true;
     }
@@ -720,6 +746,38 @@ export const Chat = () => {
     const messageConversationId = message.conversation_id;
     const currentConversationId = selectedConversationRef.current?.id;
 
+    // OAuth consent messages from eager auth have no conversation_id and no active message.
+    // Handle them before the conversation filter so they are never dropped.
+    if (isSystemInteractionMessage(message) && message?.content?.input_type === 'oauth_consent') {
+      const oauthUrl =
+        message?.content?.oauth_url ||
+        message?.content?.redirect_url ||
+        message?.content?.text;
+      if (oauthUrl) {
+        if (isValidConsentPromptURL(oauthUrl)) {
+          const shouldUsePopup = !message?.content?.use_redirect;
+          if (shouldUsePopup) {
+            const popup = window.open(oauthUrl, 'oauth-popup', 'noopener,noreferrer');
+            const handleOAuthComplete = (event: MessageEvent) => {
+              if (popup && !popup.closed) popup.close();
+              window.removeEventListener('message', handleOAuthComplete);
+            };
+            window.addEventListener('message', handleOAuthComplete);
+          } else {
+            persistOAuthPendingMessage();
+            window.location.href = oauthUrl;
+          }
+        } else {
+          console.error('OAuth URL validation failed, refusing to open potentially malicious URL:', oauthUrl);
+          toast.error('Invalid OAuth URL received. Please contact support.');
+        }
+      } else {
+        console.error('OAuth consent message received but no URL found in content:', message?.content);
+        toast.error('OAuth URL not found in message content');
+      }
+      return;
+    }
+
     if (activeUserMessageId.current === null || messageConversationId !== currentConversationId) {
       return;
     }
@@ -748,8 +806,23 @@ export const Chat = () => {
         if (oauthUrl) {
           // Validate URL before opening to prevent Open Redirect attacks
           if (isValidConsentPromptURL(oauthUrl)) {
-            // Open the validated OAuth URL in a new tab
-            window.open(oauthUrl, '_blank', 'noopener,noreferrer');
+            const shouldUsePopup = !message?.content?.use_redirect;
+            if (shouldUsePopup) {
+              if (oauthPopupCancelledRef.current) return;
+              // Open the validated OAuth URL in a new tab
+              const popup = window.open(oauthUrl, 'oauth-popup', 'noopener,noreferrer');
+              const handleOAuthComplete = (event: MessageEvent) => {
+                if (popup && !popup.closed) popup.close();
+                window.removeEventListener('message', handleOAuthComplete);
+                if (event.data?.type === 'AUTH_CANCELLED') {
+                  oauthPopupCancelledRef.current = true;
+                }
+              };
+              window.addEventListener('message', handleOAuthComplete);
+            } else {
+              persistOAuthPendingMessage();
+              window.location.href = oauthUrl;
+            }
           } else {
             console.error('OAuth URL validation failed, refusing to open potentially malicious URL:', oauthUrl);
             toast.error('Invalid OAuth URL received. Please contact support.');
@@ -831,6 +904,7 @@ export const Chat = () => {
   const handleSend = useCallback(
     async (message: Message, deleteCount = 0, retry = false) => {
       message.id = uuidv4();
+      oauthPopupCancelledRef.current = false;
 
       // Set the active user message ID for WebSocket message tracking
       activeUserMessageId.current = message.id;
@@ -1433,6 +1507,95 @@ export const Chat = () => {
     setCurrentMessage(editedMessage);
     handleSend(editedMessage, deleteCount || 0);
   }, [handleSend]);
+
+  // After returning from the OAuth provider, resubmit the message that triggered auth.
+  useEffect(() => {
+    // Always clean OAuth query params from the URL, regardless of whether there is a pending message.
+    // This handles both mid-workflow auth (user had a pending message) and page-load auth (no pending message).
+    const urlParams = new URLSearchParams(window.location.search);
+    const authCompleted = urlParams.get('oauth_auth_completed');
+    const authError = urlParams.get('oauth_auth_error');
+    if (authCompleted || authError) {
+      urlParams.delete('oauth_auth_completed');
+      urlParams.delete('oauth_auth_error');
+      const cleanUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+      window.history.replaceState({}, '', cleanUrl);
+    }
+
+    const pendingMessageRaw = sessionStorage.getItem('oauth_pending_message');
+    const pendingConversationId = sessionStorage.getItem('oauth_pending_conversation_id');
+    if (!pendingMessageRaw || !pendingConversationId) {
+      // No pending message means this was a page-load eager auth.
+      if (authError) {
+        // User declined eager auth; skip it on reconnect to avoid a redirect loop.
+        sessionStorage.setItem('oauth_eager_auth_declined', 'true');
+      } else if (authCompleted) {
+        // Successful auth clears any prior decline so eager auth resumes on future connections.
+        sessionStorage.removeItem('oauth_eager_auth_declined');
+      }
+      return;
+    }
+    if (!selectedConversation || selectedConversation.id !== pendingConversationId) return;
+
+    sessionStorage.removeItem('oauth_pending_message');
+    sessionStorage.removeItem('oauth_pending_conversation_id');
+
+    // Successful mid-workflow auth clears any eager auth decline flag.
+    if (authCompleted) {
+      sessionStorage.removeItem('oauth_eager_auth_declined');
+    }
+
+    // If the user pressed back without completing OAuth, show a cancellation message.
+    if (!authCompleted) {
+      const conversation = selectedConversationRef.current;
+      if (conversation) {
+        const messages = conversation.messages;
+        const lastMessage = messages.at(-1);
+        const updatedMessages = lastMessage?.role === 'assistant'
+          ? messages.map((m, idx) =>
+              idx === messages.length - 1 ? updateAssistantMessage(m, 'Authorization cancelled.') : m
+            )
+          : [...messages, createAssistantMessage(undefined, undefined, 'Authorization cancelled.')];
+        const updatedConversation = { ...conversation, messages: updatedMessages };
+        const updatedConversations = conversationsRef.current.map(c =>
+          c.id === updatedConversation.id ? updatedConversation : c
+        );
+        updateRefsAndDispatch(updatedConversations, updatedConversation, conversation);
+      }
+      return;
+    }
+
+    const resume = async () => {
+      let pendingMessage: Message;
+      try {
+        pendingMessage = JSON.parse(pendingMessageRaw);
+      } catch {
+        return;
+      }
+      // Ensure the WebSocket is connected before calling handleSend.
+      // useEffect([webSocketMode]) has already called connectWebSocket() by the time this runs,
+      // so wait for that in-progress connection rather than starting a second one.
+      if (webSocketModeRef.current && !webSocketConnectedRef.current) {
+        if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.CONNECTING) {
+          await new Promise<void>(resolve => {
+            const interval = setInterval(() => {
+              if (webSocketConnectedRef.current ||
+                  !webSocketRef.current ||
+                  webSocketRef.current.readyState !== WebSocket.CONNECTING) {
+                clearInterval(interval);
+                resolve();
+              }
+            }, 50);
+          });
+        } else {
+          await connectWebSocket();
+        }
+      }
+      // Delete the user message + empty assistant placeholder appended during original send, then resubmit.
+      handleSend(pendingMessage, 2);
+    };
+    resume();
+  }, [selectedConversation?.id]);
 
   // Add a new effect to handle streaming state changes
   useEffect(() => {
