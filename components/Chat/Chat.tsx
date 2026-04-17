@@ -767,8 +767,9 @@ export const Chat = () => {
       return;
     }
 
-    // Respect intermediate-steps toggle
+    // Drop intermediate step messages only when both thought process and intermediate steps are disabled
     if (
+      sessionStorage.getItem('showThoughtProcess') === 'false' &&
       sessionStorage.getItem('enableIntermediateSteps') === 'false' &&
       isSystemIntermediateMessage(message)
     ) {

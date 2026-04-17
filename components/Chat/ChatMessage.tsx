@@ -2,6 +2,7 @@
 
 import {
   IconCheck,
+  IconChevronDown,
   IconCopy,
   IconEdit,
   IconMessage,
@@ -13,13 +14,14 @@ import {
   IconVolume2,
   IconX,
 } from '@tabler/icons-react';
-import { FC, memo, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { FC, memo, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 import { useTranslation } from 'next-i18next';
 
 import { updateConversation } from '@/utils/app/conversation';
 import {
+  collectThoughtProcessSteps,
   fixMalformedHtml,
   generateContentIntermediate,
 } from '@/utils/app/helper';
@@ -64,7 +66,7 @@ export const ChatMessage: FC<Props> = memo(
     const { t } = useTranslation('chat');
 
     const {
-      state: { selectedConversation, conversations, messageIsStreaming },
+      state: { selectedConversation, conversations, messageIsStreaming, showThoughtProcess, enableIntermediateSteps },
       dispatch: homeDispatch,
     } = useContext(HomeContext);
 
@@ -78,6 +80,11 @@ export const ChatMessage: FC<Props> = memo(
     const [showFeedbackInput, setShowFeedbackInput] = useState(false);
     const [feedbackComment, setFeedbackComment] = useState('');
     const {submitFeedback} = useFeedback();
+    const thoughtProcessScrollRef = useRef<HTMLDivElement>(null);
+    const [isThoughtProcessExpanded, setIsThoughtProcessExpanded] = useState(true);
+    const [showThoughtOverlayTop, setShowThoughtOverlayTop] = useState(false);
+    const [showThoughtOverlayBottom, setShowThoughtOverlayBottom] = useState(false);
+    const wasAtBottomRef = useRef(true);
 
     // Memoize the markdown components to prevent recreation on every render
     const markdownComponents = useMemo(() => {
@@ -85,8 +92,51 @@ export const ChatMessage: FC<Props> = memo(
     }, [messageIndex, message?.id]);
 
     // return if the there is nothing to show
-    // no message and no intermediate steps
-    if (message?.content === '' && message?.intermediateSteps?.length === 0) {
+    // no message, no intermediate steps, and no thought process
+    const thoughtSteps = collectThoughtProcessSteps(message?.intermediateSteps ?? []);
+    const hasThoughtProcess = thoughtSteps.length > 0;
+
+    // Collapse thought process once the assistant response is fully displayed
+    const isLastMessage =
+      selectedConversation?.messages != null &&
+      messageIndex === selectedConversation.messages.length - 1;
+
+    const updateThoughtOverlayVisibility = useCallback(() => {
+      const el = thoughtProcessScrollRef.current;
+      if (!el) return;
+      const scrollable = el.scrollHeight > el.clientHeight;
+      const atTop = el.scrollTop <= 2;
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
+      setShowThoughtOverlayTop(scrollable && !atTop);
+      setShowThoughtOverlayBottom(scrollable && !atBottom);
+      wasAtBottomRef.current = atBottom;
+    }, []);
+
+    useEffect(() => {
+      if (!hasThoughtProcess) return;
+      updateThoughtOverlayVisibility();
+    }, [hasThoughtProcess, thoughtSteps.length, updateThoughtOverlayVisibility]);
+
+    useEffect(() => {
+      if (hasThoughtProcess && isLastMessage && !messageIsStreaming) {
+        setIsThoughtProcessExpanded(false);
+      }
+    }, [hasThoughtProcess, isLastMessage, messageIsStreaming]);
+
+    useLayoutEffect(() => {
+      const el = thoughtProcessScrollRef.current;
+      if (!hasThoughtProcess || !el) return;
+      
+      if (wasAtBottomRef.current) {
+        el.scrollTop = el.scrollHeight;
+      }
+      
+      // Re-check overlay after layout (content may have changed)
+      const t = setTimeout(updateThoughtOverlayVisibility, 0);
+      return () => clearTimeout(t);
+    }, [thoughtSteps.length, hasThoughtProcess, updateThoughtOverlayVisibility]);
+
+    if (message?.content === '' && message?.intermediateSteps?.length === 0 && !hasThoughtProcess) {
       return null;
     }
 
@@ -336,30 +386,96 @@ export const ChatMessage: FC<Props> = memo(
             ) : (
               <div className="flex flex-col w-[90%]">
                 <div className="flex flex-col gap-2">
+                  {/* Thought process (e.g. ReAct thoughts) and tool/function calls when present */}
+                  {showThoughtProcess !== false && hasThoughtProcess && (
+                    <div className="w-full">
+                      <button
+                        type="button"
+                        onClick={() => setIsThoughtProcessExpanded((v) => !v)}
+                        className="flex w-full cursor-pointer list-none items-center gap-2 rounded py-1 text-left text-sm font-medium text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 [&::-webkit-details-marker]:hidden"
+                        aria-expanded={isThoughtProcessExpanded}
+                      >
+                        <span>Thought process</span>
+
+                        <IconChevronDown
+                          size={18}
+                          className={`shrink-0 transition-transform duration-200 ${isThoughtProcessExpanded ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                      {isThoughtProcessExpanded && (
+                        <div className="relative w-full">
+                          {showThoughtOverlayTop && (
+                            <div
+                              className="pointer-events-none absolute top-0 left-0 right-0 z-10 h-14 bg-gradient-to-b from-gray-50 to-transparent dark:from-[#444654] dark:to-transparent"
+                              aria-hidden
+                            />
+                          )}
+                          {showThoughtOverlayBottom && (
+                            <div
+                              className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 h-14 bg-gradient-to-t from-gray-50 to-transparent dark:from-[#444654] dark:to-transparent"
+                              aria-hidden
+                            />
+                          )}
+                          <div
+                            ref={thoughtProcessScrollRef}
+                            onScroll={updateThoughtOverlayVisibility}
+                            className="max-h-80 overflow-y-auto w-full overflow-x-hidden text-sm opacity-85"
+                          >
+                            <ul className="space-y-1 list-none pl-0">
+                              {thoughtSteps.map((thoughtStep, idx) => (
+                                <li key={idx} className="flex items-start gap-2">
+                                  <span className="inline [&>p]:inline [&>p]:m-0">
+                                    <MemoizedReactMarkdown
+                                      className="w-full max-w-none break-words text-gray-500 dark:text-gray-400"
+                                      rehypePlugins={[rehypeRaw] as any}
+                                      remarkPlugins={[
+                                        remarkGfm,
+                                        [
+                                          remarkMath,
+                                          {
+                                            singleDollarTextMath: false,
+                                          },
+                                        ],
+                                      ]}
+                                      components={markdownComponents}
+                                    >
+                                      {thoughtStep}
+                                    </MemoizedReactMarkdown>
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {/* for intermediate steps content  */}
-                  <div className="w-full overflow-x-hidden overflow-y-auto">
-                    <MemoizedReactMarkdown
-                      className="prose dark:prose-invert w-full max-w-none break-words"
-                      rehypePlugins={[rehypeRaw] as any}
-                      remarkPlugins={[
-                        remarkGfm,
-                        [
-                          remarkMath,
-                          {
-                            singleDollarTextMath: false,
-                          },
-                        ],
-                      ]}
-                      components={markdownComponents}
-                    >
-                      {prepareContent({
-                        message,
-                        role: 'assistant',
-                        intermediateStepsContent: true,
-                        responseContent: false,
-                      })}
-                    </MemoizedReactMarkdown>
-                  </div>
+                  {enableIntermediateSteps && (
+                    <div className="w-full overflow-x-hidden overflow-y-auto">
+                      <MemoizedReactMarkdown
+                        className="prose dark:prose-invert w-full max-w-none break-words"
+                        rehypePlugins={[rehypeRaw] as any}
+                        remarkPlugins={[
+                          remarkGfm,
+                          [
+                            remarkMath,
+                            {
+                              singleDollarTextMath: false,
+                            },
+                          ],
+                        ]}
+                        components={markdownComponents}
+                      >
+                        {prepareContent({
+                          message,
+                          role: 'assistant',
+                          intermediateStepsContent: true,
+                          responseContent: false,
+                        })}
+                      </MemoizedReactMarkdown>
+                    </div>
+                  )}
                   {/* for response content */}
                   <div className="overflow-x-auto prose dark:prose-invert flex-1 w-full flex-grow max-w-full whitespace-normal">
                     <MemoizedReactMarkdown
