@@ -2,24 +2,20 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
 import toast from 'react-hot-toast';
-import { useTranslation } from 'next-i18next';
 import { v4 as uuidv4 } from 'uuid';
 
 import { webSocketMessageTypes } from '@/utils/app/const';
 import {
   saveConversation,
   saveConversations,
-  updateConversation,
 } from '@/utils/app/conversation';
 import {
   fetchLastMessage,
   processIntermediateMessage,
-  updateConversationTitle,
 } from '@/utils/app/helper';
 import {
   shouldAppendResponse,
@@ -35,19 +31,13 @@ import { isValidConsentPromptURL } from '@/utils/security/oauth-validation';
 import { Conversation, Message } from '@/types/chat';
 import {
   WebSocketInbound,
-  validateWebSocketMessage,
   validateWebSocketMessageWithConversationId,
-  validateConversationId,
   isSystemResponseMessage,
   isSystemIntermediateMessage,
   isSystemInteractionMessage,
   isErrorMessage,
-  isSystemResponseInProgress,
   isSystemResponseComplete,
-  isOAuthConsentMessage,
   isObservabilityTraceMessage,
-  extractOAuthUrl,
-  shouldAppendResponseContent,
 } from '@/types/websocket';
 import HomeContext from '@/pages/api/home/home.context';
 import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
@@ -57,8 +47,8 @@ import {
   HTTP_PROXY_PATH,
   CORE_ROUTES,
   EXTENDED_ROUTES,
+  SESSION_COOKIE_NAME,
 } from '@/constants';
-import { SESSION_COOKIE_NAME } from '@/constants';
 import {
   buildGeneratePayload,
   buildGenerateStreamPayload,
@@ -203,7 +193,6 @@ function getWebSocketCustomPayload(): Record<string, unknown> {
 }
 
 export const Chat = () => {
-  const { t } = useTranslation('chat');
   const {
     state: {
       selectedConversation,
@@ -220,13 +209,11 @@ export const Chat = () => {
       intermediateStepOverride,
       enableIntermediateSteps,
     },
-    handleUpdateConversation,
     dispatch: homeDispatch,
   } = useContext(HomeContext);
 
   const [currentMessage, setCurrentMessage] = useState<Message>();
   const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true);
-  const [showSettings, setShowSettings] = useState<boolean>(false);
   const [showScrollDownButton, setShowScrollDownButton] =
     useState<boolean>(false);
 
@@ -563,40 +550,6 @@ export const Chat = () => {
   }, [intermediateStepOverride]);
 
   /**
-   * Handles OAuth consent flow by opening popup window
-   */
-  const handleOAuthConsent = (message: WebSocketInbound) => {
-    if (!isSystemInteractionMessage(message)) return false;
-
-    if (message.content?.input_type === 'oauth_consent') {
-      const oauthUrl = extractOAuthUrl(message);
-      if (oauthUrl) {
-        // Validate URL before opening
-        if (!isValidConsentPromptURL(oauthUrl)) {
-          console.error(
-            'OAuth URL validation failed in popup handler, refusing to open potentially malicious URL.',
-          );
-          toast.error('OAuth URL validation failed.');
-          return false;
-        }
-
-        const popup = window.open(
-          oauthUrl,
-          'oauth-popup',
-          'width=600,height=700,scrollbars=yes,resizable=yes,noopener,noreferrer',
-        );
-        const handleOAuthComplete = (event: MessageEvent) => {
-          if (popup && !popup.closed) popup.close();
-          window.removeEventListener('message', handleOAuthComplete);
-        };
-        window.addEventListener('message', handleOAuthComplete);
-      }
-      return true;
-    }
-    return false;
-  };
-
-  /**
    * Updates refs immediately before React dispatch to prevent stale reads
    */
   const updateRefsAndDispatch = (
@@ -912,7 +865,7 @@ export const Chat = () => {
   };
 
   const handleSend = useCallback(
-    async (message: Message, deleteCount = 0, retry = false) => {
+    async (message: Message, deleteCount = 0, _retry = false) => {
       message.id = uuidv4();
 
       // Set the active user message ID for WebSocket message tracking
@@ -1208,7 +1161,6 @@ export const Chat = () => {
             let done = false;
             let isFirst = true;
             let text = '';
-            let counter = 1;
             let partialIntermediateStep = ''; // Add this to store partial chunks
 
             // Initialize streaming buffers
@@ -1279,8 +1231,6 @@ export const Chat = () => {
                 chunkValue = String(chunkValue ?? '');
               }
 
-              counter++;
-
               // First, handle any partial chunk from previous iteration
               if (partialIntermediateStep) {
                 chunkValue = partialIntermediateStep + chunkValue;
@@ -1301,7 +1251,7 @@ export const Chat = () => {
                   if (idString && !extractedObservabilityTraceId) {
                     extractedObservabilityTraceId = idString;
                   }
-                } catch (error) {
+                } catch (_error) {
                   // Ignore parse errors
                 }
               }
@@ -1346,7 +1296,7 @@ export const Chat = () => {
                   if (rawIntermediateMessage?.type === 'system_intermediate') {
                     rawIntermediateSteps.push(rawIntermediateMessage);
                   }
-                } catch (error) {
+                } catch (_error) {
                   // console.log('Stream response parse error:', error.message);
                 }
               }

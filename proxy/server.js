@@ -6,10 +6,11 @@ const http = require('http');
 const url = require('url');
 const querystring = require('querystring');
 
+/* eslint-disable import/order */
 const httpProxy = require('http-proxy');
 const { detectPort } = require('detect-port');
-
 const constants = require('../constants');
+/* eslint-enable import/order */
 
 const {
   HTTP_PROXY_PATH,
@@ -73,7 +74,7 @@ const NEXT_DEV_TARGET =
 // Validate NEXT_INTERNAL_URL format
 try {
   new URL(NEXT_DEV_TARGET);
-} catch (err) {
+} catch (_err) {
   console.error('ERROR: Invalid NEXT_INTERNAL_URL format:', NEXT_DEV_TARGET);
   console.error(
     'Expected format: http://hostname:port or https://hostname:port',
@@ -371,7 +372,7 @@ server.on('upgrade', (req, socket, head) => {
         ) {
           req._wsCustomHeaders = headers;
         }
-      } catch (e) {
+      } catch (_e) {
         // Ignore invalid _ws_headers
       }
       delete parsedUrl.query._ws_headers;

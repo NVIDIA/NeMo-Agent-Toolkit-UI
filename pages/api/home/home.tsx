@@ -26,7 +26,6 @@ import { ChatHeader } from '@/components/Chat/ChatHeader';
 import { Chatbar } from '@/components/Chatbar/Chatbar';
 import { DataStreamManager } from '@/components/DataStreamDisplay/DataStreamManager';
 import { Navbar } from '@/components/Mobile/Navbar';
-import { APPLICATION_NAME } from '@/constants';
 import { useTheme } from '@/contexts/ThemeContext';
 
 import HomeContext from './home.context';
@@ -37,7 +36,7 @@ import { HomeInitialState, initialState } from './home.state';
 
 const webSocketMode = initialState.webSocketMode;
 
-const Home = (props: any) => {
+const Home = (_props: any) => {
   const { t } = useTranslation('chat');
 
   const contextValue = useCreateReducer<HomeInitialState>({
@@ -58,7 +57,6 @@ const Home = (props: any) => {
 
   const { lightMode, setLightMode } = useTheme();
 
-  const stopConversationRef = useRef<boolean>(false);
 
   const webSocketModeRef = useRef(
     typeof window !== 'undefined'
@@ -160,8 +158,6 @@ const Home = (props: any) => {
 
       return;
     }
-
-    const lastConversation = conversations[conversations.length - 1];
 
     const newConversation: Conversation = {
       id: uuidv4(),

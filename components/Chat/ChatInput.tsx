@@ -1,6 +1,5 @@
 import {
   IconArrowDown,
-  IconBolt,
   IconPaperclip,
   IconPhoto,
   IconPlayerStop,
@@ -9,7 +8,6 @@ import {
   IconTrash,
   IconMicrophone,
   IconPlayerStopFilled,
-  IconMicrophone2,
 } from '@tabler/icons-react';
 import {
   KeyboardEvent,
@@ -37,7 +35,7 @@ import {
 } from './PromptSuggestions';
 
 interface Props {
-  onSend: (message: Message) => void;
+  onSend: (_message: Message) => void;
   onRegenerate: () => void;
   onScrollDownClick: () => void;
   textareaRef: MutableRefObject<HTMLTextAreaElement | null>;
@@ -52,14 +50,13 @@ export const ChatInput = ({
   onScrollDownClick,
   textareaRef,
   showScrollDownButton,
-  controller,
+  controller: _controller,
   onStopConversation,
 }: Props) => {
   const { t } = useTranslation('chat');
 
   const {
-    state: { selectedConversation, messageIsStreaming, loading, webSocketMode },
-    dispatch: homeDispatch,
+    state: { selectedConversation, messageIsStreaming },
   } = useContext(HomeContext);
 
   const workflow = getWorkflowName();
@@ -74,9 +71,9 @@ export const ChatInput = ({
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const fileInputRef = useRef(null);
   const [inputFile, setInputFile] = useState(null);
-  const [inputFileExtension, setInputFileExtension] = useState('');
+  const [, setInputFileExtension] = useState('');
   const [inputFileContent, setInputFileContent] = useState('');
-  const [inputFileContentCompressed, setInputFileContentCompressed] =
+  const [, setInputFileContentCompressed] =
     useState('');
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef(null);
@@ -87,7 +84,7 @@ export const ChatInput = ({
     fileInputRef?.current.click();
   };
 
-  const handleInputFileDelete = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleInputFileDelete = (_e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputFile(null);
     setInputFileExtension('');
     setInputFileContent('');
@@ -226,31 +223,6 @@ export const ChatInput = ({
       setInputFile(file.name);
       const extension = file.name.split('.').pop() ?? 'jpg';
       setInputFileExtension(extension.toLowerCase());
-    }
-  };
-
-  const parseVariables = (content: string) => {
-    const regex = /{{(.*?)}}/g;
-    const foundVariables = [];
-    let match;
-
-    while ((match = regex.exec(content)) !== null) {
-      foundVariables.push(match[1]);
-    }
-
-    return foundVariables;
-  };
-
-  const handleSubmit = (updatedVariables: string[]) => {
-    const newContent = content?.replace(/{{(.*?)}}/g, (match, variable) => {
-      const index = variables.indexOf(variable);
-      return updatedVariables[index];
-    });
-
-    setContent(newContent);
-
-    if (textareaRef && textareaRef.current) {
-      textareaRef.current.focus();
     }
   };
 

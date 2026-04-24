@@ -40,7 +40,7 @@ export default [
     },
     rules: {
       // TypeScript specific rules (using ESLint equivalents)
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
 
       // React specific rules
       'react/react-in-jsx-scope': 'off',

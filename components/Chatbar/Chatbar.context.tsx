@@ -9,10 +9,10 @@ import { ChatbarInitialState } from './Chatbar.state';
 export interface ChatbarContextProps {
   state: ChatbarInitialState;
   dispatch: Dispatch<ActionType<ChatbarInitialState>>;
-  handleDeleteConversation: (conversation: Conversation) => void;
+  handleDeleteConversation: (_conversation: Conversation) => void;
   handleClearConversations: () => void;
   handleExportData: () => void;
-  handleImportConversations: (data: SupportedExportFormats) => void;
+  handleImportConversations: (_data: SupportedExportFormats) => void;
 }
 
 const ChatbarContext = createContext<ChatbarContextProps>(undefined!);

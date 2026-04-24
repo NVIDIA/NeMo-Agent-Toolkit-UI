@@ -54,3 +54,4 @@ export const Video = memo(
     return prevProps.src === nextProps.src;
   },
 );
+Video.displayName = 'Video';

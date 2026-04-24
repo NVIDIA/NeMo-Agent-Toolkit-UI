@@ -14,7 +14,6 @@ import {
   CHAT,
   GENERATE_STREAM,
   GENERATE,
-  CA_RAG_INIT,
   CHAT_CA_RAG,
 } from '@/constants';
 import { useTheme } from '@/contexts/ThemeContext';

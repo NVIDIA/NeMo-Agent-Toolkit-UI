@@ -11,26 +11,21 @@ import { Video } from '@/components/Markdown/Video';
 
 export const getReactMarkDownCustomComponents = (
   messageIndex = 0,
-  messageId = '',
+  _messageId = '',
 ) => {
   return {
     code: memo(
-      ({
-        node,
+      function Code({
+        node: _node,
         className,
         children,
         ...props
       }: {
         children: React.ReactNode;
         [key: string]: any;
-      }) => {
-        // Check for language class - only code blocks (triple backticks) have language-xxx
-        // In react-markdown v10+, the `inline` prop was removed, so we detect inline code
-        // by checking for absence of a language class
+      }) {
         const match = /language-(\w+)/.exec(className || '');
         const isInline = !match;
-
-        // Handle inline code (single backticks) - no language class
         if (isInline) {
           return (
             <code
@@ -41,8 +36,6 @@ export const getReactMarkDownCustomComponents = (
             </code>
           );
         }
-
-        // Handle code blocks (triple backticks) - has language class
         return (
           <CodeBlock
             key={Math.random()}
@@ -52,13 +45,11 @@ export const getReactMarkDownCustomComponents = (
           />
         );
       },
-      (prevProps, nextProps) => {
-        return isEqual(prevProps.children, nextProps.children);
-      },
+      (prevProps, nextProps) => isEqual(prevProps.children, nextProps.children),
     ),
 
     chart: memo(
-      ({ children }) => {
+      function Chart_({ children }) {
         try {
           const payload = JSON.parse(children.replaceAll('\n', ''));
           return payload ? <Chart payload={payload} /> : null;
@@ -71,76 +62,78 @@ export const getReactMarkDownCustomComponents = (
     ),
 
     table: memo(
-      ({ children }) => (
-        <table className="border-collapse border border-black px-3 py-1 dark:border-white">
-          {children}
-        </table>
-      ),
+      function Table({ children }) {
+        return (
+          <table className="border-collapse border border-black px-3 py-1 dark:border-white">
+            {children}
+          </table>
+        );
+      },
       (prevProps, nextProps) => isEqual(prevProps.children, nextProps.children),
     ),
 
     th: memo(
-      ({ children }) => (
-        <th className="break-words border border-black bg-gray-500 px-3 py-1 text-white dark:border-white">
-          {children}
-        </th>
-      ),
+      function Th({ children }) {
+        return (
+          <th className="break-words border border-black bg-gray-500 px-3 py-1 text-white dark:border-white">
+            {children}
+          </th>
+        );
+      },
       (prevProps, nextProps) => isEqual(prevProps.children, nextProps.children),
     ),
 
     td: memo(
-      ({ children }) => (
-        <td className="break-words border border-black px-3 py-1 dark:border-white">
-          {children}
-        </td>
-      ),
+      function Td({ children }) {
+        return (
+          <td className="break-words border border-black px-3 py-1 dark:border-white">
+            {children}
+          </td>
+        );
+      },
       (prevProps, nextProps) => isEqual(prevProps.children, nextProps.children),
     ),
 
     a: memo(
-      ({ href, children, ...props }) => (
-        <a
-          href={href}
-          className="text-[#76b900] no-underline hover:underline"
-          target="_blank"
-          rel="noopener noreferrer"
-          {...props}
-        >
-          {children}
-        </a>
-      ),
+      function A({ href, children, ...props }) {
+        return (
+          <a
+            href={href}
+            className="text-[#76b900] no-underline hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+            {...props}
+          >
+            {children}
+          </a>
+        );
+      },
       (prevProps, nextProps) => isEqual(prevProps.children, nextProps.children),
     ),
 
     ol: memo(
-      ({ children, ...props }) => (
-        <ol className="list-decimal" {...props}>
-          {children}
-        </ol>
-      ),
+      function Ol({ children, ...props }) {
+        return <ol className="list-decimal" {...props}>{children}</ol>;
+      },
       (prevProps, nextProps) => isEqual(prevProps.children, nextProps.children),
     ),
 
     ul: memo(
-      ({ children, ...props }) => (
-        <ul className="list-disc" {...props}>
-          {children}
-        </ul>
-      ),
+      function Ul({ children, ...props }) {
+        return <ul className="list-disc" {...props}>{children}</ul>;
+      },
       (prevProps, nextProps) => isEqual(prevProps.children, nextProps.children),
     ),
 
     li: memo(
-      ({ children, ...props }) => (
-        <li className="leading-[1.35rem]" {...props}>
-          {children}
-        </li>
-      ),
+      function Li({ children, ...props }) {
+        return <li className="leading-[1.35rem]" {...props}>{children}</li>;
+      },
       (prevProps, nextProps) => isEqual(prevProps.children, nextProps.children),
     ),
 
     sup: memo(
-      ({ children, ...props }) => {
+      function Sup({ children, ...props }) {
         const validContent = Array.isArray(children)
           ? children
               .filter(
@@ -155,7 +148,6 @@ export const getReactMarkDownCustomComponents = (
             children.trim() !== ','
           ? children
           : null;
-
         return validContent ? (
           <sup
             className="text-xs bg-gray-100 text-[#76b900] border border-[#e7ece0] px-1 py-0.5 rounded-md shadow-sm"
@@ -175,33 +167,31 @@ export const getReactMarkDownCustomComponents = (
     ),
 
     p: memo(
-      ({
+      function P({
         children,
         ...props
       }: {
         children: React.ReactNode;
         [key: string]: any;
-      }) => {
+      }) {
         return <p {...props}>{children}</p>;
       },
-      (prevProps, nextProps) => {
-        return isEqual(prevProps.children, nextProps.children);
-      },
+      (prevProps, nextProps) => isEqual(prevProps.children, nextProps.children),
     ),
     img: memo(
-      (props) => <Image {...props} />,
+      function Img(props) { return <Image {...props} />; },
       (prevProps, nextProps) => isEqual(prevProps, nextProps),
     ),
     video: memo(
-      (props) => <Video {...props} />,
+      function Vid(props) { return <Video {...props} />; },
       (prevProps, nextProps) => isEqual(prevProps, nextProps),
     ),
     details: memo(
-      (props) => <CustomDetails messageIndex={messageIndex} {...props} />,
+      function Details(props) { return <CustomDetails messageIndex={messageIndex} {...props} />; },
       (prevProps, nextProps) => isEqual(prevProps, nextProps),
     ),
     summary: memo(
-      (props) => <CustomSummary {...props} />,
+      function Summary(props) { return <CustomSummary {...props} />; },
       (prevProps, nextProps) => isEqual(prevProps, nextProps),
     ),
   };

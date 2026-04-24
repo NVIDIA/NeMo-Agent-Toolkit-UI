@@ -4,11 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   Message,
   Conversation,
-  WebSocketMessage,
-  SystemResponseMessage,
-  SystemIntermediateMessage,
-  SystemInteractionMessage,
-  ErrorMessage,
 } from '@/types/chat';
 import { APPLICATION_NAME } from '@/constants';
 
@@ -27,7 +22,7 @@ export const compressImage = (
   base64: string,
   mimeType: string | undefined,
   shouldCompress: boolean,
-  callback: { (compressedBase64: string): void; (arg0: string): void },
+  callback: { (_compressedBase64: string): void; (_arg0: string): void },
 ) => {
   const MAX_SIZE = 200 * 1024; // 200 KB maximum size
   const MIN_SIZE = 100 * 1024; // 100 KB minimum size, to avoid under compression
@@ -228,7 +223,7 @@ export const processIntermediateMessage = (
     // If no parent found or no parent_id, add to root level
     existingSteps.push(newMessage);
     return existingSteps;
-  } catch (error) {
+  } catch (_error) {
     return existingSteps;
   }
 };
@@ -244,7 +239,7 @@ export const escapeHtml = (str: string): string => {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
-  } catch (error) {
+  } catch (_error) {
     return ''; // Return an empty string in case of error
   }
 };
@@ -269,7 +264,7 @@ export const convertBackticksToPreCode = (markdown = '') => {
     markdown = markdown.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
     return markdown;
-  } catch (error) {
+  } catch (_error) {
     return markdown;
   }
 };
@@ -304,7 +299,7 @@ export const generateContentIntermediate = (
           return details;
         })
         .join('');
-    } catch (error) {
+    } catch (_error) {
       return ''; // Return an empty string in case of error
     }
   };
@@ -324,25 +319,25 @@ export const generateContentIntermediate = (
       intermediateContent = intermediateContent.replace(/\n{2,}/g, '\n');
     }
     return intermediateContent;
-  } catch (error) {
+  } catch (_error) {
     return '';
   }
 };
 
 export const replaceMalformedMarkdownImages = (str = '') => {
-  return str.replace(/!\[.*?\]\(([^)]*)$/, (match) => {
+  return str.replace(/!\[.*?\]\(([^)]*)$/, (_match) => {
     return `<img src="loading" alt="loading" style="max-width: 100%; height: 100%;" />`;
   });
 };
 
 export const replaceMalformedHTMLImages = (str = '') => {
-  return str.replace(/<img\s+[^>]*$/, (match) => {
+  return str.replace(/<img\s+[^>]*$/, (_match) => {
     return `<img src="loading" alt="loading" style="max-width: 100%; height: 100%;" />`;
   });
 };
 
 export const replaceMalformedHTMLVideos = (str = '') => {
-  return str.replace(/<video\s+[^>]*$/, (match) => {
+  return str.replace(/<video\s+[^>]*$/, (_match) => {
     return `<video controls width="400" height="200">
             <source src="loading" type="video/mp4">
             Your browser does not support the video tag.
@@ -356,7 +351,7 @@ export const fixMalformedHtml = (content = '') => {
     fixed = replaceMalformedHTMLVideos(fixed);
     fixed = replaceMalformedMarkdownImages(fixed);
     return fixed;
-  } catch (e) {
+  } catch (_e) {
     return content; // Return original if fixing fails
   }
 };

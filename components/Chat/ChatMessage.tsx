@@ -63,7 +63,7 @@ function formatWebSocketError(err: WebSocketError): {
 export interface Props {
   message: Message;
   messageIndex: number;
-  onEdit?: (editedMessage: Message, deleteCount?: number) => void;
+  onEdit?: (_editedMessage: Message, _deleteCount?: number) => void;
 }
 
 export const ChatMessage: FC<Props> = memo(
@@ -90,6 +90,25 @@ export const ChatMessage: FC<Props> = memo(
     const markdownComponents = useMemo(() => {
       return getReactMarkDownCustomComponents(messageIndex, message?.id);
     }, [messageIndex, message?.id]);
+
+    useEffect(() => {
+      setMessageContent(message.content);
+    }, [message.content]);
+
+    useEffect(() => {
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'inherit';
+        textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      }
+    }, [isEditing]);
+
+    useEffect(() => {
+      return () => {
+        if (speechSynthesisRef.current) {
+          window.speechSynthesis.cancel();
+        }
+      };
+    }, []);
 
     // return if the there is nothing to show
     // no message and no intermediate steps
@@ -169,17 +188,6 @@ export const ChatMessage: FC<Props> = memo(
       });
     };
 
-    useEffect(() => {
-      setMessageContent(message.content);
-    }, [message.content]);
-
-    useEffect(() => {
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'inherit';
-        textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-      }
-    }, [isEditing]);
-
     const removeLinks = (text: string) => {
       // This regex matches http/https URLs
       const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -205,14 +213,6 @@ export const ChatMessage: FC<Props> = memo(
       }
     };
 
-    useEffect(() => {
-      return () => {
-        if (speechSynthesisRef.current) {
-          window.speechSynthesis.cancel();
-        }
-      };
-    }, []);
-
     const handleSubmitFeedbackComment = async () => {
       if (!message.observabilityTraceId || !feedbackComment.trim()) return;
 
@@ -223,7 +223,7 @@ export const ChatMessage: FC<Props> = memo(
           feedbackComment,
         );
         closeFeedbackInput();
-      } catch (error) {
+      } catch (_error) {
         // Error is already handled in the hook
       }
     };

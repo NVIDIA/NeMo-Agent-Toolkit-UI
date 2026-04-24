@@ -53,7 +53,7 @@ const MenuItem = ({ label, onClick, hasChevron = false }: MenuItemProps) => (
 interface Props {
   promptSuggestions: PromptSuggestionsData;
   messageIsStreaming: boolean;
-  onPromptSelect: (prompt: string) => void;
+  onPromptSelect: (_prompt: string) => void;
 }
 
 export const PromptSuggestions = ({

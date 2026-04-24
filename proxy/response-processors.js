@@ -40,7 +40,7 @@ function processIntermediateData(line, res) {
         intermediateMessage,
       )}</intermediatestep>`,
     );
-  } catch (e) {
+  } catch (_e) {
     // Ignore parse errors
   }
 }
@@ -54,7 +54,7 @@ function processObservabilityTrace(line, res) {
         `<observabilitytraceid>${payload.observability_trace_id}</observabilitytraceid>`,
       );
     }
-  } catch (e) {
+  } catch (_e) {
     // Ignore parse errors
   }
 }
@@ -145,7 +145,7 @@ async function processChatStream(backendRes, res) {
             if (content) {
               res.write(content);
             }
-          } catch (e) {
+          } catch (_e) {
             // Ignore parse errors
           }
         } else {
@@ -155,7 +155,7 @@ async function processChatStream(backendRes, res) {
     }
 
     processRemainingBuffer(buffer, res);
-  } catch (err) {
+  } catch (_err) {
     // Stream processing error
   } finally {
     res.end();
@@ -195,7 +195,7 @@ async function processChat(backendRes, res) {
 
     res.writeHead(200, responseHeaders);
     res.end(typeof content === 'string' ? content : JSON.stringify(content));
-  } catch (e) {
+  } catch (_e) {
     res.writeHead(200, responseHeaders);
     res.end(data);
   }
@@ -247,7 +247,7 @@ async function processGenerateStream(backendRes, res) {
             if (parsed?.value && typeof parsed.value === 'string') {
               res.write(data);
             }
-          } catch (e) {
+          } catch (_e) {
             // Ignore parse errors
           }
         } else {
@@ -315,7 +315,7 @@ async function processCaRag(backendRes, res) {
       'Access-Control-Allow-Credentials': 'true',
     });
     res.end(typeof answer === 'string' ? answer : JSON.stringify(answer));
-  } catch (e) {
+  } catch (_e) {
     res.writeHead(200, {
       'Content-Type': 'text/plain; charset=utf-8',
       'Access-Control-Allow-Origin': constants.CORS_ORIGIN,

@@ -21,7 +21,7 @@ import SidebarActionButton from '@/components/Buttons/SidebarActionButton';
 interface Props {
   currentFolder: FolderInterface;
   searchTerm: string;
-  handleDrop: (e: any, folder: FolderInterface) => void;
+  handleDrop: (_e: any, _folder: FolderInterface) => void;
   folderComponent: (ReactElement | undefined)[];
 }
 

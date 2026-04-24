@@ -19,11 +19,11 @@ interface Props<T> {
   folderComponent: ReactNode;
   footerComponent?: ReactNode;
   searchTerm: string;
-  handleSearchTerm: (searchTerm: string) => void;
+  handleSearchTerm: (_searchTerm: string) => void;
   toggleOpen: () => void;
   handleCreateItem: () => void;
   handleCreateFolder: () => void;
-  handleDrop: (e: any) => void;
+  handleDrop: (_e: any) => void;
 }
 
 const Sidebar = <T,>({

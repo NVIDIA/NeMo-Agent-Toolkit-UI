@@ -25,7 +25,7 @@ interface InteractionModalProps {
   isOpen: boolean;
   interactionMessage: InteractionMessage | null;
   onClose: () => void;
-  onSubmit: (data: {
+  onSubmit: (_data: {
     interactionMessage: InteractionMessage;
     userResponse: string;
   }) => void;

@@ -31,7 +31,7 @@ export function isValidMediaURL(url: string): boolean {
   let parsedUrl: URL;
   try {
     parsedUrl = new URL(url);
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 

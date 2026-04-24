@@ -9,7 +9,7 @@ import { SupportedExportFormats } from '@/types/export';
 import { SidebarButton } from '../Sidebar/SidebarButton';
 
 interface Props {
-  onImport: (data: SupportedExportFormats) => void;
+  onImport: (_data: SupportedExportFormats) => void;
 }
 
 export const Import: FC<Props> = ({ onImport }) => {

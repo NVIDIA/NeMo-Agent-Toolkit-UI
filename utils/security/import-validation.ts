@@ -27,7 +27,7 @@ export function validateImportData(
   try {
     // Parse JSON safely
     parsed = JSON.parse(rawJson);
-  } catch (error) {
+  } catch (_error) {
     toast.error('Invalid JSON format');
     return null;
   }

@@ -18,8 +18,7 @@ export const ChatbarSettings = () => {
   const [isMCPModalOpen, setIsMCPModalOpen] = useState<boolean>(false);
 
   const {
-    state: { lightMode, conversations },
-    dispatch: homeDispatch,
+    state: { conversations },
   } = useContext(HomeContext);
 
   const {

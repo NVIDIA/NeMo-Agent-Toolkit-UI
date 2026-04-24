@@ -10,7 +10,7 @@ import { getSettings, saveSettings } from '@/utils/app/settings';
 
 interface ThemeContextType {
   lightMode: 'light' | 'dark';
-  setLightMode: (mode: 'light' | 'dark') => void;
+  setLightMode: (_mode: 'light' | 'dark') => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);

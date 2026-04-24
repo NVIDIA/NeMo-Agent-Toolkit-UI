@@ -1,11 +1,7 @@
-// Import html-to-image for generating images
 import { IconDownload } from '@tabler/icons-react';
-import React, { useContext } from 'react';
+import React from 'react';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
-
-// Import dynamic from Next.js
-
 import * as htmlToImage from 'html-to-image';
 import {
   BarChart,
@@ -32,8 +28,6 @@ import {
   ComposedChart,
   Cell,
 } from 'recharts';
-
-import HomeContext from '@/pages/api/home/home.context';
 
 // Dynamically import the ForceGraph2D component with SSR disabled
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
@@ -71,11 +65,6 @@ const Chart = (props: any) => {
     Nodes = [],
     Links = [],
   } = data;
-
-  const {
-    state: { selectedConversation, conversations },
-    dispatch,
-  } = useContext(HomeContext);
 
   const colors = {
     fill: '#76b900',

@@ -103,7 +103,7 @@ export const DataStreamManager = ({
             }
           }
         }
-      } catch (err) {
+      } catch (_err) {
         // Optionally handle error
       }
     }, 2000); // Less frequent polling for stream discovery

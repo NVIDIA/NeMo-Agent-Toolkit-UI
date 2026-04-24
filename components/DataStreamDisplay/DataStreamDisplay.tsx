@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { HTTP_PROXY_PATH, UPDATE_DATA_STREAM } from '@/constants';
 
@@ -36,7 +36,7 @@ import { HTTP_PROXY_PATH, UPDATE_DATA_STREAM } from '@/constants';
 interface DataStreamDisplayProps {
   dataStreams: string[];
   selectedStream: string;
-  onStreamChange: (stream: string) => void;
+  onStreamChange: (_stream: string) => void;
 }
 
 interface FinalizedDataEntry {
@@ -68,7 +68,7 @@ export const DataStreamDisplay: React.FC<DataStreamDisplayProps> = React.memo(
               setText(textData.text);
             }
           }
-        } catch (err) {
+        } catch (_err) {
           // Optionally handle error
         }
       }, 100);
@@ -102,7 +102,7 @@ export const DataStreamDisplay: React.FC<DataStreamDisplayProps> = React.memo(
               setLastDbUpdate(null);
             }
           }
-        } catch (err) {
+        } catch (_err) {
           // Handle error silently
           setLastDbUpdate(null);
         }
@@ -204,3 +204,4 @@ export const DataStreamDisplay: React.FC<DataStreamDisplayProps> = React.memo(
     );
   },
 );
+DataStreamDisplay.displayName = 'DataStreamDisplay';

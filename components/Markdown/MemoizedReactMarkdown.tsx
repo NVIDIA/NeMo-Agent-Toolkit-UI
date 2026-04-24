@@ -28,3 +28,4 @@ export const MemoizedReactMarkdown: FC<MemoizedOptions> = memo(
     prevProps.children === nextProps.children &&
     prevProps.className === nextProps.className,
 );
+MemoizedReactMarkdown.displayName = 'MemoizedReactMarkdown';

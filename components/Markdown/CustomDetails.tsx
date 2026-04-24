@@ -1,4 +1,3 @@
-import { IconChevronCompactDown } from '@tabler/icons-react';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { fetchLastMessage } from '@/utils/app/helper';
@@ -11,7 +10,7 @@ export const CustomDetails = ({ children, id, messageIndex, index }) => {
   try {
     // index === -1 for top level
     parsedIndex = parseInt(index);
-  } catch (error) {
+  } catch (_error) {
     console.log('error - parsing index');
   }
 
