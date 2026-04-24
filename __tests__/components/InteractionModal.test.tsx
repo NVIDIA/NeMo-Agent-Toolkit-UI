@@ -22,7 +22,6 @@ import {
   isOAuthConsentMessage,
   extractOAuthUrl,
 } from '@/types/websocket';
-
 import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
 
 // Mock react-hot-toast

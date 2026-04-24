@@ -1,5 +1,6 @@
 import React from 'react';
 
+
 export const UserAvatar = ({ src = '', height = 30, width = 30 }) => {
   const profilePicUrl = src || ``;
 

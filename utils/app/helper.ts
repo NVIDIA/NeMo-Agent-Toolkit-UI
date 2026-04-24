@@ -1,9 +1,11 @@
 import { env } from 'next-runtime-env';
-
-import { Message, Conversation } from '@/types/chat';
-
-import { APPLICATION_NAME } from '@/constants';
 import { v4 as uuidv4 } from 'uuid';
+
+import {
+  Message,
+  Conversation,
+} from '@/types/chat';
+import { APPLICATION_NAME } from '@/constants';
 
 export const getInitials = (fullName = '') => {
   if (!fullName) {

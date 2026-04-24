@@ -1,8 +1,18 @@
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import toast from 'react-hot-toast';
+import { v4 as uuidv4 } from 'uuid';
 
 import { webSocketMessageTypes } from '@/utils/app/const';
-import { saveConversation, saveConversations } from '@/utils/app/conversation';
+import {
+  saveConversation,
+  saveConversations,
+} from '@/utils/app/conversation';
 import {
   fetchLastMessage,
   processIntermediateMessage,
@@ -18,7 +28,6 @@ import {
 } from '@/utils/chatTransform';
 import { throttle } from '@/utils/data/throttle';
 import { isValidConsentPromptURL } from '@/utils/security/oauth-validation';
-
 import { Conversation, Message } from '@/types/chat';
 import {
   WebSocketInbound,
@@ -30,15 +39,8 @@ import {
   isSystemResponseComplete,
   isObservabilityTraceMessage,
 } from '@/types/websocket';
-
 import HomeContext from '@/pages/api/home/home.context';
-
 import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
-
-import { ChatInput } from './ChatInput';
-import { ChatLoader } from './ChatLoader';
-import { MemoizedChatMessage } from './MemoizedChatMessage';
-
 import {
   DEFAULT_CORE_ROUTE,
   WEBSOCKET_PROXY_PATH,
@@ -54,7 +56,11 @@ import {
   buildChatStreamPayload,
   buildCaRagPayload,
 } from '@/proxy/request-transformers';
-import { v4 as uuidv4 } from 'uuid';
+
+import { ChatInput } from './ChatInput';
+import { ChatLoader } from './ChatLoader';
+import { MemoizedChatMessage } from './MemoizedChatMessage';
+
 
 ('use client');
 

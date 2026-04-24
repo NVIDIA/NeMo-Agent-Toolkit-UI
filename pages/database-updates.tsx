@@ -8,7 +8,6 @@ import {
   IconCheck,
 } from '@tabler/icons-react';
 import React, { useState, useEffect } from 'react';
-
 import Head from 'next/head';
 
 import { HTTP_PROXY_PATH, UPDATE_DATA_STREAM } from '@/constants';

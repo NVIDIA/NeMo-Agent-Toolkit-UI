@@ -1,16 +1,15 @@
 import { IconFileExport, IconSettings, IconPlug } from '@tabler/icons-react';
 import { useContext, useState } from 'react';
-
 import { useTranslation } from 'next-i18next';
 
 import HomeContext from '@/pages/api/home/home.context';
-
 import { MCPModal } from '@/components/MCP/MCPModal';
 import { SettingDialog } from '@/components/Settings/SettingDialog';
 
 import { Import } from '../../Settings/Import';
 import { SidebarButton } from '../../Sidebar/SidebarButton';
 import ChatbarContext from '../Chatbar.context';
+
 import { ClearConversations } from './ClearConversations';
 
 export const ChatbarSettings = () => {
