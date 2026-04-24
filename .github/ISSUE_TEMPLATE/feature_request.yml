@@ -15,8 +15,8 @@
 
 name: Feature Request Form
 description: Request new or improved functionality or changes to existing functionality
-title: "[FEA]: "
-labels: ["feature request"]
+title: '[FEA]: '
+labels: ['feature request']
 
 body:
   - type: markdown

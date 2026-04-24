@@ -5,8 +5,8 @@ import { useTranslation } from 'next-i18next';
 
 import HomeContext from '@/pages/api/home/home.context';
 
-import { SettingDialog } from '@/components/Settings/SettingDialog';
 import { MCPModal } from '@/components/MCP/MCPModal';
+import { SettingDialog } from '@/components/Settings/SettingDialog';
 
 import { Import } from '../../Settings/Import';
 import { SidebarButton } from '../../Sidebar/SidebarButton';

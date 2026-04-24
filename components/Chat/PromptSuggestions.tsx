@@ -6,7 +6,10 @@ type PromptItem = string | Record<string, PromptItem[]>;
 export type PromptSuggestionsData = Record<string, PromptItem[]> | PromptItem[];
 
 // Returns the list of items (prompts and/or subcategories) at the given path.
-function getItemsAtPath(data: PromptSuggestionsData, path: string[]): PromptItem[] {
+function getItemsAtPath(
+  data: PromptSuggestionsData,
+  path: string[],
+): PromptItem[] {
   if (path.length === 0) return Array.isArray(data) ? data : [];
 
   const [first, ...rest] = path;
@@ -20,7 +23,10 @@ function getItemsAtPath(data: PromptSuggestionsData, path: string[]): PromptItem
   // Find the subcategory object in the array whose key matches the next segment
   const obj = data.find(
     (item): item is Record<string, PromptItem[]> =>
-      typeof item === 'object' && item !== null && !Array.isArray(item) && first in item
+      typeof item === 'object' &&
+      item !== null &&
+      !Array.isArray(item) &&
+      first in item,
   );
   if (!obj) return [];
   const next = obj[first];
@@ -104,7 +110,9 @@ export const PromptSuggestions = ({
     <>
       <button
         ref={promptGuideRef}
-        onClick={() => (showPromptGuide ? closeMenu() : setShowPromptGuide(true))}
+        onClick={() =>
+          showPromptGuide ? closeMenu() : setShowPromptGuide(true)
+        }
         className={`absolute left-10 top-2 rounded-sm p-[5px] text-neutral-800 opacity-60 dark:bg-opacity-50 dark:text-neutral-100 ${
           messageIsStreaming
             ? 'text-neutral-400'
@@ -116,12 +124,15 @@ export const PromptSuggestions = ({
       </button>
 
       {showPromptGuide && (
-        <div 
+        <div
           data-testid="prompt-suggestions-menu"
           className="prompt-guide-menu absolute bottom-12 w-max max-w-xl max-h-[500px] overflow-y-auto bg-white dark:bg-[#40414F] border border-neutral-200 dark:border-gray-700 rounded-lg shadow-lg z-50"
         >
           <div className="p-4">
-            <nav className="flex items-center gap-1.5 mb-3 text-sm whitespace-nowrap" aria-label="Breadcrumb">
+            <nav
+              className="flex items-center gap-1.5 mb-3 text-sm whitespace-nowrap"
+              aria-label="Breadcrumb"
+            >
               <button
                 onClick={() => setPath([])}
                 className={`font-bold ${
@@ -134,7 +145,12 @@ export const PromptSuggestions = ({
               </button>
               {path.map((segment, i) => (
                 <span key={i} className="flex items-center gap-1.5">
-                  <span className="text-neutral-400 dark:text-neutral-500" aria-hidden>/</span>
+                  <span
+                    className="text-neutral-400 dark:text-neutral-500"
+                    aria-hidden
+                  >
+                    /
+                  </span>
                   {i < path.length - 1 ? (
                     <button
                       onClick={() => setPath(path.slice(0, i + 1))}
@@ -152,35 +168,33 @@ export const PromptSuggestions = ({
             </nav>
 
             <div className="space-y-2">
-              {showCategories ? (
-                Object.keys(promptSuggestions).map((category) => (
-                  <MenuItem
-                    key={category}
-                    label={category}
-                    onClick={() => setPath([category])}
-                    hasChevron
-                  />
-                ))
-              ) : (
-                getItemsAtPath(promptSuggestions, path).map((item, index) =>
-                  typeof item === 'string' ? (
+              {showCategories
+                ? Object.keys(promptSuggestions).map((category) => (
                     <MenuItem
-                      key={`${index}-${item.slice(0, 20)}`}
-                      label={item}
-                      onClick={() => handlePromptSelect(item)}
+                      key={category}
+                      label={category}
+                      onClick={() => setPath([category])}
+                      hasChevron
                     />
-                  ) : (
-                    Object.keys(item).map((subName) => (
+                  ))
+                : getItemsAtPath(promptSuggestions, path).map((item, index) =>
+                    typeof item === 'string' ? (
                       <MenuItem
-                        key={subName}
-                        label={subName}
-                        onClick={() => setPath([...path, subName])}
-                        hasChevron
+                        key={`${index}-${item.slice(0, 20)}`}
+                        label={item}
+                        onClick={() => handlePromptSelect(item)}
                       />
-                    ))
-                  )
-                )
-              )}
+                    ) : (
+                      Object.keys(item).map((subName) => (
+                        <MenuItem
+                          key={subName}
+                          label={subName}
+                          onClick={() => setPath([...path, subName])}
+                          hasChevron
+                        />
+                      ))
+                    ),
+                  )}
             </div>
           </div>
         </div>

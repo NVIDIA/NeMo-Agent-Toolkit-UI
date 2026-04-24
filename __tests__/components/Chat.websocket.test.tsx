@@ -2,17 +2,20 @@
  * WebSocket tests including session cookie handling and stop generating functionality
  */
 
-import MockWebSocket from '@/__mocks__/websocket';
-import { SESSION_COOKIE_NAME } from '@/constants';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import React from 'react';
+
 // Import type definitions for testing interaction message handling
 import {
   isSystemInteractionMessage,
   isOAuthConsentMessage,
   extractOAuthUrl,
 } from '@/types/websocket';
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+
 import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
+
+import MockWebSocket from '@/__mocks__/websocket';
+import { SESSION_COOKIE_NAME } from '@/constants';
 
 // Mock react-hot-toast for notification tests
 jest.mock('react-hot-toast', () => ({
@@ -60,12 +63,16 @@ describe('WebSocket Functionality', () => {
 
       // Verify the session cookie was found and URL was built correctly
       expect(sessionCookie).toBe(mockSessionId);
-      expect(wsUrl).toBe(`${baseUrl}?session=${encodeURIComponent(mockSessionId)}`);
+      expect(wsUrl).toBe(
+        `${baseUrl}?session=${encodeURIComponent(mockSessionId)}`,
+      );
 
       // Verify WebSocket is created with the session cookie
       const ws = new MockWebSocket(wsUrl);
       expect(ws.url).toContain(`session=${encodeURIComponent(mockSessionId)}`);
-      expect(ws.url).toContain(SESSION_COOKIE_NAME.replace('nemo-agent-toolkit-session', 'session')); // URL param vs cookie name
+      expect(ws.url).toContain(
+        SESSION_COOKIE_NAME.replace('nemo-agent-toolkit-session', 'session'),
+      ); // URL param vs cookie name
     });
 
     it('should use the correct session cookie constant name', () => {
@@ -135,7 +142,10 @@ describe('WebSocket Functionality', () => {
       const shouldIgnoreMessage = (message: any) => {
         const messageParentId = message.parent_id;
         if (messageParentId) {
-          if (activeUserMessageId.current === null || messageParentId !== activeUserMessageId.current) {
+          if (
+            activeUserMessageId.current === null ||
+            messageParentId !== activeUserMessageId.current
+          ) {
             return true;
           }
         }
@@ -143,7 +153,10 @@ describe('WebSocket Functionality', () => {
       };
 
       // Test with null activeUserMessageId (stop was clicked)
-      const message = { parent_id: 'some-message-id', type: 'system_response_message' };
+      const message = {
+        parent_id: 'some-message-id',
+        type: 'system_response_message',
+      };
 
       expect(shouldIgnoreMessage(message)).toBe(true);
     });
@@ -154,7 +167,10 @@ describe('WebSocket Functionality', () => {
       const shouldIgnoreMessage = (message: any) => {
         const messageParentId = message.parent_id;
         if (messageParentId) {
-          if (activeUserMessageId.current === null || messageParentId !== activeUserMessageId.current) {
+          if (
+            activeUserMessageId.current === null ||
+            messageParentId !== activeUserMessageId.current
+          ) {
             return true;
           }
         }
@@ -162,7 +178,10 @@ describe('WebSocket Functionality', () => {
       };
 
       // Test with matching parent_id
-      const message = { parent_id: 'active-msg-123', type: 'system_response_message' };
+      const message = {
+        parent_id: 'active-msg-123',
+        type: 'system_response_message',
+      };
 
       expect(shouldIgnoreMessage(message)).toBe(false);
     });
@@ -179,7 +198,9 @@ describe('WebSocket Functionality', () => {
 
     it('should create WebSocket with session cookie in URL', () => {
       const sessionId = 'integration_test_session';
-      const wsUrl = `ws://test.com/websocket?session=${encodeURIComponent(sessionId)}`;
+      const wsUrl = `ws://test.com/websocket?session=${encodeURIComponent(
+        sessionId,
+      )}`;
 
       const ws = new MockWebSocket(wsUrl);
 
@@ -196,7 +217,7 @@ describe('WebSocket Functionality', () => {
           type: 'system_response_message',
           conversation_id: 'conv-123',
           content: { text: 'Hello' },
-          status: 'in_progress'
+          status: 'in_progress',
         };
 
         // Mock the validation function behavior
@@ -209,14 +230,16 @@ describe('WebSocket Functionality', () => {
           }
         };
 
-        expect(() => validateWebSocketMessageWithConversationId(validMessage)).not.toThrow();
+        expect(() =>
+          validateWebSocketMessageWithConversationId(validMessage),
+        ).not.toThrow();
       });
 
       it('should reject message without conversation_id', () => {
         const invalidMessage = {
           type: 'system_response_message',
           content: { text: 'Hello' },
-          status: 'in_progress'
+          status: 'in_progress',
         };
 
         const validateWebSocketMessageWithConversationId = (message: any) => {
@@ -228,15 +251,16 @@ describe('WebSocket Functionality', () => {
           }
         };
 
-        expect(() => validateWebSocketMessageWithConversationId(invalidMessage))
-          .toThrow('conversation_id is required');
+        expect(() =>
+          validateWebSocketMessageWithConversationId(invalidMessage),
+        ).toThrow('conversation_id is required');
       });
 
       it('should reject message without type', () => {
         const invalidMessage = {
           conversation_id: 'conv-123',
           content: { text: 'Hello' },
-          status: 'in_progress'
+          status: 'in_progress',
         };
 
         const validateWebSocketMessageWithConversationId = (message: any) => {
@@ -248,8 +272,9 @@ describe('WebSocket Functionality', () => {
           }
         };
 
-        expect(() => validateWebSocketMessageWithConversationId(invalidMessage))
-          .toThrow('type is required');
+        expect(() =>
+          validateWebSocketMessageWithConversationId(invalidMessage),
+        ).toThrow('type is required');
       });
     });
 
@@ -262,13 +287,13 @@ describe('WebSocket Functionality', () => {
         const systemMessage = {
           type: 'system_response_message',
           conversation_id: 'conv-123',
-          content: { text: 'AI response' }
+          content: { text: 'AI response' },
         };
 
         const userMessage = {
           type: 'user_message',
           conversation_id: 'conv-123',
-          content: { text: 'User input' }
+          content: { text: 'User input' },
         };
 
         expect(isSystemResponseMessage(systemMessage)).toBe(true);
@@ -283,13 +308,13 @@ describe('WebSocket Functionality', () => {
         const intermediateMessage = {
           type: 'system_intermediate_step',
           conversation_id: 'conv-123',
-          content: { text: 'Processing step 1...' }
+          content: { text: 'Processing step 1...' },
         };
 
         const regularMessage = {
           type: 'system_response_message',
           conversation_id: 'conv-123',
-          content: { text: 'Final response' }
+          content: { text: 'Final response' },
         };
 
         expect(isSystemIntermediateMessage(intermediateMessage)).toBe(true);
@@ -304,21 +329,21 @@ describe('WebSocket Functionality', () => {
         const errorMessage = {
           type: 'error',
           conversation_id: 'conv-123',
-          content: { text: 'Something went wrong' }
+          content: { text: 'Something went wrong' },
         };
 
         const statusErrorMessage = {
           type: 'system_response_message',
           status: 'error',
           conversation_id: 'conv-123',
-          content: { text: 'Processing failed' }
+          content: { text: 'Processing failed' },
         };
 
         const normalMessage = {
           type: 'system_response_message',
           status: 'in_progress',
           conversation_id: 'conv-123',
-          content: { text: 'Working...' }
+          content: { text: 'Working...' },
         };
 
         expect(isErrorMessage(errorMessage)).toBe(true);
@@ -328,24 +353,27 @@ describe('WebSocket Functionality', () => {
 
       it('should identify system response complete messages', () => {
         const isSystemResponseComplete = (message: any) => {
-          return message.type === 'system_response:complete' || message.status === 'complete';
+          return (
+            message.type === 'system_response:complete' ||
+            message.status === 'complete'
+          );
         };
 
         const completeMessage = {
           type: 'system_response:complete',
-          conversation_id: 'conv-123'
+          conversation_id: 'conv-123',
         };
 
         const statusCompleteMessage = {
           type: 'system_response_message',
           status: 'complete',
-          conversation_id: 'conv-123'
+          conversation_id: 'conv-123',
         };
 
         const inProgressMessage = {
           type: 'system_response_message',
           status: 'in_progress',
-          conversation_id: 'conv-123'
+          conversation_id: 'conv-123',
         };
 
         expect(isSystemResponseComplete(completeMessage)).toBe(true);
@@ -359,40 +387,51 @@ describe('WebSocket Functionality', () => {
         const conversation = {
           id: 'conv-123',
           name: 'Test Chat',
-          messages: [
-            { id: 'msg-1', role: 'user', content: 'Hello' }
-          ]
+          messages: [{ id: 'msg-1', role: 'user', content: 'Hello' }],
         };
 
         const wsMessage = {
           type: 'system_response_message',
           conversation_id: 'conv-123',
           content: { text: 'Hi there!' },
-          status: 'in_progress'
+          status: 'in_progress',
         };
 
         // Simulate message processing
-        const processSystemResponseMessage = (message: any, messages: any[]) => {
+        const processSystemResponseMessage = (
+          message: any,
+          messages: any[],
+        ) => {
           const lastMessage = messages[messages.length - 1];
 
-          if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content === '') {
+          if (
+            lastMessage &&
+            lastMessage.role === 'assistant' &&
+            lastMessage.content === ''
+          ) {
             // Update existing assistant message
             return messages.map((msg, index) =>
               index === messages.length - 1
                 ? { ...msg, content: message.content.text }
-                : msg
+                : msg,
             );
           } else {
             // Add new assistant message
-            return [...messages, {
-              id: `assistant-${Date.now()}`,
-              role: 'assistant',
-              content: message.content.text
-            }];
+            return [
+              ...messages,
+              {
+                id: `assistant-${Date.now()}`,
+                role: 'assistant',
+                content: message.content.text,
+              },
+            ];
           }
         };
 
-        const updatedMessages = processSystemResponseMessage(wsMessage, conversation.messages);
+        const updatedMessages = processSystemResponseMessage(
+          wsMessage,
+          conversation.messages,
+        );
 
         expect(updatedMessages).toHaveLength(2);
         expect(updatedMessages[1].role).toBe('assistant');
@@ -405,15 +444,15 @@ describe('WebSocket Functionality', () => {
           name: 'Test Chat',
           messages: [
             { id: 'msg-1', role: 'user', content: 'Hello' },
-            { id: 'msg-2', role: 'assistant', content: 'Hi ' }
-          ]
+            { id: 'msg-2', role: 'assistant', content: 'Hi ' },
+          ],
         };
 
         const wsMessage = {
           type: 'system_response_message',
           conversation_id: 'conv-123',
           content: { text: 'there!' },
-          status: 'in_progress'
+          status: 'in_progress',
         };
 
         const appendAssistantText = (messages: any[], newText: string) => {
@@ -422,39 +461,57 @@ describe('WebSocket Functionality', () => {
             return messages.map((msg, index) =>
               index === messages.length - 1
                 ? { ...msg, content: msg.content + newText }
-                : msg
+                : msg,
             );
           }
           return messages;
         };
 
-        const updatedMessages = appendAssistantText(conversation.messages, wsMessage.content.text);
+        const updatedMessages = appendAssistantText(
+          conversation.messages,
+          wsMessage.content.text,
+        );
 
         expect(updatedMessages[1].content).toBe('Hi there!');
       });
 
       it('should maintain conversation reference integrity', () => {
-        const conversationsRef = { current: [
-          { id: 'conv-1', name: 'Chat 1', messages: [] },
-          { id: 'conv-2', name: 'Chat 2', messages: [] }
-        ]};
+        const conversationsRef = {
+          current: [
+            { id: 'conv-1', name: 'Chat 1', messages: [] },
+            { id: 'conv-2', name: 'Chat 2', messages: [] },
+          ],
+        };
 
-        const selectedConversationRef = { current: conversationsRef.current[0] };
+        const selectedConversationRef = {
+          current: conversationsRef.current[0],
+        };
 
         // Simulate updating a conversation
-        const updateRefsAndDispatch = (updatedConversations: any[], updatedConversation: any, currentSelected: any) => {
+        const updateRefsAndDispatch = (
+          updatedConversations: any[],
+          updatedConversation: any,
+          currentSelected: any,
+        ) => {
           conversationsRef.current = updatedConversations;
           if (currentSelected?.id === updatedConversation.id) {
             selectedConversationRef.current = updatedConversation;
           }
         };
 
-        const updatedConv = { ...conversationsRef.current[0], name: 'Updated Chat 1' };
-        const updatedConversations = conversationsRef.current.map(c =>
-          c.id === updatedConv.id ? updatedConv : c
+        const updatedConv = {
+          ...conversationsRef.current[0],
+          name: 'Updated Chat 1',
+        };
+        const updatedConversations = conversationsRef.current.map((c) =>
+          c.id === updatedConv.id ? updatedConv : c,
         );
 
-        updateRefsAndDispatch(updatedConversations, updatedConv, selectedConversationRef.current);
+        updateRefsAndDispatch(
+          updatedConversations,
+          updatedConv,
+          selectedConversationRef.current,
+        );
 
         expect(conversationsRef.current[0].name).toBe('Updated Chat 1');
         expect(selectedConversationRef.current.name).toBe('Updated Chat 1');
@@ -472,14 +529,14 @@ describe('WebSocket Functionality', () => {
           conversation_id: 'conv-123',
           content: {
             input_type: 'oauth_consent',
-            oauth_url: 'https://auth.example.com/oauth/authorize?client_id=123'
-          }
+            oauth_url: 'https://auth.example.com/oauth/authorize?client_id=123',
+          },
         };
 
         const regularMessage = {
           type: 'system_response_message',
           conversation_id: 'conv-123',
-          content: { text: 'Regular response' }
+          content: { text: 'Regular response' },
         };
 
         expect(isSystemInteractionMessage(oauthMessage)).toBe(true);
@@ -488,38 +545,46 @@ describe('WebSocket Functionality', () => {
 
       it('should extract OAuth URL from consent message', () => {
         const extractOAuthUrl = (message: any) => {
-          return message?.content?.oauth_url ||
-                 message?.content?.redirect_url ||
-                 message?.content?.text;
+          return (
+            message?.content?.oauth_url ||
+            message?.content?.redirect_url ||
+            message?.content?.text
+          );
         };
 
         const oauthMessage = {
           type: 'system_interaction_message',
           content: {
             input_type: 'oauth_consent',
-            oauth_url: 'https://auth.example.com/oauth/authorize'
-          }
+            oauth_url: 'https://auth.example.com/oauth/authorize',
+          },
         };
 
         const redirectMessage = {
           type: 'system_interaction_message',
           content: {
             input_type: 'oauth_consent',
-            redirect_url: 'https://auth.example.com/redirect'
-          }
+            redirect_url: 'https://auth.example.com/redirect',
+          },
         };
 
         const textMessage = {
           type: 'system_interaction_message',
           content: {
             input_type: 'oauth_consent',
-            text: 'https://auth.example.com/text'
-          }
+            text: 'https://auth.example.com/text',
+          },
         };
 
-        expect(extractOAuthUrl(oauthMessage)).toBe('https://auth.example.com/oauth/authorize');
-        expect(extractOAuthUrl(redirectMessage)).toBe('https://auth.example.com/redirect');
-        expect(extractOAuthUrl(textMessage)).toBe('https://auth.example.com/text');
+        expect(extractOAuthUrl(oauthMessage)).toBe(
+          'https://auth.example.com/oauth/authorize',
+        );
+        expect(extractOAuthUrl(redirectMessage)).toBe(
+          'https://auth.example.com/redirect',
+        );
+        expect(extractOAuthUrl(textMessage)).toBe(
+          'https://auth.example.com/text',
+        );
       });
 
       it('should handle OAuth consent message processing', () => {
@@ -527,9 +592,10 @@ describe('WebSocket Functionality', () => {
           if (message.type !== 'system_interaction_message') return false;
 
           if (message.content?.input_type === 'oauth_consent') {
-            const oauthUrl = message?.content?.oauth_url ||
-                           message?.content?.redirect_url ||
-                           message?.content?.text;
+            const oauthUrl =
+              message?.content?.oauth_url ||
+              message?.content?.redirect_url ||
+              message?.content?.text;
 
             if (oauthUrl) {
               // In real implementation, this would open a popup
@@ -545,22 +611,25 @@ describe('WebSocket Functionality', () => {
           type: 'system_interaction_message',
           content: {
             input_type: 'oauth_consent',
-            oauth_url: 'https://auth.example.com/oauth'
-          }
+            oauth_url: 'https://auth.example.com/oauth',
+          },
         };
 
         const nonOAuthMessage = {
           type: 'system_interaction_message',
           content: {
             input_type: 'user_input',
-            text: 'Please enter your name'
-          }
+            text: 'Please enter your name',
+          },
         };
 
         const result1 = handleOAuthConsent(oauthMessage);
         const result2 = handleOAuthConsent(nonOAuthMessage);
 
-        expect(result1).toEqual({ opened: true, url: 'https://auth.example.com/oauth' });
+        expect(result1).toEqual({
+          opened: true,
+          url: 'https://auth.example.com/oauth',
+        });
         expect(result2).toBe(false);
       });
     });
@@ -568,12 +637,14 @@ describe('WebSocket Functionality', () => {
     describe('Intermediate Steps Filtering', () => {
       it('should respect enableIntermediateSteps session storage setting', () => {
         const mockSessionStorage = {
-          'enableIntermediateSteps': 'false'
+          enableIntermediateSteps: 'false',
         };
 
         const shouldProcessIntermediateStep = (message: any) => {
-          if (mockSessionStorage['enableIntermediateSteps'] === 'false' &&
-              message.type === 'system_intermediate_step') {
+          if (
+            mockSessionStorage['enableIntermediateSteps'] === 'false' &&
+            message.type === 'system_intermediate_step'
+          ) {
             return false;
           }
           return true;
@@ -582,13 +653,13 @@ describe('WebSocket Functionality', () => {
         const intermediateMessage = {
           type: 'system_intermediate_step',
           conversation_id: 'conv-123',
-          content: { text: 'Processing...' }
+          content: { text: 'Processing...' },
         };
 
         const regularMessage = {
           type: 'system_response_message',
           conversation_id: 'conv-123',
-          content: { text: 'Final result' }
+          content: { text: 'Final result' },
         };
 
         expect(shouldProcessIntermediateStep(intermediateMessage)).toBe(false);
@@ -597,12 +668,14 @@ describe('WebSocket Functionality', () => {
 
       it('should process intermediate steps when enabled', () => {
         const mockSessionStorage = {
-          'enableIntermediateSteps': 'true'
+          enableIntermediateSteps: 'true',
         };
 
         const shouldProcessIntermediateStep = (message: any) => {
-          if (mockSessionStorage['enableIntermediateSteps'] === 'false' &&
-              message.type === 'system_intermediate_step') {
+          if (
+            mockSessionStorage['enableIntermediateSteps'] === 'false' &&
+            message.type === 'system_intermediate_step'
+          ) {
             return false;
           }
           return true;
@@ -611,7 +684,7 @@ describe('WebSocket Functionality', () => {
         const intermediateMessage = {
           type: 'system_intermediate_step',
           conversation_id: 'conv-123',
-          content: { text: 'Processing step 1...' }
+          content: { text: 'Processing step 1...' },
         };
 
         expect(shouldProcessIntermediateStep(intermediateMessage)).toBe(true);
@@ -621,8 +694,13 @@ describe('WebSocket Functionality', () => {
         const mockSessionStorage = {};
 
         const shouldProcessIntermediateStep = (message: any) => {
-          const setting = (mockSessionStorage as any)['enableIntermediateSteps'];
-          if (setting === 'false' && message.type === 'system_intermediate_step') {
+          const setting = (mockSessionStorage as any)[
+            'enableIntermediateSteps'
+          ];
+          if (
+            setting === 'false' &&
+            message.type === 'system_intermediate_step'
+          ) {
             return false;
           }
           return true;
@@ -631,7 +709,7 @@ describe('WebSocket Functionality', () => {
         const intermediateMessage = {
           type: 'system_intermediate_step',
           conversation_id: 'conv-123',
-          content: { text: 'Processing...' }
+          content: { text: 'Processing...' },
         };
 
         // Should default to processing when setting is undefined
@@ -641,17 +719,21 @@ describe('WebSocket Functionality', () => {
 
     describe('Message Persistence and Ref Updates', () => {
       it('should update conversations ref before React dispatch', () => {
-        const conversationsRef = { current: [
-          { id: 'conv-1', messages: [] }
-        ]};
-        const selectedConversationRef = { current: conversationsRef.current[0] };
+        const conversationsRef = { current: [{ id: 'conv-1', messages: [] }] };
+        const selectedConversationRef = {
+          current: conversationsRef.current[0],
+        };
 
         let dispatchCalls: any[] = [];
         const mockDispatch = (action: any) => {
           dispatchCalls.push(action);
         };
 
-        const updateRefsAndDispatch = (updatedConversations: any[], updatedConversation: any, currentSelected: any) => {
+        const updateRefsAndDispatch = (
+          updatedConversations: any[],
+          updatedConversation: any,
+          currentSelected: any,
+        ) => {
           // Update refs BEFORE dispatch to prevent stale reads
           conversationsRef.current = updatedConversations;
           if (currentSelected?.id === updatedConversation.id) {
@@ -661,14 +743,24 @@ describe('WebSocket Functionality', () => {
           // Then dispatch to trigger React re-renders
           mockDispatch({ field: 'conversations', value: updatedConversations });
           if (currentSelected?.id === updatedConversation.id) {
-            mockDispatch({ field: 'selectedConversation', value: updatedConversation });
+            mockDispatch({
+              field: 'selectedConversation',
+              value: updatedConversation,
+            });
           }
         };
 
-        const updatedConv = { id: 'conv-1', messages: [{ id: 'msg-1', content: 'test' }] };
+        const updatedConv = {
+          id: 'conv-1',
+          messages: [{ id: 'msg-1', content: 'test' }],
+        };
         const updatedConversations = [updatedConv];
 
-        updateRefsAndDispatch(updatedConversations, updatedConv, selectedConversationRef.current);
+        updateRefsAndDispatch(
+          updatedConversations,
+          updatedConv,
+          selectedConversationRef.current,
+        );
 
         // Refs should be updated immediately
         expect(conversationsRef.current).toEqual(updatedConversations);
@@ -676,17 +768,21 @@ describe('WebSocket Functionality', () => {
 
         // Dispatch should be called
         expect(dispatchCalls).toHaveLength(2);
-        expect(dispatchCalls[0]).toEqual({ field: 'conversations', value: updatedConversations });
-        expect(dispatchCalls[1]).toEqual({ field: 'selectedConversation', value: updatedConv });
+        expect(dispatchCalls[0]).toEqual({
+          field: 'conversations',
+          value: updatedConversations,
+        });
+        expect(dispatchCalls[1]).toEqual({
+          field: 'selectedConversation',
+          value: updatedConv,
+        });
       });
 
       it('should handle conversation not found scenario', () => {
-        const conversationsRef = { current: [
-          { id: 'conv-1', messages: [] }
-        ]};
+        const conversationsRef = { current: [{ id: 'conv-1', messages: [] }] };
 
         const findTargetConversation = (conversationId: string) => {
-          return conversationsRef.current.find(c => c.id === conversationId);
+          return conversationsRef.current.find((c) => c.id === conversationId);
         };
 
         const handleConversationNotFound = (conversationId: string) => {
@@ -707,26 +803,49 @@ describe('WebSocket Functionality', () => {
 
       it('should properly chain message processing functions', () => {
         const initialMessages = [
-          { id: 'msg-1', role: 'user', content: 'Hello' }
+          { id: 'msg-1', role: 'user', content: 'Hello' },
         ];
 
-        const processSystemResponseMessage = (message: any, messages: any[]) => {
+        const processSystemResponseMessage = (
+          message: any,
+          messages: any[],
+        ) => {
           if (message.type === 'system_response_message') {
-            return [...messages, { id: 'assistant-1', role: 'assistant', content: message.content.text }];
+            return [
+              ...messages,
+              {
+                id: 'assistant-1',
+                role: 'assistant',
+                content: message.content.text,
+              },
+            ];
           }
           return messages;
         };
 
-        const processIntermediateStepMessage = (message: any, messages: any[]) => {
+        const processIntermediateStepMessage = (
+          message: any,
+          messages: any[],
+        ) => {
           if (message.type === 'system_intermediate_step') {
-            return [...messages, { id: 'step-1', role: 'system', content: message.content.text }];
+            return [
+              ...messages,
+              { id: 'step-1', role: 'system', content: message.content.text },
+            ];
           }
           return messages;
         };
 
         const processErrorMessage = (message: any, messages: any[]) => {
           if (message.type === 'error') {
-            return [...messages, { id: 'error-1', role: 'system', content: `Error: ${message.content.text}` }];
+            return [
+              ...messages,
+              {
+                id: 'error-1',
+                role: 'system',
+                content: `Error: ${message.content.text}`,
+              },
+            ];
           }
           return messages;
         };
@@ -734,12 +853,18 @@ describe('WebSocket Functionality', () => {
         // Test system response processing
         const systemMessage = {
           type: 'system_response_message',
-          content: { text: 'AI response' }
+          content: { text: 'AI response' },
         };
 
         let updatedMessages = initialMessages;
-        updatedMessages = processSystemResponseMessage(systemMessage, updatedMessages);
-        updatedMessages = processIntermediateStepMessage(systemMessage, updatedMessages);
+        updatedMessages = processSystemResponseMessage(
+          systemMessage,
+          updatedMessages,
+        );
+        updatedMessages = processIntermediateStepMessage(
+          systemMessage,
+          updatedMessages,
+        );
         updatedMessages = processErrorMessage(systemMessage, updatedMessages);
 
         expect(updatedMessages).toHaveLength(2);
@@ -749,10 +874,13 @@ describe('WebSocket Functionality', () => {
         // Test intermediate step processing
         const intermediateMessage = {
           type: 'system_intermediate_step',
-          content: { text: 'Processing...' }
+          content: { text: 'Processing...' },
         };
 
-        updatedMessages = processIntermediateStepMessage(intermediateMessage, updatedMessages);
+        updatedMessages = processIntermediateStepMessage(
+          intermediateMessage,
+          updatedMessages,
+        );
 
         expect(updatedMessages).toHaveLength(3);
         expect(updatedMessages[2].role).toBe('system');
@@ -788,7 +916,10 @@ describe('WebSocket Functionality', () => {
           window.open(oauthUrl, '_blank');
           return true;
         } else {
-          console.error('OAuth consent message received but no URL found in content:', message?.content);
+          console.error(
+            'OAuth consent message received but no URL found in content:',
+            message?.content,
+          );
           return false;
         }
       }
@@ -828,8 +959,8 @@ describe('WebSocket Functionality', () => {
           content: {
             input_type: 'oauth_consent',
             oauth_url: 'https://auth.example.com/oauth',
-            text: 'Please authorize the application to access your data.'
-          }
+            text: 'Please authorize the application to access your data.',
+          },
         };
 
         // Mock window.open
@@ -839,7 +970,10 @@ describe('WebSocket Functionality', () => {
 
         // Should be processed as OAuth consent (not regular modal)
         expect(result).toBe(true);
-        expect(mockWindowOpen).toHaveBeenCalledWith('https://auth.example.com/oauth', '_blank');
+        expect(mockWindowOpen).toHaveBeenCalledWith(
+          'https://auth.example.com/oauth',
+          '_blank',
+        );
         expect(modalOpen).toBe(false); // OAuth should not open modal
 
         mockWindowOpen.mockRestore();
@@ -852,8 +986,8 @@ describe('WebSocket Functionality', () => {
           content: {
             input_type: 'user_input',
             text: 'Please enter your name:',
-            placeholder: 'Your full name'
-          }
+            placeholder: 'Your full name',
+          },
         };
 
         const result = processWebSocketMessage(userInputMessage);
@@ -872,8 +1006,8 @@ describe('WebSocket Functionality', () => {
             input_type: 'file_upload',
             text: 'Please upload a document for analysis:',
             accepted_file_types: ['.pdf', '.docx', '.txt'],
-            max_file_size: '10MB'
-          }
+            max_file_size: '10MB',
+          },
         };
 
         const result = processWebSocketMessage(fileUploadMessage);
@@ -892,8 +1026,8 @@ describe('WebSocket Functionality', () => {
             input_type: 'confirmation',
             text: 'Are you sure you want to proceed with this action?',
             confirm_text: 'Yes, proceed',
-            cancel_text: 'Cancel'
-          }
+            cancel_text: 'Cancel',
+          },
         };
 
         const result = processWebSocketMessage(confirmationMessage);
@@ -910,8 +1044,8 @@ describe('WebSocket Functionality', () => {
           conversation_id: 'conv-123',
           status: 'in_progress',
           content: {
-            text: 'This is a regular response message'
-          }
+            text: 'This is a regular response message',
+          },
         };
 
         const result = processWebSocketMessage(regularMessage);
@@ -932,7 +1066,7 @@ describe('WebSocket Functionality', () => {
         // Open modal
         const testMessage = {
           type: 'system_interaction_message',
-          content: { input_type: 'user_input', text: 'Test' }
+          content: { input_type: 'user_input', text: 'Test' },
         };
 
         openModal(testMessage);
@@ -962,14 +1096,17 @@ describe('WebSocket Functionality', () => {
           conversation_id: 'conv-123',
           content: {
             input_type: 'oauth_consent',
-            oauth_url: 'https://auth.example.com/oauth/authorize'
-          }
+            oauth_url: 'https://auth.example.com/oauth/authorize',
+          },
         };
 
         const result = processWebSocketMessage(oauthMessage);
 
         // OAuth URL should be opened in new tab
-        expect(window.open).toHaveBeenCalledWith('https://auth.example.com/oauth/authorize', '_blank');
+        expect(window.open).toHaveBeenCalledWith(
+          'https://auth.example.com/oauth/authorize',
+          '_blank',
+        );
 
         // Should return true (processed) but modal should NOT be opened
         expect(result).toBe(true);
@@ -982,13 +1119,16 @@ describe('WebSocket Functionality', () => {
           conversation_id: 'conv-123',
           content: {
             input_type: 'oauth_consent',
-            redirect_url: 'https://auth.example.com/redirect'
-          }
+            redirect_url: 'https://auth.example.com/redirect',
+          },
         };
 
         const result = processWebSocketMessage(oauthMessage);
 
-        expect(window.open).toHaveBeenCalledWith('https://auth.example.com/redirect', '_blank');
+        expect(window.open).toHaveBeenCalledWith(
+          'https://auth.example.com/redirect',
+          '_blank',
+        );
         expect(result).toBe(true);
         expect(modalOpen).toBe(false);
       });
@@ -999,13 +1139,16 @@ describe('WebSocket Functionality', () => {
           conversation_id: 'conv-123',
           content: {
             input_type: 'oauth_consent',
-            text: 'https://auth.example.com/fallback'
-          }
+            text: 'https://auth.example.com/fallback',
+          },
         };
 
         const result = processWebSocketMessage(oauthMessage);
 
-        expect(window.open).toHaveBeenCalledWith('https://auth.example.com/fallback', '_blank');
+        expect(window.open).toHaveBeenCalledWith(
+          'https://auth.example.com/fallback',
+          '_blank',
+        );
         expect(result).toBe(true);
         expect(modalOpen).toBe(false);
       });
@@ -1018,9 +1161,9 @@ describe('WebSocket Functionality', () => {
           type: 'system_interaction_message',
           conversation_id: 'conv-123',
           content: {
-            input_type: 'oauth_consent'
+            input_type: 'oauth_consent',
             // No oauth_url, redirect_url, or text with URL
-          }
+          },
         };
 
         const result = processWebSocketMessage(oauthMessage);
@@ -1030,8 +1173,10 @@ describe('WebSocket Functionality', () => {
 
         // Should log error about missing URL
         expect(consoleSpy).toHaveBeenCalledWith(
-          expect.stringContaining('OAuth consent message received but no URL found'),
-          expect.any(Object)
+          expect.stringContaining(
+            'OAuth consent message received but no URL found',
+          ),
+          expect.any(Object),
         );
 
         // Should return false (not processed successfully)
@@ -1049,30 +1194,34 @@ describe('WebSocket Functionality', () => {
             name: 'user_input',
             message: {
               type: 'system_interaction_message',
-              content: { input_type: 'user_input', text: 'Enter name:' }
-            }
+              content: { input_type: 'user_input', text: 'Enter name:' },
+            },
           },
           {
             name: 'file_upload',
             message: {
               type: 'system_interaction_message',
-              content: { input_type: 'file_upload', text: 'Upload file:' }
-            }
+              content: { input_type: 'file_upload', text: 'Upload file:' },
+            },
           },
           {
             name: 'confirmation',
             message: {
               type: 'system_interaction_message',
-              content: { input_type: 'confirmation', text: 'Confirm action?' }
-            }
+              content: { input_type: 'confirmation', text: 'Confirm action?' },
+            },
           },
           {
             name: 'selection',
             message: {
               type: 'system_interaction_message',
-              content: { input_type: 'selection', text: 'Choose option:', options: ['A', 'B'] }
-            }
-          }
+              content: {
+                input_type: 'selection',
+                text: 'Choose option:',
+                options: ['A', 'B'],
+              },
+            },
+          },
         ];
 
         testCases.forEach(({ name, message }) => {
@@ -1091,7 +1240,7 @@ describe('WebSocket Functionality', () => {
       it('should handle interaction messages without input_type', () => {
         const messageWithoutInputType = {
           type: 'system_interaction_message',
-          content: { text: 'General interaction message' }
+          content: { text: 'General interaction message' },
         };
 
         const result = processWebSocketMessage(messageWithoutInputType);
@@ -1107,7 +1256,7 @@ describe('WebSocket Functionality', () => {
       it('should handle interaction message with empty content', () => {
         const minimalMessage = {
           type: 'system_interaction_message',
-          content: {}
+          content: {},
         };
 
         const result = processWebSocketMessage(minimalMessage);
@@ -1120,7 +1269,7 @@ describe('WebSocket Functionality', () => {
 
       it('should handle interaction message without content property', () => {
         const messageWithoutContent = {
-          type: 'system_interaction_message'
+          type: 'system_interaction_message',
           // No content property
         };
 
@@ -1137,10 +1286,10 @@ describe('WebSocket Functionality', () => {
           { type: 'system_response_message', content: { text: 'Response' } },
           { type: 'system_intermediate_message', content: { text: 'Step' } },
           { type: 'error', content: { text: 'Error' } },
-          { type: 'user_message', content: { text: 'User input' } }
+          { type: 'user_message', content: { text: 'User input' } },
         ];
 
-        nonInteractionMessages.forEach(message => {
+        nonInteractionMessages.forEach((message) => {
           modalOpen = false;
           currentInteractionMessage = null;
 
@@ -1160,7 +1309,7 @@ describe('WebSocket Functionality', () => {
       const mockSend = jest.fn();
       const mockWebSocket = {
         send: mockSend,
-        readyState: WebSocket.OPEN
+        readyState: WebSocket.OPEN,
       };
 
       // Mock interaction message received from backend
@@ -1171,7 +1320,7 @@ describe('WebSocket Functionality', () => {
         content: {
           input_type: 'text',
           text: 'Please provide your input',
-        }
+        },
       };
 
       // Mock conversation
@@ -1215,14 +1364,16 @@ describe('WebSocket Functionality', () => {
       expect(sentMessage.thread_id).toBe(interactionMessage.thread_id);
       expect(sentMessage.parent_id).toBe(interactionMessage.parent_id);
       expect(sentMessage.content.messages[0].role).toBe('user');
-      expect(sentMessage.content.messages[0].content[0].text).toBe(userResponse);
+      expect(sentMessage.content.messages[0].content[0].text).toBe(
+        userResponse,
+      );
     });
 
     it('should not send interaction response if conversation is undefined', () => {
       const mockSend = jest.fn();
       const mockWebSocket = {
         send: mockSend,
-        readyState: WebSocket.OPEN
+        readyState: WebSocket.OPEN,
       };
 
       // Simulate the case where selectedConversation is undefined
@@ -1243,56 +1394,56 @@ describe('WebSocket Functionality', () => {
   describe('Observability Trace Handling', () => {
     it('should attach trace ID from separate observability_trace_message', () => {
       const messages: any[] = [];
-      
+
       // First, receive response message
       const responseMessage = {
         type: 'system_response_message',
         conversation_id: 'conv-123',
         content: { text: 'AI response' },
-        status: 'complete'
+        status: 'complete',
       };
-      
+
       messages.push({
         role: 'assistant',
-        content: responseMessage.content.text
+        content: responseMessage.content.text,
       });
-      
+
       // Then, receive separate trace message
       const traceMessage = {
         type: 'observability_trace_message',
         conversation_id: 'conv-123',
-        content: { 
-          observability_trace_id: 'trace-abc-123' 
-        }
+        content: {
+          observability_trace_id: 'trace-abc-123',
+        },
       };
-      
+
       // Simulate attaching trace to last message
       const lastMessage = messages[messages.length - 1];
       const updatedMessage = {
         ...lastMessage,
-        observabilityTraceId: traceMessage.content.observability_trace_id
+        observabilityTraceId: traceMessage.content.observability_trace_id,
       };
       messages[messages.length - 1] = updatedMessage;
-      
+
       expect(messages[0].observabilityTraceId).toBe('trace-abc-123');
       expect(messages[0].content).toBe('AI response');
     });
 
     it('should handle observability_trace_message without assistant message', () => {
       const messages: any[] = [];
-      
+
       const traceMessage = {
         type: 'observability_trace_message',
         conversation_id: 'conv-123',
-        content: { 
-          observability_trace_id: 'trace-early-123' 
-        }
+        content: {
+          observability_trace_id: 'trace-early-123',
+        },
       };
-      
+
       // If there's no assistant message, trace message should be ignored
       const lastMessage = messages[messages.length - 1];
       const isLastAssistant = lastMessage?.role === 'assistant';
-      
+
       if (!isLastAssistant) {
         // Don't create a new message, just skip
         expect(messages.length).toBe(0);
@@ -1305,26 +1456,28 @@ describe('WebSocket Functionality', () => {
         'trace_underscore_456',
         'trace:colon:789',
         'trace.dot.012',
-        '12345678-1234-1234-1234-123456789abc'
+        '12345678-1234-1234-1234-123456789abc',
       ];
 
-      testCases.forEach(traceId => {
-        const messages = [{
-          role: 'assistant',
-          content: 'Test response'
-        }];
-        
+      testCases.forEach((traceId) => {
+        const messages = [
+          {
+            role: 'assistant',
+            content: 'Test response',
+          },
+        ];
+
         const traceMessage = {
           type: 'observability_trace_message',
           conversation_id: 'conv-123',
-          content: { observability_trace_id: traceId }
+          content: { observability_trace_id: traceId },
         };
-        
+
         messages[0] = {
           ...messages[0],
-          observabilityTraceId: traceMessage.content.observability_trace_id
+          observabilityTraceId: traceMessage.content.observability_trace_id,
         };
-        
+
         expect(messages[0].observabilityTraceId).toBe(traceId);
       });
     });
@@ -1339,137 +1492,183 @@ describe('WebSocket Functionality', () => {
 
     const mockSessionStorage = {
       getItem: (key: string) => mockStorage[key] ?? null,
-      setItem: (key: string, value: string) => { mockStorage[key] = value; },
-      removeItem: (key: string) => { delete mockStorage[key]; },
-      clear: () => { mockStorage = {}; },
+      setItem: (key: string, value: string) => {
+        mockStorage[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete mockStorage[key];
+      },
+      clear: () => {
+        mockStorage = {};
+      },
     };
 
     it('should save activeUserMessageId to sessionStorage when user sends a message', () => {
       const conversationId = 'conv-123';
       const messageId = 'msg-456';
-      
-      mockSessionStorage.setItem(`activeUserMessageId_${conversationId}`, messageId);
-      
-      expect(mockSessionStorage.getItem(`activeUserMessageId_${conversationId}`)).toBe(messageId);
+
+      mockSessionStorage.setItem(
+        `activeUserMessageId_${conversationId}`,
+        messageId,
+      );
+
+      expect(
+        mockSessionStorage.getItem(`activeUserMessageId_${conversationId}`),
+      ).toBe(messageId);
     });
 
     it('should restore activeUserMessageId from sessionStorage on WebSocket reconnect', () => {
       const conversationId = 'conv-123';
       const messageId = 'msg-456';
       const activeUserMessageId = { current: null as string | null };
-      
-      mockSessionStorage.setItem(`activeUserMessageId_${conversationId}`, messageId);
-      
-      const storedMessageId = mockSessionStorage.getItem(`activeUserMessageId_${conversationId}`);
+
+      mockSessionStorage.setItem(
+        `activeUserMessageId_${conversationId}`,
+        messageId,
+      );
+
+      const storedMessageId = mockSessionStorage.getItem(
+        `activeUserMessageId_${conversationId}`,
+      );
       if (storedMessageId) {
         activeUserMessageId.current = storedMessageId;
       }
-      
+
       expect(activeUserMessageId.current).toBe(messageId);
     });
 
     it('should not restore activeUserMessageId if sessionStorage is empty', () => {
       const conversationId = 'conv-123';
       const activeUserMessageId = { current: null as string | null };
-      
-      const storedMessageId = mockSessionStorage.getItem(`activeUserMessageId_${conversationId}`);
+
+      const storedMessageId = mockSessionStorage.getItem(
+        `activeUserMessageId_${conversationId}`,
+      );
       if (storedMessageId) {
         activeUserMessageId.current = storedMessageId;
       }
-      
+
       expect(activeUserMessageId.current).toBeNull();
     });
 
     it('should clear sessionStorage when Stop Generating is clicked', () => {
       const conversationId = 'conv-123';
-      mockSessionStorage.setItem(`activeUserMessageId_${conversationId}`, 'msg-456');
-      
+      mockSessionStorage.setItem(
+        `activeUserMessageId_${conversationId}`,
+        'msg-456',
+      );
+
       mockSessionStorage.removeItem(`activeUserMessageId_${conversationId}`);
-      
-      expect(mockSessionStorage.getItem(`activeUserMessageId_${conversationId}`)).toBeNull();
+
+      expect(
+        mockSessionStorage.getItem(`activeUserMessageId_${conversationId}`),
+      ).toBeNull();
     });
 
     it('should clear sessionStorage when response completes', () => {
       const conversationId = 'conv-123';
-      mockSessionStorage.setItem(`activeUserMessageId_${conversationId}`, 'msg-456');
-      
+      mockSessionStorage.setItem(
+        `activeUserMessageId_${conversationId}`,
+        'msg-456',
+      );
+
       mockSessionStorage.removeItem(`activeUserMessageId_${conversationId}`);
-      
-      expect(mockSessionStorage.getItem(`activeUserMessageId_${conversationId}`)).toBeNull();
+
+      expect(
+        mockSessionStorage.getItem(`activeUserMessageId_${conversationId}`),
+      ).toBeNull();
     });
 
     it('should allow HITL messages through after reconnection with restored activeUserMessageId', () => {
       const conversationId = 'conv-123';
       const messageId = 'msg-456';
       const activeUserMessageId = { current: null as string | null };
-      
-      mockSessionStorage.setItem(`activeUserMessageId_${conversationId}`, messageId);
-      
-      const storedMessageId = mockSessionStorage.getItem(`activeUserMessageId_${conversationId}`);
+
+      mockSessionStorage.setItem(
+        `activeUserMessageId_${conversationId}`,
+        messageId,
+      );
+
+      const storedMessageId = mockSessionStorage.getItem(
+        `activeUserMessageId_${conversationId}`,
+      );
       if (storedMessageId) {
         activeUserMessageId.current = storedMessageId;
       }
-      
+
       const hitlMessage = {
         type: 'system_interaction_message',
         conversation_id: conversationId,
       };
-      
-      const shouldProcess = activeUserMessageId.current !== null && 
-                            hitlMessage.conversation_id === conversationId;
-      
+
+      const shouldProcess =
+        activeUserMessageId.current !== null &&
+        hitlMessage.conversation_id === conversationId;
+
       expect(shouldProcess).toBe(true);
     });
 
     it('should block messages when activeUserMessageId is not restored', () => {
       const conversationId = 'conv-123';
       const activeUserMessageId = { current: null as string | null };
-      
+
       const message = {
         type: 'system_interaction_message',
         conversation_id: conversationId,
       };
-      
-      const shouldProcess = activeUserMessageId.current !== null && 
-                            message.conversation_id === conversationId;
-      
+
+      const shouldProcess =
+        activeUserMessageId.current !== null &&
+        message.conversation_id === conversationId;
+
       expect(shouldProcess).toBe(false);
     });
 
     it('should use conversation-specific keys in sessionStorage', () => {
       mockSessionStorage.setItem('activeUserMessageId_conv-A', 'msg-A');
       mockSessionStorage.setItem('activeUserMessageId_conv-B', 'msg-B');
-      
-      expect(mockSessionStorage.getItem('activeUserMessageId_conv-A')).toBe('msg-A');
-      expect(mockSessionStorage.getItem('activeUserMessageId_conv-B')).toBe('msg-B');
-      
+
+      expect(mockSessionStorage.getItem('activeUserMessageId_conv-A')).toBe(
+        'msg-A',
+      );
+      expect(mockSessionStorage.getItem('activeUserMessageId_conv-B')).toBe(
+        'msg-B',
+      );
+
       mockSessionStorage.removeItem('activeUserMessageId_conv-A');
-      
-      expect(mockSessionStorage.getItem('activeUserMessageId_conv-A')).toBeNull();
-      expect(mockSessionStorage.getItem('activeUserMessageId_conv-B')).toBe('msg-B');
+
+      expect(
+        mockSessionStorage.getItem('activeUserMessageId_conv-A'),
+      ).toBeNull();
+      expect(mockSessionStorage.getItem('activeUserMessageId_conv-B')).toBe(
+        'msg-B',
+      );
     });
 
     it('should handle reconnection to different conversation without cross-contamination', () => {
       const activeUserMessageId = { current: null as string | null };
-      
+
       mockSessionStorage.setItem('activeUserMessageId_conv-A', 'msg-A');
       mockSessionStorage.setItem('activeUserMessageId_conv-B', 'msg-B');
-      
+
       const currentConversationId = 'conv-A';
-      const storedMessageId = mockSessionStorage.getItem(`activeUserMessageId_${currentConversationId}`);
+      const storedMessageId = mockSessionStorage.getItem(
+        `activeUserMessageId_${currentConversationId}`,
+      );
       if (storedMessageId) {
         activeUserMessageId.current = storedMessageId;
       }
-      
+
       expect(activeUserMessageId.current).toBe('msg-A');
-      
+
       const messageForConvB = {
         conversation_id: 'conv-B',
       };
-      
-      const shouldProcess = activeUserMessageId.current !== null && 
-                            messageForConvB.conversation_id === currentConversationId;
-      
+
+      const shouldProcess =
+        activeUserMessageId.current !== null &&
+        messageForConvB.conversation_id === currentConversationId;
+
       expect(shouldProcess).toBe(false);
     });
   });

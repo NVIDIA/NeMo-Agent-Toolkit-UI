@@ -2,6 +2,7 @@ import { env } from 'next-runtime-env';
 
 import { Conversation, Message } from '@/types/chat';
 import { FolderInterface } from '@/types/folder';
+
 import { DEFAULT_CORE_ROUTE, CORE_ROUTE_OPTIONS } from '@/constants';
 
 export interface HomeInitialState {
@@ -18,7 +19,7 @@ export interface HomeInitialState {
   searchTerm: string;
   chatHistory: boolean;
   httpEndpoint?: string;
-  httpEndpoints?: Array<{label: string; value: string}>;
+  httpEndpoints?: Array<{ label: string; value: string }>;
   optionalGenerationParameters?: string;
   webSocketMode?: boolean;
   webSocketConnected?: boolean;
@@ -28,10 +29,10 @@ export interface HomeInitialState {
   expandIntermediateSteps?: boolean;
   intermediateStepOverride?: boolean;
   autoScroll?: boolean;
-  enableStreamingRagVizOptions: boolean;  /* This toggle displays settings that are hidden during with default / core functionality */
+  enableStreamingRagVizOptions: boolean /* This toggle displays settings that are hidden during with default / core functionality */;
   additionalConfig: any;
-  dataStreams: string[];  /* Used for holding the associated label of live data streams (see `stream_id` in DATA_STREAMING.md) */
-  showDataStreamDisplay: boolean;  /* This toggle displays the data stream display in the chat interface (see DATA_STREAMING.md) */
+  dataStreams: string[] /* Used for holding the associated label of live data streams (see `stream_id` in DATA_STREAMING.md) */;
+  showDataStreamDisplay: boolean /* This toggle displays the data stream display in the chat interface (see DATA_STREAMING.md) */;
 }
 
 export const initialState: HomeInitialState = {
@@ -76,7 +77,8 @@ export const initialState: HomeInitialState = {
       ? true
       : false,
   additionalConfig: {},
-  dataStreams: [],  /* Used for holding the associated label of live data streams (see `stream_id` in DATA_STREAMING.md) */
+  dataStreams:
+    [] /* Used for holding the associated label of live data streams (see `stream_id` in DATA_STREAMING.md) */,
   showDataStreamDisplay:
     env('NEXT_PUBLIC_NAT_SHOW_DATA_STREAM_DEFAULT_ON') === 'true' ||
     process?.env?.NEXT_PUBLIC_NAT_SHOW_DATA_STREAM_DEFAULT_ON === 'true'

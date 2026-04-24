@@ -67,6 +67,7 @@ POST /api/update-data-stream
 ```
 
 **Parameters**:
+
 - `text` (string, required): The text content
 - `stream_id` (string, optional): Stream identifier (defaults to 'default')
 - `timestamp` (number, optional): Unix timestamp in milliseconds (defaults to current time)
@@ -74,6 +75,7 @@ POST /api/update-data-stream
 - `uuid` (string, optional): Backend UUID for database tracking (used with finalized entries)
 
 **Behavior**:
+
 - **Non-finalized**: Updates the live stream text, overwriting previous content for that `stream_id`
 - **Finalized**: Creates a new database entry record (does not overwrite). Clears the live stream text for that `stream_id`
 
@@ -94,6 +96,7 @@ GET /api/update-data-stream
 ```
 
 **Response for finalized entries**:
+
 ```javascript
 {
   "entries": [
@@ -138,6 +141,7 @@ Located in the chat interface header (toggle: "Data Stream Display").
 **Purpose**: Visualize live, continuously updating text streams before they're finalized.
 
 **Features**:
+
 - Updates every 100ms to show real-time stream content
 - Displays last database update timestamp for the selected stream
 - Stream selector (when multiple streams are active)
@@ -152,6 +156,7 @@ Accessible via "Database Updates" button in chat header (`/database-updates`).
 **Purpose**: View all finalized entries and their database ingestion status.
 
 **Features**:
+
 - Lists all finalized entries with timestamps
 - Processing status indicators:
   - 🕐 **Database Pending**: Entry marked for database storage, not yet ingested

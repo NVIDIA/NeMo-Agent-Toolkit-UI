@@ -1,7 +1,8 @@
-'use client';
 import { IconInfoCircle, IconX } from '@tabler/icons-react';
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-hot-toast';
+
+('use client');
 
 const WARNING_THRESHOLD = 0.2; // Show red warning when 20% of time remains
 
@@ -24,7 +25,10 @@ interface InteractionModalProps {
   isOpen: boolean;
   interactionMessage: InteractionMessage | null;
   onClose: () => void;
-  onSubmit: (data: { interactionMessage: InteractionMessage; userResponse: string }) => void;
+  onSubmit: (data: {
+    interactionMessage: InteractionMessage;
+    userResponse: string;
+  }) => void;
 }
 
 export const InteractionModal = ({
@@ -55,12 +59,12 @@ export const InteractionModal = ({
 
   useEffect(() => {
     if (!isOpen || !interactionMessage) return;
-    
+
     const timeout = content?.timeout;
     if (typeof timeout === 'number' && timeout > 0) {
       setRemainingSeconds(timeout);
       setIsTimedOut(false);
-      
+
       intervalRef.current = setInterval(() => {
         setRemainingSeconds((prev) => {
           if (prev === null || prev <= 1) {
@@ -167,7 +171,13 @@ export const InteractionModal = ({
         </h2>
 
         {remainingSeconds !== null && (
-          <p className={`text-sm mb-3 ${remainingSeconds <= (content?.timeout || 0) * WARNING_THRESHOLD ? 'text-red-500 font-semibold' : 'text-slate-500'}`}>
+          <p
+            className={`text-sm mb-3 ${
+              remainingSeconds <= (content?.timeout || 0) * WARNING_THRESHOLD
+                ? 'text-red-500 font-semibold'
+                : 'text-slate-500'
+            }`}
+          >
             Time remaining: {formatTime(remainingSeconds)}
           </p>
         )}

@@ -31,7 +31,9 @@ describe('Proxy Request Transformers and Response Processors', () => {
   describe('Request Payload Builders', () => {
     describe('parseOptionalParams', () => {
       it('should parse JSON string format', () => {
-        const result = parseOptionalParams('{"temperature": 0.8, "max_tokens": 100}');
+        const result = parseOptionalParams(
+          '{"temperature": 0.8, "max_tokens": 100}',
+        );
         expect(result).toEqual({ temperature: 0.8, max_tokens: 100 });
       });
 
@@ -90,7 +92,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const messages = [
           { role: 'user', content: 'Hello' },
           { role: 'assistant', content: 'Hi' },
-          { role: 'user', content: 'How are you?' }
+          { role: 'user', content: 'How are you?' },
         ];
         const result = buildChatPayload(messages, true, '');
 
@@ -104,16 +106,22 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const messages = [
           { role: 'user', content: 'Hello' },
           { role: 'assistant', content: 'Hi' },
-          { role: 'user', content: 'How are you?' }
+          { role: 'user', content: 'How are you?' },
         ];
         const result = buildChatPayload(messages, false, '');
 
-        expect(result.messages).toEqual([{ role: 'user', content: 'How are you?' }]);
+        expect(result.messages).toEqual([
+          { role: 'user', content: 'How are you?' },
+        ]);
       });
 
       it('should merge optional parameters', () => {
         const messages = [{ role: 'user', content: 'Test' }];
-        const result = buildChatPayload(messages, true, '{"max_tokens": 500, "top_p": 0.9}');
+        const result = buildChatPayload(
+          messages,
+          true,
+          '{"max_tokens": 500, "top_p": 0.9}',
+        );
 
         expect(result.max_tokens).toBe(500);
         expect(result.top_p).toBe(0.9);
@@ -122,7 +130,11 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
       it('should use key=value format for optional params', () => {
         const messages = [{ role: 'user', content: 'Test' }];
-        const result = buildChatPayload(messages, true, 'max_tokens=300,top_p=0.95');
+        const result = buildChatPayload(
+          messages,
+          true,
+          'max_tokens=300,top_p=0.95',
+        );
 
         expect(result.max_tokens).toBe(300);
         expect(result.top_p).toBe(0.95);
@@ -134,7 +146,11 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const messages = [{ role: 'user', content: 'Test' }];
 
         // Attempt to override reserved field 'stream' via optionalParams
-        const result = buildChatPayload(messages, true, '{"stream": true, "max_tokens": 100}');
+        const result = buildChatPayload(
+          messages,
+          true,
+          '{"stream": true, "max_tokens": 100}',
+        );
 
         // Server enforces: 'stream' is filtered out, remains false
         expect(result.stream).toBe(false);
@@ -152,7 +168,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const result = buildChatPayload(
           messages,
           true,
-          '{"messages": [{"role": "system", "content": "Override"}], "temperature": 0.9}'
+          '{"messages": [{"role": "system", "content": "Override"}], "temperature": 0.9}',
         );
 
         // Server enforces: 'messages' is filtered out, original messages preserved
@@ -178,7 +194,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const messages = [
           { role: 'user', content: 'Hello' },
           { role: 'assistant', content: 'Hi' },
-          { role: 'user', content: 'How are you?' }
+          { role: 'user', content: 'How are you?' },
         ];
         const result = buildChatStreamPayload(messages, true, '');
 
@@ -192,16 +208,22 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const messages = [
           { role: 'user', content: 'Hello' },
           { role: 'assistant', content: 'Hi' },
-          { role: 'user', content: 'How are you?' }
+          { role: 'user', content: 'How are you?' },
         ];
         const result = buildChatStreamPayload(messages, false, '');
 
-        expect(result.messages).toEqual([{ role: 'user', content: 'How are you?' }]);
+        expect(result.messages).toEqual([
+          { role: 'user', content: 'How are you?' },
+        ]);
       });
 
       it('should merge optional parameters', () => {
         const messages = [{ role: 'user', content: 'Test' }];
-        const result = buildChatStreamPayload(messages, true, '{"max_tokens": 500, "top_p": 0.9}');
+        const result = buildChatStreamPayload(
+          messages,
+          true,
+          '{"max_tokens": 500, "top_p": 0.9}',
+        );
 
         expect(result.max_tokens).toBe(500);
         expect(result.top_p).toBe(0.9);
@@ -210,7 +232,11 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
       it('should use key=value format for optional params', () => {
         const messages = [{ role: 'user', content: 'Test' }];
-        const result = buildChatStreamPayload(messages, true, 'max_tokens=300,top_p=0.95');
+        const result = buildChatStreamPayload(
+          messages,
+          true,
+          'max_tokens=300,top_p=0.95',
+        );
 
         expect(result.max_tokens).toBe(300);
         expect(result.top_p).toBe(0.95);
@@ -222,7 +248,11 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const messages = [{ role: 'user', content: 'Test' }];
 
         // Attempt to override reserved field 'stream' via optionalParams
-        const result = buildChatStreamPayload(messages, true, '{"stream": false, "max_tokens": 100}');
+        const result = buildChatStreamPayload(
+          messages,
+          true,
+          '{"stream": false, "max_tokens": 100}',
+        );
 
         // Server enforces: 'stream' is filtered out, remains true (critical fix)
         expect(result.stream).toBe(true);
@@ -240,7 +270,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const result = buildChatStreamPayload(
           messages,
           true,
-          '{"messages": [{"role": "system", "content": "Override"}], "temperature": 0.8}'
+          '{"messages": [{"role": "system", "content": "Override"}], "temperature": 0.8}',
         );
 
         // Server enforces: 'messages' is filtered out, original messages preserved
@@ -281,14 +311,25 @@ describe('Proxy Request Transformers and Response Processors', () => {
         // Track initialized conversations to avoid re-initialization
         const initializedConversations = new Set<string>();
 
-        return async (messages: any[], conversationId: string, serverURL: string) => {
-          if (!messages?.length || messages[messages.length - 1]?.role !== 'user') {
-            throw new Error('User message not found: messages array is empty or invalid.');
+        return async (
+          messages: any[],
+          conversationId: string,
+          serverURL: string,
+        ) => {
+          if (
+            !messages?.length ||
+            messages[messages.length - 1]?.role !== 'user'
+          ) {
+            throw new Error(
+              'User message not found: messages array is empty or invalid.',
+            );
           }
 
           // Initialize the retrieval system only once per conversation
           const ragUuid = '123456'; // Use a fixed value for testing
-          const combinedConversationId = `${ragUuid}-${conversationId || 'default'}`;
+          const combinedConversationId = `${ragUuid}-${
+            conversationId || 'default'
+          }`;
 
           if (!initializedConversations.has(combinedConversationId)) {
             try {
@@ -299,21 +340,29 @@ describe('Proxy Request Transformers and Response Processors', () => {
               });
 
               if (!initResponse.ok) {
-                throw new Error(`CA RAG initialization failed: ${initResponse.statusText}`);
+                throw new Error(
+                  `CA RAG initialization failed: ${initResponse.statusText}`,
+                );
               }
 
               initializedConversations.add(combinedConversationId);
             } catch (initError) {
-              throw new Error(`CA RAG initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
+              throw new Error(
+                `CA RAG initialization failed: ${
+                  initError instanceof Error
+                    ? initError.message
+                    : 'Unknown error'
+                }`,
+              );
             }
           }
 
           return {
             state: {
               chat: {
-                question: messages[messages.length - 1]?.content ?? ''
-              }
-            }
+                question: messages[messages.length - 1]?.content ?? '',
+              },
+            },
           };
         };
       }
@@ -325,17 +374,21 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const messages = [
           { role: 'user', content: 'First question' },
           { role: 'assistant', content: 'Answer' },
-          { role: 'user', content: 'Second question' }
+          { role: 'user', content: 'Second question' },
         ];
 
-        const result = await buildPayload(messages, 'conv-123', 'http://localhost:8080');
+        const result = await buildPayload(
+          messages,
+          'conv-123',
+          'http://localhost:8080',
+        );
 
         expect(result).toEqual({
           state: {
             chat: {
-              question: 'Second question'
-            }
-          }
+              question: 'Second question',
+            },
+          },
         });
       });
 
@@ -347,14 +400,11 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         await buildPayload(messages, 'conv-123', 'http://localhost:8080');
 
-        expect(mockFetch).toHaveBeenCalledWith(
-          'http://localhost:8080/init',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ uuid: '123456' })
-          }
-        );
+        expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/init', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uuid: '123456' }),
+        });
       });
 
       it('should not call init endpoint on subsequent uses for same conversation', async () => {
@@ -395,8 +445,10 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const buildPayload = createBuildContextAwareRAGPayload();
 
         await expect(
-          buildPayload([], 'conv-123', 'http://localhost:8080')
-        ).rejects.toThrow('User message not found: messages array is empty or invalid.');
+          buildPayload([], 'conv-123', 'http://localhost:8080'),
+        ).rejects.toThrow(
+          'User message not found: messages array is empty or invalid.',
+        );
       });
 
       it('should throw error when last message is not from user', async () => {
@@ -404,23 +456,30 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         const messages = [
           { role: 'user', content: 'Question' },
-          { role: 'assistant', content: 'Answer' }
+          { role: 'assistant', content: 'Answer' },
         ];
 
         await expect(
-          buildPayload(messages, 'conv-123', 'http://localhost:8080')
-        ).rejects.toThrow('User message not found: messages array is empty or invalid.');
+          buildPayload(messages, 'conv-123', 'http://localhost:8080'),
+        ).rejects.toThrow(
+          'User message not found: messages array is empty or invalid.',
+        );
       });
 
       it('should throw error when init endpoint fails', async () => {
         const buildPayload = createBuildContextAwareRAGPayload();
-        mockFetch.mockResolvedValueOnce({ ok: false, statusText: 'Internal Server Error' });
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          statusText: 'Internal Server Error',
+        });
 
         const messages = [{ role: 'user', content: 'Test question' }];
 
         await expect(
-          buildPayload(messages, 'conv-123', 'http://localhost:8080')
-        ).rejects.toThrow('CA RAG initialization failed: Internal Server Error');
+          buildPayload(messages, 'conv-123', 'http://localhost:8080'),
+        ).rejects.toThrow(
+          'CA RAG initialization failed: Internal Server Error',
+        );
       });
 
       it('should throw error when init endpoint network fails', async () => {
@@ -430,7 +489,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const messages = [{ role: 'user', content: 'Test question' }];
 
         await expect(
-          buildPayload(messages, 'conv-123', 'http://localhost:8080')
+          buildPayload(messages, 'conv-123', 'http://localhost:8080'),
         ).rejects.toThrow('CA RAG initialization failed: Network error');
       });
 
@@ -457,14 +516,18 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         const messages = [{ role: 'user', content: '' }];
 
-        const result = await buildPayload(messages, 'conv-123', 'http://localhost:8080');
+        const result = await buildPayload(
+          messages,
+          'conv-123',
+          'http://localhost:8080',
+        );
 
         expect(result).toEqual({
           state: {
             chat: {
-              question: ''
-            }
-          }
+              question: '',
+            },
+          },
         });
       });
     });
@@ -488,9 +551,12 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         await processGenerate(mockBackendRes, mockRes);
 
-        expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
-          'Content-Type': 'application/json; charset=utf-8',
-        }));
+        expect(mockRes.writeHead).toHaveBeenCalledWith(
+          200,
+          expect.objectContaining({
+            'Content-Type': 'application/json; charset=utf-8',
+          }),
+        );
         expect(mockRes.end).toHaveBeenCalledWith('{"value":"Test response"}');
       });
 
@@ -532,9 +598,12 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         await processGenerate(mockBackendRes, mockRes);
 
-        expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
-          'Observability-Trace-Id': 'trace-header-123',
-        }));
+        expect(mockRes.writeHead).toHaveBeenCalledWith(
+          200,
+          expect.objectContaining({
+            'Observability-Trace-Id': 'trace-header-123',
+          }),
+        );
       });
     });
 
@@ -542,7 +611,11 @@ describe('Proxy Request Transformers and Response Processors', () => {
       it('should process JSON response', async () => {
         const mockBackendRes = {
           ok: true,
-          text: jest.fn().mockResolvedValue('{"choices":[{"message":{"content":"Chat response"}}]}'),
+          text: jest
+            .fn()
+            .mockResolvedValue(
+              '{"choices":[{"message":{"content":"Chat response"}}]}',
+            ),
           headers: {
             get: jest.fn().mockReturnValue(null),
           },
@@ -581,7 +654,11 @@ describe('Proxy Request Transformers and Response Processors', () => {
       it('should forward observability-trace-id header from backend', async () => {
         const mockBackendRes = {
           ok: true,
-          text: jest.fn().mockResolvedValue('{"choices":[{"message":{"content":"Chat response"}}]}'),
+          text: jest
+            .fn()
+            .mockResolvedValue(
+              '{"choices":[{"message":{"content":"Chat response"}}]}',
+            ),
           headers: {
             get: jest.fn((name) => {
               if (name === 'observability-trace-id') return 'trace-chat-456';
@@ -597,9 +674,12 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         await processChat(mockBackendRes, mockRes);
 
-        expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
-          'Observability-Trace-Id': 'trace-chat-456',
-        }));
+        expect(mockRes.writeHead).toHaveBeenCalledWith(
+          200,
+          expect.objectContaining({
+            'Observability-Trace-Id': 'trace-chat-456',
+          }),
+        );
       });
     });
 
@@ -617,7 +697,10 @@ describe('Proxy Request Transformers and Response Processors', () => {
                   return Promise.resolve({ done: true, value: undefined });
                 }
                 const chunk = chunks[chunkIndex++];
-                return Promise.resolve({ done: false, value: encoder.encode(chunk) });
+                return Promise.resolve({
+                  done: false,
+                  value: encoder.encode(chunk),
+                });
               }),
             }),
           },
@@ -638,9 +721,12 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         await processChatStream(mockBackendRes, mockRes);
 
-        expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
-          'Content-Type': expect.stringMatching(/text\/event-stream/i),
-        }));
+        expect(mockRes.writeHead).toHaveBeenCalledWith(
+          200,
+          expect.objectContaining({
+            'Content-Type': expect.stringMatching(/text\/event-stream/i),
+          }),
+        );
         expect(mockRes.write).toHaveBeenCalledWith('Hello');
         expect(mockRes.write).toHaveBeenCalledWith(' world');
         expect(mockRes.end).toHaveBeenCalled();
@@ -659,8 +745,12 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         await processChatStream(mockBackendRes, mockRes);
 
-        expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('<intermediatestep>'));
-        expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('Test Step'));
+        expect(mockRes.write).toHaveBeenCalledWith(
+          expect.stringContaining('<intermediatestep>'),
+        );
+        expect(mockRes.write).toHaveBeenCalledWith(
+          expect.stringContaining('Test Step'),
+        );
       });
 
       it('should process observability_trace lines separately', async () => {
@@ -679,7 +769,11 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         // Should write both content and trace ID tag
         expect(mockRes.write).toHaveBeenCalledWith('Response');
-        expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('<observabilitytraceid>trace-abc-123</observabilitytraceid>'));
+        expect(mockRes.write).toHaveBeenCalledWith(
+          expect.stringContaining(
+            '<observabilitytraceid>trace-abc-123</observabilitytraceid>',
+          ),
+        );
       });
 
       it('should handle non-ok response', async () => {
@@ -716,7 +810,10 @@ describe('Proxy Request Transformers and Response Processors', () => {
                   return Promise.resolve({ done: true, value: undefined });
                 }
                 const chunk = chunks[chunkIndex++];
-                return Promise.resolve({ done: false, value: encoder.encode(chunk) });
+                return Promise.resolve({
+                  done: false,
+                  value: encoder.encode(chunk),
+                });
               }),
             }),
           },
@@ -737,9 +834,12 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         await processGenerateStream(mockBackendRes, mockRes);
 
-        expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
-          'Content-Type': expect.stringMatching(/text\/event-stream/i),
-        }));
+        expect(mockRes.writeHead).toHaveBeenCalledWith(
+          200,
+          expect.objectContaining({
+            'Content-Type': expect.stringMatching(/text\/event-stream/i),
+          }),
+        );
         expect(mockRes.write).toHaveBeenCalled();
         expect(mockRes.end).toHaveBeenCalled();
       });
@@ -757,8 +857,12 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         await processGenerateStream(mockBackendRes, mockRes);
 
-        expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('<intermediatestep>'));
-        expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('Generation Step'));
+        expect(mockRes.write).toHaveBeenCalledWith(
+          expect.stringContaining('<intermediatestep>'),
+        );
+        expect(mockRes.write).toHaveBeenCalledWith(
+          expect.stringContaining('Generation Step'),
+        );
       });
 
       it('should process observability_trace lines separately', async () => {
@@ -776,7 +880,11 @@ describe('Proxy Request Transformers and Response Processors', () => {
         await processGenerateStream(mockBackendRes, mockRes);
 
         // Should process trace ID separately from content
-        expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('<observabilitytraceid>trace-def-456</observabilitytraceid>'));
+        expect(mockRes.write).toHaveBeenCalledWith(
+          expect.stringContaining(
+            '<observabilitytraceid>trace-def-456</observabilitytraceid>',
+          ),
+        );
       });
 
       it('should handle non-ok response', async () => {

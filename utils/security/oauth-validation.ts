@@ -17,7 +17,7 @@ export function isValidConsentPromptURL(raw: string): boolean {
   }
 
   // 3) protocol: only http(s)
-  if (u.protocol !== "http:" && u.protocol !== "https:") return false;
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
 
   // 4) forbid embedded credentials (userinfo)
   if (u.username || u.password) return false;
@@ -27,4 +27,3 @@ export function isValidConsentPromptURL(raw: string): boolean {
 
   return true;
 }
-

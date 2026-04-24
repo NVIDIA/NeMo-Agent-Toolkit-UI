@@ -1,9 +1,18 @@
-
+import {
+  IconRefresh,
+  IconFilter,
+  IconHistory,
+  IconSortAscending,
+  IconSortDescending,
+  IconClock,
+  IconCheck,
+} from '@tabler/icons-react';
 import React, { useState, useEffect } from 'react';
-import { IconRefresh, IconFilter, IconHistory, IconSortAscending, IconSortDescending, IconClock, IconCheck } from '@tabler/icons-react';
-import { useTheme } from '@/contexts/ThemeContext';
-import { HTTP_PROXY_PATH, UPDATE_DATA_STREAM } from '@/constants';
+
 import Head from 'next/head';
+
+import { HTTP_PROXY_PATH, UPDATE_DATA_STREAM } from '@/constants';
+import { useTheme } from '@/contexts/ThemeContext';
 
 /**
  * Database Updates History Page (/database-updates)
@@ -46,7 +55,9 @@ interface FinalizedDataEntry {
 
 const DataStreamHistory = () => {
   const [entries, setEntries] = useState<FinalizedDataEntry[]>([]);
-  const [filteredEntries, setFilteredEntries] = useState<FinalizedDataEntry[]>([]);
+  const [filteredEntries, setFilteredEntries] = useState<FinalizedDataEntry[]>(
+    [],
+  );
   const [selectedStream, setSelectedStream] = useState<string | null>(null);
   const [availableStreams, setAvailableStreams] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,14 +65,24 @@ const DataStreamHistory = () => {
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>(() => {
     // Initialize from localStorage, fallback to 'newest'
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('entry-sort-order') as 'newest' | 'oldest') || 'newest';
+      return (
+        (localStorage.getItem('entry-sort-order') as 'newest' | 'oldest') ||
+        'newest'
+      );
     }
     return 'newest';
   });
-  const [pendingFilter, setPendingFilter] = useState<'all' | 'pending' | 'ingested'>(() => {
+  const [pendingFilter, setPendingFilter] = useState<
+    'all' | 'pending' | 'ingested'
+  >(() => {
     // Initialize from localStorage, fallback to 'all'
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('entry-pending-filter') as 'all' | 'pending' | 'ingested') || 'all';
+      return (
+        (localStorage.getItem('entry-pending-filter') as
+          | 'all'
+          | 'pending'
+          | 'ingested') || 'all'
+      );
     }
     return 'all';
   });
@@ -86,7 +107,9 @@ const DataStreamHistory = () => {
   const fetchEntries = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${HTTP_PROXY_PATH}${UPDATE_DATA_STREAM}?type=finalized`);
+      const response = await fetch(
+        `${HTTP_PROXY_PATH}${UPDATE_DATA_STREAM}?type=finalized`,
+      );
       if (!response.ok) {
         throw new Error('Failed to fetch entries');
       }
@@ -98,7 +121,9 @@ const DataStreamHistory = () => {
 
       // Extract unique stream IDs from entries
       const streamIds = entries.map((t: FinalizedDataEntry) => t.stream_id);
-      const streams = Array.from(new Set<string>(streamIds)).sort((a: string, b: string) => a.localeCompare(b));
+      const streams = Array.from(new Set<string>(streamIds)).sort(
+        (a: string, b: string) => a.localeCompare(b),
+      );
       setAvailableStreams(streams);
 
       setError(null);
@@ -115,7 +140,9 @@ const DataStreamHistory = () => {
 
     // Apply stream filter
     if (selectedStream !== null) {
-      filtered = filtered.filter((t: FinalizedDataEntry) => t.stream_id === selectedStream);
+      filtered = filtered.filter(
+        (t: FinalizedDataEntry) => t.stream_id === selectedStream,
+      );
     }
 
     // Apply pending status filter
@@ -138,8 +165,14 @@ const DataStreamHistory = () => {
       }
       // Then sort by timestamp based on sort order
       // Convert timestamps to numbers to ensure proper comparison
-      const timestampA = typeof a.timestamp === 'string' ? new Date(a.timestamp).getTime() : a.timestamp;
-      const timestampB = typeof b.timestamp === 'string' ? new Date(b.timestamp).getTime() : b.timestamp;
+      const timestampA =
+        typeof a.timestamp === 'string'
+          ? new Date(a.timestamp).getTime()
+          : a.timestamp;
+      const timestampB =
+        typeof b.timestamp === 'string'
+          ? new Date(b.timestamp).getTime()
+          : b.timestamp;
 
       if (sortOrder === 'newest') {
         return timestampB - timestampA; // Newest first
@@ -171,7 +204,7 @@ const DataStreamHistory = () => {
     let hash = 0;
     for (let i = 0; i < streamId.length; i++) {
       const char = streamId.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
 
@@ -192,7 +225,10 @@ const DataStreamHistory = () => {
     <>
       <Head>
         <title>Database Updates</title>
-        <meta name="description" content="View and manage database entry updates" />
+        <meta
+          name="description"
+          content="View and manage database entry updates"
+        />
         <link rel="icon" href="/nvidia.jpg" />
       </Head>
 
@@ -210,9 +246,13 @@ const DataStreamHistory = () => {
                 </div>
                 <div className="flex items-center space-x-3">
                   <button
-                    onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
+                    onClick={() =>
+                      setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')
+                    }
                     className="flex items-center space-x-2 px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-md text-white transition-colors"
-                    title={`Sort by ${sortOrder === 'newest' ? 'oldest first' : 'newest first'}`}
+                    title={`Sort by ${
+                      sortOrder === 'newest' ? 'oldest first' : 'newest first'
+                    }`}
                   >
                     {sortOrder === 'newest' ? (
                       <IconSortDescending className="w-4 h-4" />
@@ -228,7 +268,9 @@ const DataStreamHistory = () => {
                     disabled={loading}
                     className="flex items-center space-x-2 px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-md text-white transition-colors disabled:opacity-50"
                   >
-                    <IconRefresh className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                    <IconRefresh
+                      className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
+                    />
                     <span>Refresh</span>
                   </button>
                 </div>
@@ -246,7 +288,9 @@ const DataStreamHistory = () => {
                 {/* Stream Filter */}
                 <select
                   value={selectedStream ?? ''}
-                  onChange={(e) => setSelectedStream(e.target.value ? e.target.value : null)}
+                  onChange={(e) =>
+                    setSelectedStream(e.target.value ? e.target.value : null)
+                  }
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-[#76b900] focus:border-transparent"
                 >
                   <option value="">All Streams</option>
@@ -260,7 +304,11 @@ const DataStreamHistory = () => {
                 {/* Pending Status Filter */}
                 <select
                   value={pendingFilter}
-                  onChange={(e) => setPendingFilter(e.target.value as 'all' | 'pending' | 'ingested')}
+                  onChange={(e) =>
+                    setPendingFilter(
+                      e.target.value as 'all' | 'pending' | 'ingested',
+                    )
+                  }
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-[#76b900] focus:border-transparent"
                 >
                   <option value="all">Any Status</option>
@@ -269,7 +317,8 @@ const DataStreamHistory = () => {
                 </select>
 
                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {filteredEntries.length} {filteredEntries.length !== 1 ? 'entries' : 'entry'}
+                  {filteredEntries.length}{' '}
+                  {filteredEntries.length !== 1 ? 'entries' : 'entry'}
                 </span>
               </div>
             </div>
@@ -297,9 +346,10 @@ const DataStreamHistory = () => {
                 </h3>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   {selectedStream !== null
-                    ? `No finalized entries for ${formatStreamName(selectedStream)}`
-                    : 'No finalized entries available'
-                  }
+                    ? `No finalized entries for ${formatStreamName(
+                        selectedStream,
+                      )}`
+                    : 'No finalized entries available'}
                 </p>
               </div>
             )}
@@ -314,16 +364,22 @@ const DataStreamHistory = () => {
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center space-x-3">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStreamColor(entry.stream_id)}`}>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStreamColor(
+                            entry.stream_id,
+                          )}`}
+                        >
                           {formatStreamName(entry.stream_id)}
                         </span>
                         {/* Processing Status Indicator */}
                         {entry.pending !== undefined && (
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            entry.pending
-                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                              : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          }`}>
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              entry.pending
+                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            }`}
+                          >
                             {entry.pending ? (
                               <>
                                 <IconClock className="w-3 h-3 mr-1" />

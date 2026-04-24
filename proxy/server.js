@@ -265,10 +265,7 @@ const server = http.createServer(async (req, res) => {
 
           if (!initRes.ok) {
             const detail = await initRes.text();
-            console.error(
-              `[CA RAG] /init failed (${initRes.status}):`,
-              detail,
-            );
+            console.error(`[CA RAG] /init failed (${initRes.status}):`, detail);
             if (!res.headersSent) {
               res.writeHead(initRes.status, {
                 'Content-Type': 'application/json',
@@ -361,9 +358,15 @@ server.on('upgrade', (req, socket, head) => {
 
     if (parsedUrl.query && parsedUrl.query._ws_headers) {
       try {
-        const raw = Buffer.from(parsedUrl.query._ws_headers, 'base64').toString('utf8');
+        const raw = Buffer.from(parsedUrl.query._ws_headers, 'base64').toString(
+          'utf8',
+        );
         const headers = JSON.parse(raw);
-        if (typeof headers === 'object' && headers !== null && !Array.isArray(headers)) {
+        if (
+          typeof headers === 'object' &&
+          headers !== null &&
+          !Array.isArray(headers)
+        ) {
           req._wsCustomHeaders = headers;
         }
       } catch (e) {

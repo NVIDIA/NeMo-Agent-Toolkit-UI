@@ -1,14 +1,16 @@
+import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 import { FC, useContext, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { useTranslation } from 'next-i18next';
-import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 
-import { useTheme } from '@/contexts/ThemeContext';
-import HomeContext from '@/pages/api/home/home.context';
+import { useTranslation } from 'next-i18next';
+
 import {
   validateOptionalGenerationJson,
   validateWebSocketCustomParams,
 } from '@/utils/app/settingsValidation';
+
+import HomeContext from '@/pages/api/home/home.context';
+
 import {
   DEFAULT_CORE_ROUTE,
   CHAT_STREAM,
@@ -18,13 +20,14 @@ import {
   CA_RAG_INIT,
   CHAT_CA_RAG,
 } from '@/constants';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // WebSocket schema display names to match HTTP endpoint naming
 const WEBSOCKET_SCHEMA_LABELS: Record<string, string> = {
-  'chat_stream': 'Chat Completions — Streaming',
-  'chat': 'Chat Completions — Non-Streaming',
-  'generate_stream': 'Generate — Streaming',
-  'generate': 'Generate — Non-Streaming',
+  chat_stream: 'Chat Completions — Streaming',
+  chat: 'Chat Completions — Non-Streaming',
+  generate_stream: 'Generate — Streaming',
+  generate: 'Generate — Non-Streaming',
 };
 
 interface Props {
@@ -53,10 +56,14 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
 
   const [theme, setTheme] = useState<'light' | 'dark'>(themeLightMode);
   const [selectedHttpEndpoint, setSelectedHttpEndpoint] = useState(
-    sessionStorage.getItem('httpEndpoint') || httpEndpoint || DEFAULT_CORE_ROUTE,
+    sessionStorage.getItem('httpEndpoint') ||
+      httpEndpoint ||
+      DEFAULT_CORE_ROUTE,
   );
   const [jsonBodyInput, setJsonBodyInput] = useState(
-    sessionStorage.getItem('optionalGenerationParameters') || optionalGenerationParameters || '',
+    sessionStorage.getItem('optionalGenerationParameters') ||
+      optionalGenerationParameters ||
+      '',
   );
   const [jsonValidationError, setJsonValidationError] = useState<string>('');
   const [webSocketSchema, setWebSocketSchema] = useState(
@@ -65,7 +72,8 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
   const [webSocketCustomParams, setWebSocketCustomParams] = useState(
     sessionStorage.getItem('webSocketCustomParams') || '',
   );
-  const [webSocketCustomParamsError, setWebSocketCustomParamsError] = useState<string>('');
+  const [webSocketCustomParamsError, setWebSocketCustomParamsError] =
+    useState<string>('');
   const [isIntermediateStepsEnabled, setIsIntermediateStepsEnabled] = useState(
     sessionStorage.getItem('enableIntermediateSteps')
       ? sessionStorage.getItem('enableIntermediateSteps') === 'true'
@@ -82,12 +90,14 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
         ? false
         : intermediateStepOverride,
     );
-  const [enableStreamingRagVizOptionsToggle, setenableStreamingRagVizOptionsToggle] =
-    useState(
-      sessionStorage.getItem('enableStreamingRagVizOptions')
-        ? sessionStorage.getItem('enableStreamingRagVizOptions') === 'true'
-        : enableStreamingRagVizOptions,
-    );
+  const [
+    enableStreamingRagVizOptionsToggle,
+    setenableStreamingRagVizOptionsToggle,
+  ] = useState(
+    sessionStorage.getItem('enableStreamingRagVizOptions')
+      ? sessionStorage.getItem('enableStreamingRagVizOptions') === 'true'
+      : enableStreamingRagVizOptions,
+  );
   const [showOptionalParams, setShowOptionalParams] = useState(false);
   const [showWebSocketParams, setShowWebSocketParams] = useState(false);
 
@@ -140,9 +150,10 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       return;
     }
 
-    const isChatEndpoint = selectedHttpEndpoint === CHAT ||
-                           selectedHttpEndpoint === CHAT_STREAM ||
-                           selectedHttpEndpoint === CHAT_CA_RAG;
+    const isChatEndpoint =
+      selectedHttpEndpoint === CHAT ||
+      selectedHttpEndpoint === CHAT_STREAM ||
+      selectedHttpEndpoint === CHAT_CA_RAG;
 
     if (isChatEndpoint) {
       const validation = validateOptionalGenerationJson(jsonBodyInput);
@@ -152,7 +163,9 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       }
     }
 
-    const wsParamsValidation = validateWebSocketCustomParams(webSocketCustomParams);
+    const wsParamsValidation = validateWebSocketCustomParams(
+      webSocketCustomParams,
+    );
     if (!wsParamsValidation.isValid) {
       setWebSocketCustomParamsError(wsParamsValidation.error);
       toast.error(`WebSocket parameters: ${wsParamsValidation.error}`);
@@ -161,9 +174,18 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
     setWebSocketCustomParamsError('');
 
     setLightMode(theme);
-    homeDispatch({ field: 'httpEndpoint', value: selectedHttpEndpoint || DEFAULT_CORE_ROUTE });
-    homeDispatch({ field: 'optionalGenerationParameters', value: jsonBodyInput });
-    homeDispatch({ field: 'webSocketSchema', value: webSocketSchema || 'chat_stream' });
+    homeDispatch({
+      field: 'httpEndpoint',
+      value: selectedHttpEndpoint || DEFAULT_CORE_ROUTE,
+    });
+    homeDispatch({
+      field: 'optionalGenerationParameters',
+      value: jsonBodyInput,
+    });
+    homeDispatch({
+      field: 'webSocketSchema',
+      value: webSocketSchema || 'chat_stream',
+    });
     homeDispatch({ field: 'expandIntermediateSteps', value: detailsToggle });
     homeDispatch({
       field: 'intermediateStepOverride',
@@ -178,7 +200,10 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
       value: enableStreamingRagVizOptionsToggle,
     });
 
-    sessionStorage.setItem('httpEndpoint', selectedHttpEndpoint || DEFAULT_CORE_ROUTE);
+    sessionStorage.setItem(
+      'httpEndpoint',
+      selectedHttpEndpoint || DEFAULT_CORE_ROUTE,
+    );
     sessionStorage.setItem('optionalGenerationParameters', jsonBodyInput);
     sessionStorage.setItem('webSocketSchema', webSocketSchema || 'chat_stream');
     sessionStorage.setItem('webSocketCustomParams', webSocketCustomParams);
@@ -240,7 +265,8 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
         </select>
 
         {/* Optional generation parameters (collapsible) */}
-        {(selectedHttpEndpoint === CHAT || selectedHttpEndpoint === CHAT_STREAM) && (
+        {(selectedHttpEndpoint === CHAT ||
+          selectedHttpEndpoint === CHAT_STREAM) && (
           <div className="mt-4">
             <button
               type="button"
@@ -274,8 +300,8 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
                   </div>
                 )}
                 <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Optional: Add custom JSON parameters for chat/chat stream endpoints only.
-                  Cannot override: messages, stream.
+                  Optional: Add custom JSON parameters for chat/chat stream
+                  endpoints only. Cannot override: messages, stream.
                 </div>
               </>
             )}
@@ -328,7 +354,9 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
   }
 }`}
                 value={webSocketCustomParams}
-                onChange={(e) => handleWebSocketCustomParamsChange(e.target.value)}
+                onChange={(e) =>
+                  handleWebSocketCustomParamsChange(e.target.value)
+                }
                 rows={5}
               />
               {webSocketCustomParamsError && (
@@ -337,7 +365,8 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
                 </div>
               )}
               <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Optional: Custom connection parameters (JSON format). Supported keys: query (URL params), headers (handshake headers), payload.
+                Optional: Custom connection parameters (JSON format). Supported
+                keys: query (URL params), headers (handshake headers), payload.
               </div>
             </>
           )}

@@ -1,5 +1,5 @@
-
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 import { HTTP_METHOD_POST, HTTP_METHOD_GET } from '@/constants';
 
 /**
@@ -123,9 +123,11 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         text,
         stream_id: streamId,
         timestamp: currentTimestamp,
-        id: `${streamId}-${currentTimestamp}-${Math.random().toString(36).substring(2, 11)}`,
+        id: `${streamId}-${currentTimestamp}-${Math.random()
+          .toString(36)
+          .substring(2, 11)}`,
         uuid: uuid, // Store the UUID from the backend
-        pending: true // Initially mark as pending database processing
+        pending: true, // Initially mark as pending database processing
       };
       finalizedEntries.push(finalizedEntry);
 
@@ -134,8 +136,14 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         if (a.stream_id !== b.stream_id) {
           return a.stream_id.localeCompare(b.stream_id);
         }
-        const timestampA = typeof a.timestamp === 'string' ? new Date(a.timestamp).getTime() : a.timestamp;
-        const timestampB = typeof b.timestamp === 'string' ? new Date(b.timestamp).getTime() : b.timestamp;
+        const timestampA =
+          typeof a.timestamp === 'string'
+            ? new Date(a.timestamp).getTime()
+            : a.timestamp;
+        const timestampB =
+          typeof b.timestamp === 'string'
+            ? new Date(b.timestamp).getTime()
+            : b.timestamp;
         return timestampA - timestampB;
       });
 
@@ -149,7 +157,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         text,
         stream_id: streamId,
         timestamp: currentTimestamp,
-        finalized: false
+        finalized: false,
       };
     }
 
@@ -164,16 +172,16 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       if (stream !== undefined) {
         const streamId = stream as string;
         const streamFinalizedEntries = finalizedEntries.filter(
-          entry => entry.stream_id === streamId
+          (entry) => entry.stream_id === streamId,
         );
         return res.status(200).json({
           entries: streamFinalizedEntries,
-          stream_id: streamId
+          stream_id: streamId,
         });
       } else {
         // Get all finalized entries
         return res.status(200).json({
-          entries: finalizedEntries
+          entries: finalizedEntries,
         });
       }
     }
@@ -184,14 +192,14 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       const streamData = streamTexts[streamId];
       return res.status(200).json({
         text: streamData?.text || '',
-        stream_id: streamId
+        stream_id: streamId,
       });
     } else {
       // Get all available streams with live text
       const streams = Object.keys(streamTexts);
       return res.status(200).json({
         streams,
-        texts: streamTexts
+        texts: streamTexts,
       });
     }
   }
@@ -210,7 +218,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     // Find the entry by UUID and update its pending status
     const entryIndex = finalizedEntries.findIndex(
-      entry => entry.uuid === uuid
+      (entry) => entry.uuid === uuid,
     );
 
     if (entryIndex === -1) {
@@ -221,7 +229,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     return res.status(200).json({
       success: true,
-      entry: finalizedEntries[entryIndex]
+      entry: finalizedEntries[entryIndex],
     });
   }
 

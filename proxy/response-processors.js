@@ -173,16 +173,18 @@ async function processChat(backendRes, res) {
   }
 
   const data = await backendRes.text();
-  
+
   // Construct response headers
   const observabilityTraceId = backendRes.headers.get('observability-trace-id');
   const responseHeaders = {
     'Content-Type': 'text/plain; charset=utf-8',
     'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
     'Access-Control-Allow-Credentials': 'true',
-    ...(observabilityTraceId ? { 'Observability-Trace-Id': observabilityTraceId } : {}),
+    ...(observabilityTraceId
+      ? { 'Observability-Trace-Id': observabilityTraceId }
+      : {}),
   };
-  
+
   try {
     const parsed = JSON.parse(data);
     const content =
@@ -280,7 +282,9 @@ async function processGenerate(backendRes, res) {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': constants.CORS_ORIGIN,
     'Access-Control-Allow-Credentials': 'true',
-    ...(observabilityTraceId ? { 'Observability-Trace-Id': observabilityTraceId } : {}),
+    ...(observabilityTraceId
+      ? { 'Observability-Trace-Id': observabilityTraceId }
+      : {}),
   };
 
   res.writeHead(200, responseHeaders);
@@ -303,10 +307,7 @@ async function processCaRag(backendRes, res) {
   try {
     const parsed = JSON.parse(data);
     const answer =
-      parsed?.result ||
-      parsed?.state?.chat?.answer ||
-      parsed?.answer ||
-      data;
+      parsed?.result || parsed?.state?.chat?.answer || parsed?.answer || data;
 
     res.writeHead(200, {
       'Content-Type': 'text/plain; charset=utf-8',

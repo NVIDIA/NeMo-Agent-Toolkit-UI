@@ -18,9 +18,9 @@ function extractSsePayloads(buffer: string): {
   for (const block of parts) {
     const dataLines = block
       .split('\n')
-      .filter(line => /^data:\s*/.test(line))
-      .map(line => line.replace(/^data:\s*/, '').trim())
-      .filter(line => line.length > 0);
+      .filter((line) => /^data:\s*/.test(line))
+      .map((line) => line.replace(/^data:\s*/, '').trim())
+      .filter((line) => line.length > 0);
 
     if (dataLines.length === 0) continue;
     const payload = dataLines.join('\n');
@@ -35,7 +35,7 @@ function splitNdjson(buffer: string): { lines: string[]; rest: string } {
   buffer = normalizeNewlines(buffer);
   const parts = buffer.split('\n');
   const rest = parts.pop() ?? '';
-  const lines = parts.map(l => l.trim()).filter(Boolean);
+  const lines = parts.map((l) => l.trim()).filter(Boolean);
   return { lines, rest };
 }
 
@@ -52,7 +52,8 @@ function parsePossiblyConcatenatedJson(payload: string): any[] {
   if (single !== null) return [single];
 
   const objs: any[] = [];
-  let depth = 0, start = -1;
+  let depth = 0,
+    start = -1;
   for (let i = 0; i < payload.length; i++) {
     const ch = payload[i];
     if (ch === '{') {
@@ -73,7 +74,7 @@ function parsePossiblyConcatenatedJson(payload: string): any[] {
 
 // Mock TextEncoder/TextDecoder for streaming tests
 global.TextEncoder = jest.fn().mockImplementation(() => ({
-  encode: jest.fn(text => new Uint8Array(Buffer.from(text, 'utf8')))
+  encode: jest.fn((text) => new Uint8Array(Buffer.from(text, 'utf8'))),
 }));
 
 global.TextDecoder = jest.fn().mockImplementation(() => ({
@@ -82,7 +83,7 @@ global.TextDecoder = jest.fn().mockImplementation(() => ({
       return Buffer.from(bytes).toString('utf8');
     }
     return String(bytes);
-  })
+  }),
 }));
 
 describe('HTTP Streaming Edge Cases', () => {
@@ -103,13 +104,13 @@ describe('HTTP Streaming Edge Cases', () => {
     test('handles incomplete SSE frames gracefully', () => {
       let buffer = '';
       const chunks = [
-        'data: {"value": "Hello',  // Incomplete JSON
-        ' world"}\n\n',            // Completion
-        'data: [DONE]\n\n'         // End marker
+        'data: {"value": "Hello', // Incomplete JSON
+        ' world"}\n\n', // Completion
+        'data: [DONE]\n\n', // End marker
       ];
 
       let allFrames: string[] = [];
-      chunks.forEach(chunk => {
+      chunks.forEach((chunk) => {
         buffer += chunk;
         const { frames, rest } = extractSsePayloads(buffer);
         allFrames.push(...frames);
@@ -241,7 +242,7 @@ data: {"value": "another valid"}
       const results = parsePossiblyConcatenatedJson(singleJson);
 
       expect(results).toHaveLength(1);
-      expect(results[0]).toEqual({ value: "test" });
+      expect(results[0]).toEqual({ value: 'test' });
     });
 
     /**
@@ -249,14 +250,15 @@ data: {"value": "another valid"}
      * Success: Multiple concatenated JSON objects are separated and parsed into individual array elements
      */
     test('parsePossiblyConcatenatedJson handles concatenated objects', () => {
-      const concatenatedJson = '{"value": "first"}{"value": "second"}{"value": "third"}';
+      const concatenatedJson =
+        '{"value": "first"}{"value": "second"}{"value": "third"}';
 
       const results = parsePossiblyConcatenatedJson(concatenatedJson);
 
       expect(results).toHaveLength(3);
-      expect(results[0]).toEqual({ value: "first" });
-      expect(results[1]).toEqual({ value: "second" });
-      expect(results[2]).toEqual({ value: "third" });
+      expect(results[0]).toEqual({ value: 'first' });
+      expect(results[1]).toEqual({ value: 'second' });
+      expect(results[2]).toEqual({ value: 'third' });
     });
 
     /**
@@ -269,8 +271,8 @@ data: {"value": "another valid"}
       const results = parsePossiblyConcatenatedJson(nestedJson);
 
       expect(results).toHaveLength(2);
-      expect(results[0]).toEqual({ data: { nested: "value" } });
-      expect(results[1]).toEqual({ simple: "value" });
+      expect(results[0]).toEqual({ data: { nested: 'value' } });
+      expect(results[1]).toEqual({ simple: 'value' });
     });
 
     /**
@@ -278,14 +280,15 @@ data: {"value": "another valid"}
      * Success: Malformed JSON is ignored, valid portions are extracted, function doesn't crash
      */
     test('parsePossiblyConcatenatedJson handles malformed JSON gracefully', () => {
-      const malformedJson = '{"valid": "object"}{"malformed": invalid}{"another": "valid"}';
+      const malformedJson =
+        '{"valid": "object"}{"malformed": invalid}{"another": "valid"}';
 
       const results = parsePossiblyConcatenatedJson(malformedJson);
 
       // Should extract valid objects and ignore malformed ones
       expect(results).toHaveLength(2);
-      expect(results[0]).toEqual({ valid: "object" });
-      expect(results[1]).toEqual({ another: "valid" });
+      expect(results[0]).toEqual({ valid: 'object' });
+      expect(results[1]).toEqual({ another: 'valid' });
     });
 
     /**
@@ -295,7 +298,7 @@ data: {"value": "another valid"}
     test('parsePossiblyConcatenatedJson returns empty array for invalid input', () => {
       const invalidInputs = ['', 'not json at all', '}{invalid', '{incomplete'];
 
-      invalidInputs.forEach(input => {
+      invalidInputs.forEach((input) => {
         const results = parsePossiblyConcatenatedJson(input);
         expect(results).toHaveLength(0);
       });
@@ -308,14 +311,15 @@ data: {"value": "another valid"}
      * Success: All chunks are processed correctly in sequence without losing or corrupting data
      */
     test('handles rapid chunk succession without data loss', () => {
-      const rapidChunks = Array.from({ length: 100 }, (_, i) =>
-        `data: {"value": "chunk${i}"}\n\n`
+      const rapidChunks = Array.from(
+        { length: 100 },
+        (_, i) => `data: {"value": "chunk${i}"}\n\n`,
       );
 
       let buffer = '';
       let allFrames: string[] = [];
 
-      rapidChunks.forEach(chunk => {
+      rapidChunks.forEach((chunk) => {
         buffer += chunk;
         const { frames, rest } = extractSsePayloads(buffer);
         allFrames.push(...frames);
@@ -349,11 +353,12 @@ data: {"value": "another valid"}
      */
     test('buffer management prevents memory leaks', () => {
       let buffer = '';
-      const chunks = Array.from({ length: 1000 }, (_, i) =>
-        `data: {"chunk": ${i}}\n\n`
+      const chunks = Array.from(
+        { length: 1000 },
+        (_, i) => `data: {"chunk": ${i}}\n\n`,
       );
 
-      chunks.forEach(chunk => {
+      chunks.forEach((chunk) => {
         buffer += chunk;
         const { frames, rest } = extractSsePayloads(buffer);
         buffer = rest; // Critical: update buffer to prevent memory accumulation
@@ -372,15 +377,15 @@ data: {"value": "another valid"}
     test('recovers from malformed intermediate step tags', () => {
       const chunksWithMalformed = [
         'data: {"value": "Response"}\n\n',
-        '<intermediatestep>{"invalid": json}</intermediatestep>',  // Malformed JSON
-        '<intermediatestep>{"id": "step-1", "type": "system_intermediate"}</intermediatestep>',  // Valid
-        'data: [DONE]\n\n'
+        '<intermediatestep>{"invalid": json}</intermediatestep>', // Malformed JSON
+        '<intermediatestep>{"id": "step-1", "type": "system_intermediate"}</intermediatestep>', // Valid
+        'data: [DONE]\n\n',
       ];
 
       const validSteps: string[] = [];
       const responses: string[] = [];
 
-      chunksWithMalformed.forEach(chunk => {
+      chunksWithMalformed.forEach((chunk) => {
         // Extract SSE data
         if (chunk.includes('data: ')) {
           const { frames } = extractSsePayloads(chunk);
@@ -388,8 +393,10 @@ data: {"value": "another valid"}
         }
 
         // Extract intermediate steps
-        const stepMatches = chunk.match(/<intermediatestep>([\s\S]*?)<\/intermediatestep>/g) || [];
-        stepMatches.forEach(match => {
+        const stepMatches =
+          chunk.match(/<intermediatestep>([\s\S]*?)<\/intermediatestep>/g) ||
+          [];
+        stepMatches.forEach((match) => {
           try {
             const jsonString = match
               .replace('<intermediatestep>', '')
@@ -417,23 +424,26 @@ data: {"value": "another valid"}
      */
     test('handles incomplete intermediate step tags', () => {
       const incompleteChunks = [
-        '<intermediatestep>{"id": "step-1",',  // Incomplete tag
-        ' "type": "system_intermediate"}</intermediatestep>',  // Completion
-        'data: {"value": "response"}\n\n'
+        '<intermediatestep>{"id": "step-1",', // Incomplete tag
+        ' "type": "system_intermediate"}</intermediatestep>', // Completion
+        'data: {"value": "response"}\n\n',
       ];
 
       let buffer = '';
       let partialStepBuffer = '';
       const completedSteps: string[] = [];
 
-      incompleteChunks.forEach(chunk => {
+      incompleteChunks.forEach((chunk) => {
         // Handle potential partial intermediate step
         if (chunk.includes('<intermediatestep>') || partialStepBuffer) {
           partialStepBuffer += chunk;
 
           // Check for complete tags
-          const stepMatches = partialStepBuffer.match(/<intermediatestep>([\s\S]*?)<\/intermediatestep>/g) || [];
-          stepMatches.forEach(match => {
+          const stepMatches =
+            partialStepBuffer.match(
+              /<intermediatestep>([\s\S]*?)<\/intermediatestep>/g,
+            ) || [];
+          stepMatches.forEach((match) => {
             try {
               const jsonString = match
                 .replace('<intermediatestep>', '')
@@ -465,31 +475,45 @@ data: {"value": "another valid"}
         '<intermediatestep>{"id": "step-1", "type": "system_intermediate"}</intermediatestep>',
         'data: {"value": " middle"}\n\n',
         '<intermediatestep>{"id": "step-2", "type": "system_intermediate"}</intermediatestep>',
-        'data: {"value": " end"}\n\n'
+        'data: {"value": " end"}\n\n',
       ];
 
-      const orderedItems: { type: 'response' | 'step', content: string, order: number }[] = [];
+      const orderedItems: {
+        type: 'response' | 'step';
+        content: string;
+        order: number;
+      }[] = [];
       let order = 0;
 
-      interleavedChunks.forEach(chunk => {
+      interleavedChunks.forEach((chunk) => {
         // Process responses
         if (chunk.includes('data: ')) {
           const { frames } = extractSsePayloads(chunk);
-          frames.forEach(frame => {
+          frames.forEach((frame) => {
             if (!frame.includes('[DONE]')) {
-              orderedItems.push({ type: 'response', content: frame, order: order++ });
+              orderedItems.push({
+                type: 'response',
+                content: frame,
+                order: order++,
+              });
             }
           });
         }
 
         // Process steps
-        const stepMatches = chunk.match(/<intermediatestep>([\s\S]*?)<\/intermediatestep>/g) || [];
-        stepMatches.forEach(match => {
+        const stepMatches =
+          chunk.match(/<intermediatestep>([\s\S]*?)<\/intermediatestep>/g) ||
+          [];
+        stepMatches.forEach((match) => {
           const jsonString = match
             .replace('<intermediatestep>', '')
             .replace('</intermediatestep>', '')
             .trim();
-          orderedItems.push({ type: 'step', content: jsonString, order: order++ });
+          orderedItems.push({
+            type: 'step',
+            content: jsonString,
+            order: order++,
+          });
         });
       });
 
@@ -511,13 +535,13 @@ data: {"value": "another valid"}
       const chunksWithTraceId = [
         'data: {"value": "Response text"}\n\n',
         '<observabilitytraceid>trace-abc-123</observabilitytraceid>',
-        'data: [DONE]\n\n'
+        'data: [DONE]\n\n',
       ];
 
       const responses: string[] = [];
       let extractedObservabilityTraceId: string | undefined = undefined;
 
-      chunksWithTraceId.forEach(chunk => {
+      chunksWithTraceId.forEach((chunk) => {
         // Extract responses from SSE data
         if (chunk.includes('data: ')) {
           const { frames } = extractSsePayloads(chunk);
@@ -525,7 +549,10 @@ data: {"value": "another valid"}
         }
 
         // Extract trace ID tags
-        const observabilityTraceIdMatches = chunk.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
+        const observabilityTraceIdMatches =
+          chunk.match(
+            /<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g,
+          ) || [];
         for (const match of observabilityTraceIdMatches) {
           try {
             const idString = match
@@ -552,16 +579,16 @@ data: {"value": "another valid"}
     test('handles incomplete observabilitytraceid tags across chunks', () => {
       const incompleteChunks = [
         'data: {"value": "start"}\n\n',
-        '<observabilitytraceid>trace-def-',  // Incomplete
-        '456</observabilitytraceid>',  // Completion
-        'data: {"value": "end"}\n\n'
+        '<observabilitytraceid>trace-def-', // Incomplete
+        '456</observabilitytraceid>', // Completion
+        'data: {"value": "end"}\n\n',
       ];
 
       let buffer = '';
       let extractedObservabilityTraceId: string | undefined = undefined;
       const responses: string[] = [];
 
-      incompleteChunks.forEach(chunk => {
+      incompleteChunks.forEach((chunk) => {
         // Handle SSE data
         if (chunk.includes('data: ')) {
           const { frames } = extractSsePayloads(chunk);
@@ -569,12 +596,18 @@ data: {"value": "another valid"}
         }
 
         // Buffer potential partial trace ID tags
-        if (chunk.includes('<observabilitytraceid>') || buffer.includes('<observabilitytraceid>')) {
+        if (
+          chunk.includes('<observabilitytraceid>') ||
+          buffer.includes('<observabilitytraceid>')
+        ) {
           buffer += chunk;
 
           // Check for complete tags
-          const observabilityTraceIdMatches = buffer.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
-          observabilityTraceIdMatches.forEach(match => {
+          const observabilityTraceIdMatches =
+            buffer.match(
+              /<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g,
+            ) || [];
+          observabilityTraceIdMatches.forEach((match) => {
             const idString = match
               .replace('<observabilitytraceid>', '')
               .replace('</observabilitytraceid>', '')
@@ -601,13 +634,16 @@ data: {"value": "another valid"}
         'data: {"value": "Response"}\n\n',
         '<observabilitytraceid>trace-first-123</observabilitytraceid>',
         '<observabilitytraceid>trace-second-456</observabilitytraceid>',
-        'data: [DONE]\n\n'
+        'data: [DONE]\n\n',
       ];
 
       let extractedObservabilityTraceId: string | undefined = undefined;
 
-      chunksWithMultiple.forEach(chunk => {
-        const observabilityTraceIdMatches = chunk.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
+      chunksWithMultiple.forEach((chunk) => {
+        const observabilityTraceIdMatches =
+          chunk.match(
+            /<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g,
+          ) || [];
         for (const match of observabilityTraceIdMatches) {
           const idString = match
             .replace('<observabilitytraceid>', '')
@@ -629,16 +665,19 @@ data: {"value": "another valid"}
     test('ignores malformed observabilitytraceid tags', () => {
       const chunksWithMalformed = [
         'data: {"value": "Response"}\n\n',
-        '<observabilitytraceid></observabilitytraceid>',  // Empty tag
-        '<observabilitytraceid>   </observabilitytraceid>',  // Whitespace only
-        '<observabilitytraceid>trace-valid-123</observabilitytraceid>',  // Valid
-        'data: [DONE]\n\n'
+        '<observabilitytraceid></observabilitytraceid>', // Empty tag
+        '<observabilitytraceid>   </observabilitytraceid>', // Whitespace only
+        '<observabilitytraceid>trace-valid-123</observabilitytraceid>', // Valid
+        'data: [DONE]\n\n',
       ];
 
       let extractedObservabilityTraceId: string | undefined = undefined;
 
-      chunksWithMalformed.forEach(chunk => {
-        const observabilityTraceIdMatches = chunk.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
+      chunksWithMalformed.forEach((chunk) => {
+        const observabilityTraceIdMatches =
+          chunk.match(
+            /<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g,
+          ) || [];
         for (const match of observabilityTraceIdMatches) {
           const idString = match
             .replace('<observabilitytraceid>', '')
@@ -658,10 +697,14 @@ data: {"value": "another valid"}
      * Success: Tags are stripped from content so they don't appear in the UI
      */
     test('removes observabilitytraceid tags from chunk content', () => {
-      let chunkValue = 'Response text <observabilitytraceid>trace-123</observabilitytraceid> more text';
+      let chunkValue =
+        'Response text <observabilitytraceid>trace-123</observabilitytraceid> more text';
 
       // Extract trace ID
-      const observabilityTraceIdMatches = chunkValue.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
+      const observabilityTraceIdMatches =
+        chunkValue.match(
+          /<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g,
+        ) || [];
       let extractedObservabilityTraceId: string | undefined = undefined;
 
       for (const match of observabilityTraceIdMatches) {
@@ -676,7 +719,10 @@ data: {"value": "another valid"}
 
       // Remove tags from content
       if (observabilityTraceIdMatches.length > 0) {
-        chunkValue = chunkValue.replace(/<observabilitytraceid>[\s\S]*?<\/observabilitytraceid>/g, '');
+        chunkValue = chunkValue.replace(
+          /<observabilitytraceid>[\s\S]*?<\/observabilitytraceid>/g,
+          '',
+        );
       }
 
       expect(extractedObservabilityTraceId).toBe('trace-123');
@@ -694,14 +740,14 @@ data: {"value": "another valid"}
         '<intermediatestep>{"id": "step-1", "type": "system_intermediate"}</intermediatestep>',
         '<observabilitytraceid>trace-interleaved-789</observabilitytraceid>',
         '<intermediatestep>{"id": "step-2", "type": "system_intermediate"}</intermediatestep>',
-        'data: {"value": " end"}\n\n'
+        'data: {"value": " end"}\n\n',
       ];
 
       let extractedObservabilityTraceId: string | undefined = undefined;
       const steps: string[] = [];
       const responses: string[] = [];
 
-      interleavedChunks.forEach(chunk => {
+      interleavedChunks.forEach((chunk) => {
         // Process responses
         if (chunk.includes('data: ')) {
           const { frames } = extractSsePayloads(chunk);
@@ -709,8 +755,10 @@ data: {"value": "another valid"}
         }
 
         // Process intermediate steps
-        const stepMatches = chunk.match(/<intermediatestep>([\s\S]*?)<\/intermediatestep>/g) || [];
-        stepMatches.forEach(match => {
+        const stepMatches =
+          chunk.match(/<intermediatestep>([\s\S]*?)<\/intermediatestep>/g) ||
+          [];
+        stepMatches.forEach((match) => {
           const jsonString = match
             .replace('<intermediatestep>', '')
             .replace('</intermediatestep>', '')
@@ -719,7 +767,10 @@ data: {"value": "another valid"}
         });
 
         // Process trace ID
-        const observabilityTraceIdMatches = chunk.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
+        const observabilityTraceIdMatches =
+          chunk.match(
+            /<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g,
+          ) || [];
         for (const match of observabilityTraceIdMatches) {
           const idString = match
             .replace('<observabilitytraceid>', '')
@@ -745,14 +796,17 @@ data: {"value": "another valid"}
         '<observabilitytraceid>trace-with-dashes-123</observabilitytraceid>',
         '<observabilitytraceid>trace_with_underscores_456</observabilitytraceid>',
         '<observabilitytraceid>trace:with:colons:789</observabilitytraceid>',
-        '<observabilitytraceid>trace.with.dots.012</observabilitytraceid>'
+        '<observabilitytraceid>trace.with.dots.012</observabilitytraceid>',
       ];
 
       const extractedIds: string[] = [];
 
-      specialChars.forEach(chunk => {
-        const observabilityTraceIdMatches = chunk.match(/<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g) || [];
-        observabilityTraceIdMatches.forEach(match => {
+      specialChars.forEach((chunk) => {
+        const observabilityTraceIdMatches =
+          chunk.match(
+            /<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g,
+          ) || [];
+        observabilityTraceIdMatches.forEach((match) => {
           const idString = match
             .replace('<observabilitytraceid>', '')
             .replace('</observabilitytraceid>', '')

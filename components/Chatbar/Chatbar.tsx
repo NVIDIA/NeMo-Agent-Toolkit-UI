@@ -130,7 +130,7 @@ export const Chatbar = () => {
   useEffect(() => {
     // Filter out homepage conversations that haven't had their first message sent
     const visibleConversations = conversations.filter(
-      (conversation) => !conversation.isHomepageConversation
+      (conversation) => !conversation.isHomepageConversation,
     );
 
     if (searchTerm) {

@@ -1,11 +1,11 @@
-'use client';
-
 import { IconChevronCompactDown } from '@tabler/icons-react';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { fetchLastMessage } from '@/utils/app/helper';
 
 import HomeContext from '@/pages/api/home/home.context';
+
+('use client');
 
 export const CustomDetails = ({ children, id, messageIndex, index }) => {
   let parsedIndex = index;
@@ -106,9 +106,7 @@ export const CustomDetails = ({ children, id, messageIndex, index }) => {
                       isOpen
                         ? `opacity-100 h-auto`
                         : `${
-                            messageIsStreaming &&
-                            isLastMessage &&
-                            'opacity-60'
+                            messageIsStreaming && isLastMessage && 'opacity-60'
                           }`
                     }
                     ${

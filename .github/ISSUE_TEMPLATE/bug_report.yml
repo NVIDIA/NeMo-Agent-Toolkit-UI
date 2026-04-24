@@ -15,8 +15,8 @@
 
 name: Bug Report
 description: File a bug report
-title: "[BUG]: "
-labels: ["bug"]
+title: '[BUG]: '
+labels: ['bug']
 
 body:
   - type: markdown
@@ -29,7 +29,7 @@ body:
     attributes:
       label: Version
       description: What version of NeMo Agent Toolkit UI are you running?
-      placeholder: "example: 0.1.0"
+      placeholder: 'example: 0.1.0'
     validations:
       required: true
 
@@ -63,11 +63,11 @@ body:
       label: Relevant log output
       description: Please paste relevant error and log output here
       value: |
-       <details><summary>Click here to see error details</summary><pre>
+        <details><summary>Click here to see error details</summary><pre>
 
-        [Paste the error here, it will be hidden by default]
+         [Paste the error here, it will be hidden by default]
 
-       </pre></details>
+        </pre></details>
 
   - type: textarea
     id: misc

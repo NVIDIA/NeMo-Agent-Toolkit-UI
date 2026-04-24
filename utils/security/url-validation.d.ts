@@ -17,4 +17,3 @@ export function validateProxyWebSocketPath(pathname: string): ValidationResult;
  * SSRF Prevention: Validates backend URLs
  */
 export function validateBackendUrl(url: string): ValidationResult;
-

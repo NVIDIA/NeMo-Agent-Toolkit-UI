@@ -14,14 +14,13 @@ import {
   extractConversationContent,
 } from '@/utils/chatTransform';
 
+import { Message, Conversation } from '@/types/chat';
 import {
   SystemResponseMessage,
   SystemIntermediateMessage,
   ErrorMessage,
   IntermediateStep,
 } from '@/types/websocket';
-
-import { Message, Conversation } from '@/types/chat';
 
 describe('chatTransform', () => {
   describe('shouldAppendResponse', () => {
@@ -135,13 +134,13 @@ describe('chatTransform', () => {
   });
 
   describe('applyMessageUpdate', () => {
-      const baseConversation: Conversation = {
-    id: 'conv-1',
-    name: 'New Conversation',
-    messages: [],
-    temperature: 0.7,
-    folderId: null,
-  };
+    const baseConversation: Conversation = {
+      id: 'conv-1',
+      name: 'New Conversation',
+      messages: [],
+      temperature: 0.7,
+      folderId: null,
+    };
 
     it('updates conversation with new messages immutably', () => {
       const newMessages: Message[] = [
@@ -158,7 +157,11 @@ describe('chatTransform', () => {
 
     it('updates conversation title from first user message', () => {
       const newMessages: Message[] = [
-        { role: 'user', content: 'What is the weather like today?', id: 'msg-1' },
+        {
+          role: 'user',
+          content: 'What is the weather like today?',
+          id: 'msg-1',
+        },
         { role: 'assistant', content: "It's sunny!", id: 'msg-2' },
       ];
 
@@ -168,7 +171,8 @@ describe('chatTransform', () => {
     });
 
     it('truncates long conversation titles to 30 characters', () => {
-      const longMessage = 'This is a very long user message that should be truncated to 30 characters';
+      const longMessage =
+        'This is a very long user message that should be truncated to 30 characters';
       const newMessages: Message[] = [
         { role: 'user', content: longMessage, id: 'msg-1' },
       ];
@@ -180,7 +184,10 @@ describe('chatTransform', () => {
     });
 
     it('does not update title if not "New Conversation"', () => {
-      const conversationWithTitle = { ...baseConversation, name: 'Existing Title' };
+      const conversationWithTitle = {
+        ...baseConversation,
+        name: 'Existing Title',
+      };
       const newMessages: Message[] = [
         { role: 'user', content: 'New message', id: 'msg-1' },
       ];
@@ -226,7 +233,7 @@ describe('chatTransform', () => {
         'Hello',
         steps,
         interactions,
-        errors
+        errors,
       );
 
       expect(message.intermediateSteps).toBe(steps);
@@ -284,7 +291,10 @@ describe('chatTransform', () => {
     });
 
     it('preserves existing observabilityTraceId', () => {
-      const messageWithTraceId = { ...baseMessage, observabilityTraceId: 'trace-123' };
+      const messageWithTraceId = {
+        ...baseMessage,
+        observabilityTraceId: 'trace-123',
+      };
       const result = updateAssistantMessage(messageWithTraceId, 'New content');
 
       expect(result.observabilityTraceId).toBe('trace-123');
@@ -299,9 +309,16 @@ describe('chatTransform', () => {
     });
 
     it('preserves observabilityTraceId when updating intermediate steps', () => {
-      const messageWithTraceId = { ...baseMessage, observabilityTraceId: 'trace-123' };
+      const messageWithTraceId = {
+        ...baseMessage,
+        observabilityTraceId: 'trace-123',
+      };
       const newSteps: IntermediateStep[] = [{ id: 'step-1' }];
-      const result = updateAssistantMessage(messageWithTraceId, 'Updated content', newSteps);
+      const result = updateAssistantMessage(
+        messageWithTraceId,
+        'Updated content',
+        newSteps,
+      );
 
       expect(result.content).toBe('Updated content');
       expect(result.intermediateSteps).toBe(newSteps);
@@ -312,12 +329,20 @@ describe('chatTransform', () => {
 
   describe('shouldRenderAssistantMessage', () => {
     it('always renders non-assistant messages', () => {
-      const userMessage: Message = { role: 'user', content: 'Hello', id: 'msg-1' };
+      const userMessage: Message = {
+        role: 'user',
+        content: 'Hello',
+        id: 'msg-1',
+      };
       expect(shouldRenderAssistantMessage(userMessage)).toBe(true);
     });
 
     it('renders assistant messages with content', () => {
-      const message: Message = { role: 'assistant', content: 'Hello', id: 'msg-1' };
+      const message: Message = {
+        role: 'assistant',
+        content: 'Hello',
+        id: 'msg-1',
+      };
       expect(shouldRenderAssistantMessage(message)).toBe(true);
     });
 

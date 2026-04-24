@@ -1,5 +1,3 @@
-'use client';
-
 import {
   IconCheck,
   IconCopy,
@@ -13,10 +11,20 @@ import {
   IconVolume2,
   IconX,
 } from '@tabler/icons-react';
-import { FC, memo, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  FC,
+  memo,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import ReactMarkdown from 'react-markdown';
 
 import { useTranslation } from 'next-i18next';
+
+import { useFeedback } from '@/hooks/useFeedback';
 
 import { updateConversation } from '@/utils/app/conversation';
 import {
@@ -25,11 +33,19 @@ import {
 } from '@/utils/app/helper';
 
 import { Message } from '@/types/chat';
-import { useFeedback } from '@/hooks/useFeedback';
 
 import HomeContext from '@/pages/api/home/home.context';
 
 import { BotAvatar } from '@/components/Avatar/BotAvatar';
+
+import { getReactMarkDownCustomComponents } from '../Markdown/CustomComponents';
+import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
+
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+
+('use client');
 
 interface WebSocketError {
   content?: {
@@ -39,19 +55,15 @@ interface WebSocketError {
   };
 }
 
-function formatWebSocketError(err: WebSocketError): { title: string; details: string } {
+function formatWebSocketError(err: WebSocketError): {
+  title: string;
+  details: string;
+} {
   return {
     title: err.content?.message || 'Error',
     details: err.content?.details || 'An unexpected error occurred',
   };
 }
-
-import { getReactMarkDownCustomComponents } from '../Markdown/CustomComponents';
-import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
-
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
 
 export interface Props {
   message: Message;
@@ -77,7 +89,7 @@ export const ChatMessage: FC<Props> = memo(
     const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
     const [showFeedbackInput, setShowFeedbackInput] = useState(false);
     const [feedbackComment, setFeedbackComment] = useState('');
-    const {submitFeedback} = useFeedback();
+    const { submitFeedback } = useFeedback();
 
     // Memoize the markdown components to prevent recreation on every render
     const markdownComponents = useMemo(() => {
@@ -107,7 +119,8 @@ export const ChatMessage: FC<Props> = memo(
     const handleEditMessage = () => {
       if (message.content != messageContent) {
         if (selectedConversation && onEdit) {
-          const deleteCount = (selectedConversation.messages.length || 0) - messageIndex;
+          const deleteCount =
+            (selectedConversation.messages.length || 0) - messageIndex;
           onEdit({ ...message, content: messageContent }, deleteCount);
         }
       }
@@ -207,9 +220,13 @@ export const ChatMessage: FC<Props> = memo(
 
     const handleSubmitFeedbackComment = async () => {
       if (!message.observabilityTraceId || !feedbackComment.trim()) return;
-      
+
       try {
-        await submitFeedback(message.observabilityTraceId, undefined, feedbackComment);
+        await submitFeedback(
+          message.observabilityTraceId,
+          undefined,
+          feedbackComment,
+        );
         closeFeedbackInput();
       } catch (error) {
         // Error is already handled in the hook
@@ -385,15 +402,20 @@ export const ChatMessage: FC<Props> = memo(
                   </div>
                   {message.errorMessages?.length > 0 && (
                     <div className="mt-2 space-y-1">
-                      {message.errorMessages.map((err: WebSocketError, idx: number) => {
-                        const { title, details } = formatWebSocketError(err);
-                        return (
-                          <div key={idx} className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-2 rounded">
-                            <span className="font-semibold">{title}: </span>
-                            <span>{details}</span>
-                          </div>
-                        );
-                      })}
+                      {message.errorMessages.map(
+                        (err: WebSocketError, idx: number) => {
+                          const { title, details } = formatWebSocketError(err);
+                          return (
+                            <div
+                              key={idx}
+                              className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-2 rounded"
+                            >
+                              <span className="font-semibold">{title}: </span>
+                              <span>{details}</span>
+                            </div>
+                          );
+                        },
+                      )}
                     </div>
                   )}
                   <div className="mt-1 flex gap-1">
@@ -431,35 +453,54 @@ export const ChatMessage: FC<Props> = memo(
                             <IconVolume2 size={20} />
                           )}
                         </button>
-                        {message.observabilityTraceId &&  (
+                        {message.observabilityTraceId && (
                           <>
                             <button
-                              className={"text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300"}
-                              onClick={() => submitFeedback(message.observabilityTraceId!, '👍')}
+                              className={
+                                'text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300'
+                              }
+                              onClick={() =>
+                                submitFeedback(
+                                  message.observabilityTraceId!,
+                                  '👍',
+                                )
+                              }
                               title="Give thumbs up"
                             >
-                              <IconThumbUp size={20}/>
+                              <IconThumbUp size={20} />
                             </button>
                             <button
-                              className={"text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300"}
+                              className={
+                                'text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300'
+                              }
                               onClick={() => {
-                                submitFeedback(message.observabilityTraceId!, '👎');
+                                submitFeedback(
+                                  message.observabilityTraceId!,
+                                  '👎',
+                                );
                                 setShowFeedbackInput(true);
                               }}
                               title="Give thumbs down"
                             >
-                              <IconThumbDown size={20}/>
+                              <IconThumbDown size={20} />
                             </button>
                             <button
-                              className={"text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300"}
-                              onClick={() => setShowFeedbackInput(!showFeedbackInput)}
+                              className={
+                                'text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300'
+                              }
+                              onClick={() =>
+                                setShowFeedbackInput(!showFeedbackInput)
+                              }
                               title="Write feedback comment"
                             >
-                              {showFeedbackInput ? <IconX size={20}/> : <IconMessage size={20}/>}
+                              {showFeedbackInput ? (
+                                <IconX size={20} />
+                              ) : (
+                                <IconMessage size={20} />
+                              )}
                             </button>
                           </>
                         )}
-
                       </>
                     )}
                   </div>

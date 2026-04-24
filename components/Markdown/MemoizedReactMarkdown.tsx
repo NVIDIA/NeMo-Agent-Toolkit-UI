@@ -19,7 +19,9 @@ const customUrlTransform = (url: string): string => {
 export const MemoizedReactMarkdown: FC<MemoizedOptions> = memo(
   ({ className, children, urlTransform = customUrlTransform, ...rest }) => (
     <div className={className}>
-      <ReactMarkdown urlTransform={urlTransform} {...rest}>{children}</ReactMarkdown>
+      <ReactMarkdown urlTransform={urlTransform} {...rest}>
+        {children}
+      </ReactMarkdown>
     </div>
   ),
   (prevProps, nextProps) =>

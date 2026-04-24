@@ -108,5 +108,6 @@ export const Image = memo(
 
     return imageElement;
   },
-  (prevProps: ImageProps, nextProps: ImageProps) => prevProps.src === nextProps.src,
+  (prevProps: ImageProps, nextProps: ImageProps) =>
+    prevProps.src === nextProps.src,
 );

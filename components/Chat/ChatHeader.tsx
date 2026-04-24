@@ -1,5 +1,3 @@
-'use client';
-
 import {
   IconArrowsSort,
   IconMobiledataOff,
@@ -14,13 +12,16 @@ import ReactMarkdown from 'react-markdown';
 
 import { env } from 'next-runtime-env';
 
-import { getWorkflowName } from '@/utils/app/helper';
 import { loadContentFile } from '@/utils/app/content';
-import { useTheme } from '@/contexts/ThemeContext';
+import { getWorkflowName } from '@/utils/app/helper';
 
 import HomeContext from '@/pages/api/home/home.context';
 
 import { DataStreamControls } from './DataStreamControls';
+
+import { useTheme } from '@/contexts/ThemeContext';
+
+('use client');
 
 interface Props {
   webSocketModeRef?: React.MutableRefObject<boolean>;
@@ -76,10 +77,10 @@ export const ChatHeader = ({ webSocketModeRef }: Props) => {
     };
 
     // Load welcome content if enabled
-    const welcomeEnabled = 
+    const welcomeEnabled =
       env('NEXT_PUBLIC_NAT_WELCOME_MESSAGE_ON') === 'true' ||
       process?.env?.NEXT_PUBLIC_NAT_WELCOME_MESSAGE_ON === 'true';
-    
+
     if (welcomeEnabled) {
       loadWelcomeContent();
     }
@@ -206,9 +207,7 @@ export const ChatHeader = ({ webSocketModeRef }: Props) => {
                   });
                 }}
                 className={`relative inline-flex h-5 w-10 items-center cursor-pointer rounded-full transition-colors duration-300 ease-in-out ${
-                  webSocketMode
-                    ? 'bg-black dark:bg-[#76b900]'
-                    : 'bg-gray-200'
+                  webSocketMode ? 'bg-black dark:bg-[#76b900]' : 'bg-gray-200'
                 }`}
               >
                 <span
@@ -229,9 +228,7 @@ export const ChatHeader = ({ webSocketModeRef }: Props) => {
               entries from different data streams are added to a database. Note: this frontend
               component does not track database updates directly; it simply offers a UI element for
               users to observe the process. */}
-          {enableStreamingRagVizOptions && (
-            <DataStreamControls />
-          )}
+          {enableStreamingRagVizOptions && <DataStreamControls />}
 
           {/* Theme Toggle Button */}
           <div className="flex items-center dark:text-white text-black transition-colors duration-300">

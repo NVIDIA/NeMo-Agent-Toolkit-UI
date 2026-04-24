@@ -1,12 +1,16 @@
-'use client';
-
 import { useEffect, useContext } from 'react';
 
-import HomeContext from '@/pages/api/home/home.context';
-import { Conversation } from '@/types/chat';
 import { saveConversation } from '@/utils/app/conversation';
-import { HTTP_PROXY_PATH, UPDATE_DATA_STREAM } from '@/constants';
+
+import { Conversation } from '@/types/chat';
+
+import HomeContext from '@/pages/api/home/home.context';
+
 import { DataStreamDisplay } from './DataStreamDisplay';
+
+import { HTTP_PROXY_PATH, UPDATE_DATA_STREAM } from '@/constants';
+
+('use client');
 
 /**
  * DataStreamManager Component
@@ -84,14 +88,19 @@ export const DataStreamManager = ({
     const interval = setInterval(async () => {
       try {
         // Get available streams
-        const streamsRes = await fetch(`${HTTP_PROXY_PATH}${UPDATE_DATA_STREAM}`);
+        const streamsRes = await fetch(
+          `${HTTP_PROXY_PATH}${UPDATE_DATA_STREAM}`,
+        );
         if (streamsRes.ok) {
           const streamsData = await streamsRes.json();
           if (streamsData.streams && Array.isArray(streamsData.streams)) {
             // Only update if streams actually changed
             const currentStreams = dataStreams || [];
             const newStreams = streamsData.streams;
-            if (JSON.stringify(currentStreams.sort()) !== JSON.stringify(newStreams.sort())) {
+            if (
+              JSON.stringify(currentStreams.sort()) !==
+              JSON.stringify(newStreams.sort())
+            ) {
               dispatch({ field: 'dataStreams', value: newStreams });
             }
           }
@@ -110,9 +119,11 @@ export const DataStreamManager = ({
   return (
     <DataStreamDisplay
       dataStreams={dataStreams || []}
-      selectedStream={selectedConversation?.selectedStream || (dataStreams && dataStreams.length > 0 ? dataStreams[0] : 'default')}
+      selectedStream={
+        selectedConversation?.selectedStream ||
+        (dataStreams && dataStreams.length > 0 ? dataStreams[0] : 'default')
+      }
       onStreamChange={handleDataStreamChange}
     />
   );
 };
-

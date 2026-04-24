@@ -3,14 +3,15 @@
  * These functions have no side effects and are easily testable
  */
 
-import { Message, Conversation } from '@/types/chat';
-import { 
-  WebSocketInbound, 
-  SystemResponseMessage, 
-  SystemIntermediateMessage,
-  IntermediateStep 
-} from '@/types/websocket';
 import { processIntermediateMessage } from '@/utils/app/helper';
+
+import { Message, Conversation } from '@/types/chat';
+import {
+  WebSocketInbound,
+  SystemResponseMessage,
+  SystemIntermediateMessage,
+  IntermediateStep,
+} from '@/types/websocket';
 
 /**
  * Determines if a WebSocket message should trigger content appending to assistant message
@@ -20,21 +21,21 @@ export function shouldAppendResponse(message: WebSocketInbound): boolean {
   if (message.type !== 'system_response_message') {
     return false;
   }
-  
+
   const systemResponse = message as SystemResponseMessage;
   const text = systemResponse.content?.text;
-  
-  return (
-    systemResponse.status === 'in_progress' &&
-    text != null && text !== ''
-  );
+
+  return systemResponse.status === 'in_progress' && text != null && text !== '';
 }
 
 /**
  * Safely appends new text to existing assistant content
  * Replaces empty/placeholder content, concatenates to existing content
  */
-export function appendAssistantText(previousContent: string, newText: string): string {
+export function appendAssistantText(
+  previousContent: string,
+  newText: string,
+): string {
   // Handle null/undefined inputs gracefully
   if (!previousContent) {
     previousContent = '';
@@ -42,19 +43,19 @@ export function appendAssistantText(previousContent: string, newText: string): s
   if (!newText) {
     newText = '';
   }
-  
+
   const trimmedPrev = previousContent.trim();
-  
+
   // If no new text, return previous
   if (newText === '') {
     return previousContent;
   }
-  
+
   // Replace empty string or placeholder content
   if (!trimmedPrev || trimmedPrev === 'FAIL') {
     return newText;
   }
-  
+
   // Concatenate to existing content
   return previousContent + newText;
 }
@@ -65,17 +66,17 @@ export function appendAssistantText(previousContent: string, newText: string): s
 export function mergeIntermediateSteps(
   existingSteps: IntermediateStep[],
   incomingStep: SystemIntermediateMessage,
-  intermediateStepOverride: boolean
+  intermediateStepOverride: boolean,
 ): IntermediateStep[] {
   const stepWithIndex = {
     ...incomingStep,
-    index: existingSteps.length || 0
+    index: existingSteps.length || 0,
   };
-  
+
   return processIntermediateMessage(
     existingSteps,
     stepWithIndex,
-    intermediateStepOverride
+    intermediateStepOverride,
   );
 }
 
@@ -85,11 +86,11 @@ export function mergeIntermediateSteps(
  */
 export function applyMessageUpdate(
   conversation: Conversation,
-  updatedMessages: Message[]
+  updatedMessages: Message[],
 ): Conversation {
   let updatedConversation = {
     ...conversation,
-    messages: updatedMessages
+    messages: updatedMessages,
   };
 
   // Update conversation title if it's still "New Conversation"
@@ -101,7 +102,7 @@ export function applyMessageUpdate(
   ) {
     updatedConversation = {
       ...updatedConversation,
-      name: firstUserMessage.content.substring(0, 30)
+      name: firstUserMessage.content.substring(0, 30),
     };
   }
 
@@ -117,7 +118,7 @@ export function createAssistantMessage(
   content: string = '',
   intermediateSteps: IntermediateStep[] = [],
   humanInteractionMessages: any[] = [],
-  errorMessages: any[] = []
+  errorMessages: any[] = [],
 ): Message {
   return {
     role: 'assistant' as const,
@@ -127,7 +128,7 @@ export function createAssistantMessage(
     intermediateSteps,
     humanInteractionMessages,
     errorMessages,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   };
 }
 
@@ -137,13 +138,13 @@ export function createAssistantMessage(
 export function updateAssistantMessage(
   message: Message,
   newContent?: string,
-  newIntermediateSteps?: IntermediateStep[]
+  newIntermediateSteps?: IntermediateStep[],
 ): Message {
   return {
     ...message,
     content: newContent !== undefined ? newContent : message.content || '',
     intermediateSteps: newIntermediateSteps || message.intermediateSteps || [],
-    timestamp: Date.now()
+    timestamp: Date.now(),
   };
 }
 
@@ -155,11 +156,11 @@ export function shouldRenderAssistantMessage(message: Message): boolean {
   if (message.role !== 'assistant') {
     return true; // Always render non-assistant messages
   }
-  
+
   const content = message.content;
   const hasContent = Boolean(content && content.trim());
   const hasIntermediateSteps = Boolean(message.intermediateSteps?.length);
-  
+
   return hasContent || hasIntermediateSteps;
 }
 

@@ -1,5 +1,3 @@
-'use client';
-
 import {
   IconCheck,
   IconCpu,
@@ -9,6 +7,8 @@ import {
   IconChevronUp,
 } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
+
+('use client');
 
 // Import IconLoader for the loading state
 

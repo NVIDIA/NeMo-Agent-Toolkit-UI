@@ -95,12 +95,13 @@ const Chart = (props: any) => {
     height: 100,
     interval: 0, // disable auto-hiding of labels
     tickFormatter: (label: string) => {
-        // truncate long xAxis labels with ellipsis
+      // truncate long xAxis labels with ellipsis
       const maxLength = 20;
-      return label.length > maxLength ? `${label.substring(0, maxLength)}...` : label;
+      return label.length > maxLength
+        ? `${label.substring(0, maxLength)}...`
+        : label;
     },
   };
-
 
   const handleDownload = async () => {
     try {
@@ -151,7 +152,12 @@ const Chart = (props: any) => {
               <YAxis />
               <Tooltip />
               <Legend {...LegendProps} />
-              <Line type="monotone" dataKey={YAxisKey} name={SeriesLabel} stroke={colors.fill}  />
+              <Line
+                type="monotone"
+                dataKey={YAxisKey}
+                name={SeriesLabel}
+                stroke={colors.fill}
+              />
             </LineChart>
           </ResponsiveContainer>
         );
@@ -239,8 +245,17 @@ const Chart = (props: any) => {
               <YAxis />
               <Tooltip />
               <Legend {...LegendProps} />
-              <Bar dataKey={BarKey} name={SeriesLabelMap.bar} fill={colors.fill} />
-              <Line dataKey={LineKey} name={SeriesLabelMap.line} stroke={colors.stroke} type="monotone" />
+              <Bar
+                dataKey={BarKey}
+                name={SeriesLabelMap.bar}
+                fill={colors.fill}
+              />
+              <Line
+                dataKey={LineKey}
+                name={SeriesLabelMap.line}
+                stroke={colors.stroke}
+                type="monotone"
+              />
             </ComposedChart>
           </ResponsiveContainer>
         );

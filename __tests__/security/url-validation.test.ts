@@ -1,6 +1,6 @@
 /**
  * URL Validation Tests
- * 
+ *
  * Tests for Media URL, OAuth URL, and Path Normalization validation.
  * HTTP/WebSocket path validation is handled server-side in the proxy layer.
  */
@@ -37,10 +37,10 @@ describe('URL Validation Tests', () => {
           'https://media.company.org/assets/logo.svg',
           // truncated
           'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA',
-          'data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAABXg'
+          'data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAABXg',
         ];
 
-        validUrls.forEach(url => {
+        validUrls.forEach((url) => {
           expect(isValidMediaURL(url)).toBe(true);
         });
       });
@@ -56,10 +56,10 @@ describe('URL Validation Tests', () => {
           'https://localhost:3000/video.mp4',
           'http://127.0.0.1:8080/media.png',
           'https://127.1.1.1:5000/asset.gif',
-          'http://[::1]:3000/image.jpg'
+          'http://[::1]:3000/image.jpg',
         ];
 
-        devUrls.forEach(url => {
+        devUrls.forEach((url) => {
           expect(isValidMediaURL(url)).toBe(true);
         });
       });
@@ -75,10 +75,10 @@ describe('URL Validation Tests', () => {
           // temorary, add to allowed list when we add support for SVG
           'data:image/svg+xml,<svg><text>Hello World</text></svg>',
           'file:///etc/passwd',
-          'ftp://evil.com/image.jpg'
+          'ftp://evil.com/image.jpg',
         ];
 
-        dangerousUrls.forEach(url => {
+        dangerousUrls.forEach((url) => {
           expect(isValidMediaURL(url)).toBe(false);
         });
       });
@@ -86,10 +86,10 @@ describe('URL Validation Tests', () => {
       it('blocks URLs with embedded credentials', () => {
         const credentialUrls = [
           'https://user:password@example.com/image.jpg',
-          'http://admin:secret@cdn.com/video.mp4'
+          'http://admin:secret@cdn.com/video.mp4',
         ];
 
-        credentialUrls.forEach(url => {
+        credentialUrls.forEach((url) => {
           expect(isValidMediaURL(url)).toBe(false);
         });
       });
@@ -98,11 +98,11 @@ describe('URL Validation Tests', () => {
         const ssrfUrls = [
           'http://0.0.0.0/image.jpg',
           'https://224.0.0.1/video.mp4', // Multicast
-          'http://240.1.1.1/media.png',   // Multicast
-          'https://255.255.255.255/image.gif' // Broadcast
+          'http://240.1.1.1/media.png', // Multicast
+          'https://255.255.255.255/image.gif', // Broadcast
         ];
 
-        ssrfUrls.forEach(url => {
+        ssrfUrls.forEach((url) => {
           expect(isValidMediaURL(url)).toBe(false);
         });
       });
@@ -115,10 +115,10 @@ describe('URL Validation Tests', () => {
           '://no-protocol.com/video.mp4',
           null,
           undefined,
-          123
+          123,
         ];
 
-        invalidUrls.forEach(url => {
+        invalidUrls.forEach((url) => {
           expect(isValidMediaURL(url as any)).toBe(false);
         });
       });
@@ -128,10 +128,10 @@ describe('URL Validation Tests', () => {
           'https://example.com\x00/image.jpg',
           'https://example.com\x0a/video.mp4',
           'https://example.com\x0d/media.png',
-          'https://example.com\x7f/image.gif'
+          'https://example.com\x7f/image.gif',
         ];
 
-        controlCharUrls.forEach(url => {
+        controlCharUrls.forEach((url) => {
           expect(isValidMediaURL(url)).toBe(false);
         });
       });
@@ -148,10 +148,10 @@ describe('URL Validation Tests', () => {
           'https://accounts.google.com/oauth/authorize',
           'https://login.microsoftonline.com/oauth2/authorize',
           'https://github.com/login/oauth/authorize',
-          'https://api.example.com/oauth/consent'
+          'https://api.example.com/oauth/consent',
         ];
 
-        validUrls.forEach(url => {
+        validUrls.forEach((url) => {
           expect(isValidConsentPromptURL(url)).toBe(true);
         });
       });
@@ -168,10 +168,10 @@ describe('URL Validation Tests', () => {
           'data:text/html,<script>alert("xss")</script>',
           'vbscript:msgbox("xss")',
           'file:///etc/passwd',
-          'ftp://evil.com/malware'
+          'ftp://evil.com/malware',
         ];
 
-        dangerousUrls.forEach(url => {
+        dangerousUrls.forEach((url) => {
           expect(isValidConsentPromptURL(url)).toBe(false);
         });
       });
@@ -180,10 +180,10 @@ describe('URL Validation Tests', () => {
         const credentialUrls = [
           'https://user:password@example.com/oauth',
           'http://admin:secret@malicious.com',
-          'https://attacker:token@legitimate-site.com/oauth'
+          'https://attacker:token@legitimate-site.com/oauth',
         ];
 
-        credentialUrls.forEach(url => {
+        credentialUrls.forEach((url) => {
           expect(isValidConsentPromptURL(url)).toBe(false);
         });
       });
@@ -195,23 +195,23 @@ describe('URL Validation Tests', () => {
           'ht tp://broken.com',
           '://no-protocol.com',
           null,
-          undefined
+          undefined,
         ];
 
-        malformedUrls.forEach(url => {
+        malformedUrls.forEach((url) => {
           expect(isValidConsentPromptURL(url as any)).toBe(false);
         });
       });
 
       it('blocks URLs with control characters', () => {
         const controlCharUrls = [
-          'https://example.com /oauth',  // space character
+          'https://example.com /oauth', // space character
           'https://example.com\t/oauth', // tab character
           'https://example.com\n/oauth', // newline character
-          'https://example.com\r/oauth'  // carriage return
+          'https://example.com\r/oauth', // carriage return
         ];
 
-        controlCharUrls.forEach(url => {
+        controlCharUrls.forEach((url) => {
           expect(isValidConsentPromptURL(url)).toBe(false);
         });
       });

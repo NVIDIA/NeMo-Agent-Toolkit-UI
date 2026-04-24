@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+
 import { SESSION_COOKIE_NAME, HTTP_PROXY_PATH } from './constants';
 
 export default function middleware(req: NextRequest) {
@@ -55,7 +56,7 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
-     * 
+     *
      * Note: API auth routes are filtered dynamically in the middleware
      * function to respect the HTTP_PROXY_PATH environment variable
      */

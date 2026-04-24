@@ -14,7 +14,7 @@ export interface MockWebSocket {
   onerror: ((event: Event) => void) | null;
   readyState: number;
   url: string;
-  
+
   // Test helpers
   mockOpen: () => void;
   mockMessage: (data: any) => void;
@@ -32,12 +32,12 @@ class MockWebSocketClass implements MockWebSocket {
   public close = (() => {}) as any;
   public addEventListener = (() => {}) as any;
   public removeEventListener = (() => {}) as any;
-  
+
   public onopen: ((event: Event) => void) | null = null;
   public onmessage: ((event: MessageEvent) => void) | null = null;
   public onclose: ((event: CloseEvent) => void) | null = null;
   public onerror: ((event: Event) => void) | null = null;
-  
+
   public readyState = MockWebSocketClass.CONNECTING;
   public url: string;
 
@@ -57,8 +57,8 @@ class MockWebSocketClass implements MockWebSocket {
 
   public mockMessage(data: any) {
     if (this.onmessage) {
-      const event = new MessageEvent('message', { 
-        data: typeof data === 'string' ? data : JSON.stringify(data) 
+      const event = new MessageEvent('message', {
+        data: typeof data === 'string' ? data : JSON.stringify(data),
       });
       this.onmessage(event);
     }
