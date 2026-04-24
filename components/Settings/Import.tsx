@@ -1,11 +1,9 @@
 import { IconFileImport } from '@tabler/icons-react';
 import { FC } from 'react';
 import toast from 'react-hot-toast';
-
 import { useTranslation } from 'next-i18next';
 
 import { validateImportData } from '@/utils/security/import-validation';
-
 import { SupportedExportFormats } from '@/types/export';
 
 import { SidebarButton } from '../Sidebar/SidebarButton';

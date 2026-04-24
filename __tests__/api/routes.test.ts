@@ -11,7 +11,6 @@ const {
   buildChatStreamPayload,
   parseOptionalParams,
 } = require('../../proxy/request-transformers');
-
 const {
   processGenerate,
   processGenerateStream,

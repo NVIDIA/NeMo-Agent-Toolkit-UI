@@ -1,8 +1,9 @@
 import { DocumentProps, Head, Html, Main, NextScript } from 'next/document';
 
+import { APPLICATION_UI_NAME } from '@/constants';
+
 import i18nextConfig from '../next-i18next.config';
 
-import { APPLICATION_UI_NAME } from '@/constants';
 
 type Props = DocumentProps & {
   // add custom document props

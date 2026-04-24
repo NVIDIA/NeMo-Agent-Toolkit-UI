@@ -109,7 +109,7 @@ describe('HTTP Streaming Edge Cases', () => {
         'data: [DONE]\n\n', // End marker
       ];
 
-      let allFrames: string[] = [];
+      const allFrames: string[] = [];
       chunks.forEach((chunk) => {
         buffer += chunk;
         const { frames, rest } = extractSsePayloads(buffer);
@@ -317,7 +317,7 @@ data: {"value": "another valid"}
       );
 
       let buffer = '';
-      let allFrames: string[] = [];
+      const allFrames: string[] = [];
 
       rapidChunks.forEach((chunk) => {
         buffer += chunk;
@@ -429,7 +429,7 @@ data: {"value": "another valid"}
         'data: {"value": "response"}\n\n',
       ];
 
-      let buffer = '';
+      const buffer = '';
       let partialStepBuffer = '';
       const completedSteps: string[] = [];
 

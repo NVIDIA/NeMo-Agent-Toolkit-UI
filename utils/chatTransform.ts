@@ -4,7 +4,6 @@
  */
 
 import { processIntermediateMessage } from '@/utils/app/helper';
-
 import { Message, Conversation } from '@/types/chat';
 import {
   WebSocketInbound,

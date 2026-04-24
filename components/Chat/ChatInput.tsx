@@ -22,16 +22,13 @@ import {
   useState,
 } from 'react';
 import toast from 'react-hot-toast';
-
 import { useTranslation } from 'next-i18next';
 import { env } from 'next-runtime-env';
 
 import { appConfig } from '@/utils/app/const';
 import { loadContentFile } from '@/utils/app/content';
 import { compressImage, getWorkflowName } from '@/utils/app/helper';
-
 import { Message } from '@/types/chat';
-
 import HomeContext from '@/pages/api/home/home.context';
 
 import {
@@ -282,7 +279,7 @@ export const ChatInput = ({
   }) => {
     const clipboardData =
       event.clipboardData || event.originalEvent.clipboardData;
-    let items = clipboardData.items;
+    const items = clipboardData.items;
     let isImagePasted = false;
 
     if (items) {
@@ -304,7 +301,7 @@ export const ChatInput = ({
 
     // Handle text only if no image was pasted
     if (!isImagePasted) {
-      let text = clipboardData.getData('text/plain');
+      const text = clipboardData.getData('text/plain');
       if (text) {
         // setContent(text); // Set text content only if text is pasted
       }

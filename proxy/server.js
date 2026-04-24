@@ -3,10 +3,12 @@
 require('dotenv').config();
 
 const http = require('http');
-const httpProxy = require('http-proxy');
 const url = require('url');
 const querystring = require('querystring');
+
+const httpProxy = require('http-proxy');
 const { detectPort } = require('detect-port');
+
 const constants = require('../constants');
 
 const {

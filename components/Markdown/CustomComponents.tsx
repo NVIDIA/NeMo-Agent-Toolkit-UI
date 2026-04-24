@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { isEqual } from 'lodash';
 
 import Chart from '@/components/Markdown/Chart';
 import { CodeBlock } from '@/components/Markdown/CodeBlock';
@@ -7,7 +8,6 @@ import { CustomSummary } from '@/components/Markdown/CustomSummary';
 import { Image } from '@/components/Markdown/Image';
 import { Video } from '@/components/Markdown/Video';
 
-import { isEqual } from 'lodash';
 
 export const getReactMarkDownCustomComponents = (
   messageIndex = 0,

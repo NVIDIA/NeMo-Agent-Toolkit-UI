@@ -1,14 +1,12 @@
 import { useEffect, useContext } from 'react';
 
 import { saveConversation } from '@/utils/app/conversation';
-
 import { Conversation } from '@/types/chat';
-
 import HomeContext from '@/pages/api/home/home.context';
+import { HTTP_PROXY_PATH, UPDATE_DATA_STREAM } from '@/constants';
 
 import { DataStreamDisplay } from './DataStreamDisplay';
 
-import { HTTP_PROXY_PATH, UPDATE_DATA_STREAM } from '@/constants';
 
 ('use client');
 

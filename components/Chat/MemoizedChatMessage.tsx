@@ -1,8 +1,8 @@
 import { FC, memo } from 'react';
+import isEqual from 'lodash/isEqual';
 
 import { ChatMessage, Props } from './ChatMessage';
 
-import isEqual from 'lodash/isEqual';
 
 export const MemoizedChatMessage: FC<Props> = memo(
   ChatMessage,

@@ -1,12 +1,11 @@
 import { useEffect, useRef } from 'react';
-
 import { GetServerSideProps } from 'next';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
+import { v4 as uuidv4 } from 'uuid';
 
 import { useCreateReducer } from '@/hooks/useCreateReducer';
-
 import {
   cleanConversationHistory,
   cleanSelectedConversation,
@@ -19,23 +18,20 @@ import {
 import { saveFolders } from '@/utils/app/folders';
 import { getWorkflowName } from '@/utils/app/helper';
 import { getSettings } from '@/utils/app/settings';
-
 import { Conversation } from '@/types/chat';
 import { KeyValuePair } from '@/types/data';
 import { FolderInterface, FolderType } from '@/types/folder';
-
 import { Chat } from '@/components/Chat/Chat';
 import { ChatHeader } from '@/components/Chat/ChatHeader';
 import { Chatbar } from '@/components/Chatbar/Chatbar';
 import { DataStreamManager } from '@/components/DataStreamDisplay/DataStreamManager';
 import { Navbar } from '@/components/Mobile/Navbar';
+import { APPLICATION_NAME } from '@/constants';
+import { useTheme } from '@/contexts/ThemeContext';
 
 import HomeContext from './home.context';
 import { HomeInitialState, initialState } from './home.state';
 
-import { APPLICATION_NAME } from '@/constants';
-import { useTheme } from '@/contexts/ThemeContext';
-import { v4 as uuidv4 } from 'uuid';
 
 ('use client');
 

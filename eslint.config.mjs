@@ -1,5 +1,6 @@
-import { FlatCompat } from '@eslint/eslintrc';
 import path from 'path';
+
+import { FlatCompat } from '@eslint/eslintrc';
 
 // Reuse the existing .eslintrc.js settings via the compatibility helper, but
 // constrain what gets linted and reintroduce ignores (ESLint v9 no longer has

@@ -7,8 +7,8 @@ import {
   useState,
 } from 'react';
 import toast from 'react-hot-toast';
-
 import { useTranslation } from 'next-i18next';
+import { v4 as uuidv4 } from 'uuid';
 
 import { webSocketMessageTypes } from '@/utils/app/const';
 import {
@@ -32,7 +32,6 @@ import {
 } from '@/utils/chatTransform';
 import { throttle } from '@/utils/data/throttle';
 import { isValidConsentPromptURL } from '@/utils/security/oauth-validation';
-
 import { Conversation, Message } from '@/types/chat';
 import {
   WebSocketInbound,
@@ -50,15 +49,8 @@ import {
   extractOAuthUrl,
   shouldAppendResponseContent,
 } from '@/types/websocket';
-
 import HomeContext from '@/pages/api/home/home.context';
-
 import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
-
-import { ChatInput } from './ChatInput';
-import { ChatLoader } from './ChatLoader';
-import { MemoizedChatMessage } from './MemoizedChatMessage';
-
 import {
   DEFAULT_CORE_ROUTE,
   WEBSOCKET_PROXY_PATH,
@@ -74,7 +66,11 @@ import {
   buildChatStreamPayload,
   buildCaRagPayload,
 } from '@/proxy/request-transformers';
-import { v4 as uuidv4 } from 'uuid';
+
+import { ChatInput } from './ChatInput';
+import { ChatLoader } from './ChatLoader';
+import { MemoizedChatMessage } from './MemoizedChatMessage';
+
 
 ('use client');
 
@@ -1292,7 +1288,7 @@ export const Chat = () => {
               }
 
               // Process complete observability_trace_id tags
-              let observabilityTraceIdMatches =
+              const observabilityTraceIdMatches =
                 chunkValue.match(
                   /<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g,
                 ) || [];
@@ -1334,8 +1330,8 @@ export const Chat = () => {
               }
 
               // Process complete intermediate steps
-              let rawIntermediateSteps: any[] = [];
-              let stepMatches =
+              const rawIntermediateSteps: any[] = [];
+              const stepMatches =
                 chunkValue.match(
                   /<intermediatestep>([\s\S]*?)<\/intermediatestep>/g,
                 ) || [];
@@ -1345,7 +1341,7 @@ export const Chat = () => {
                     .replace('<intermediatestep>', '')
                     .replace('</intermediatestep>', '')
                     .trim();
-                  let rawIntermediateMessage = tryParseJson<any>(jsonString);
+                  const rawIntermediateMessage = tryParseJson<any>(jsonString);
                   // handle intermediate data
                   if (rawIntermediateMessage?.type === 'system_intermediate') {
                     rawIntermediateSteps.push(rawIntermediateMessage);

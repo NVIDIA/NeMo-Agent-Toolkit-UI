@@ -11,9 +11,7 @@ import {
   isOAuthConsentMessage,
   extractOAuthUrl,
 } from '@/types/websocket';
-
 import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
-
 import MockWebSocket from '@/__mocks__/websocket';
 import { SESSION_COOKIE_NAME } from '@/constants';
 
@@ -724,7 +722,7 @@ describe('WebSocket Functionality', () => {
           current: conversationsRef.current[0],
         };
 
-        let dispatchCalls: any[] = [];
+        const dispatchCalls: any[] = [];
         const mockDispatch = (action: any) => {
           dispatchCalls.push(action);
         };

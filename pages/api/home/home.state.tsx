@@ -2,7 +2,6 @@ import { env } from 'next-runtime-env';
 
 import { Conversation, Message } from '@/types/chat';
 import { FolderInterface } from '@/types/folder';
-
 import { DEFAULT_CORE_ROUTE, CORE_ROUTE_OPTIONS } from '@/constants';
 
 export interface HomeInitialState {

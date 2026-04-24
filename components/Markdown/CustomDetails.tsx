@@ -2,7 +2,6 @@ import { IconChevronCompactDown } from '@tabler/icons-react';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { fetchLastMessage } from '@/utils/app/helper';
-
 import HomeContext from '@/pages/api/home/home.context';
 
 ('use client');

@@ -1,7 +1,6 @@
 import toast from 'react-hot-toast';
 
 import { validateImportData } from '@/utils/security/import-validation';
-
 import { MAX_FILE_SIZE_BYTES } from '@/constants';
 
 // Mock react-hot-toast module

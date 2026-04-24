@@ -53,8 +53,8 @@ describe('Auto-scroll and UI Behavior', () => {
      * Success: scrollIntoView is called on messagesEndRef when auto-scroll is enabled during streaming
      */
     test('auto-scrolls during message streaming', () => {
-      let autoScrollEnabled = true;
-      let messageIsStreaming = true;
+      const autoScrollEnabled = true;
+      const messageIsStreaming = true;
 
       const scrollDown = () => {
         if (autoScrollEnabled) {
@@ -110,7 +110,7 @@ describe('Auto-scroll and UI Behavior', () => {
     test('stops auto-scroll when user scrolls up manually', () => {
       let autoScrollEnabled = true;
       let showScrollDownButton = false;
-      let messageIsStreaming = true;
+      const messageIsStreaming = true;
       let lastScrollTop = 400;
 
       const handleScroll = () => {
@@ -415,8 +415,8 @@ describe('Auto-scroll and UI Behavior', () => {
         return mockObserver;
       });
 
-      let autoScrollEnabled = true;
-      let messageIsStreaming = true;
+      const autoScrollEnabled = true;
+      const messageIsStreaming = true;
 
       // Setup observer (simulating useEffect)
       const observer = new IntersectionObserver(
@@ -552,7 +552,7 @@ describe('Auto-scroll and UI Behavior', () => {
      * Success: Scroll state updates are processed sequentially without conflicts or data loss
      */
     test('prevents scroll state race conditions', () => {
-      let scrollState = { processing: false, pendingUpdate: null as any };
+      const scrollState = { processing: false, pendingUpdate: null as any };
 
       const canProcessUpdate = () => {
         return !scrollState.processing;
@@ -588,7 +588,7 @@ describe('Auto-scroll and UI Behavior', () => {
      * Success: Textarea focus method is called when intersection observer detects messages end is intersecting
      */
     test('focuses textarea when messages end is intersecting', () => {
-      let textareaRef = { current: { focus: jest.fn() } as any };
+      const textareaRef = { current: { focus: jest.fn() } as any };
       let observerCallback: ((entries: any[]) => void) | null = null;
 
       const mockObserver = {

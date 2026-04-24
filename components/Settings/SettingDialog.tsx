@@ -1,16 +1,13 @@
 import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 import { FC, useContext, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-
 import { useTranslation } from 'next-i18next';
 
 import {
   validateOptionalGenerationJson,
   validateWebSocketCustomParams,
 } from '@/utils/app/settingsValidation';
-
 import HomeContext from '@/pages/api/home/home.context';
-
 import {
   DEFAULT_CORE_ROUTE,
   CHAT_STREAM,
