@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write .",
+    "format:ci": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "jest --runInBand",
     "test:watch": "jest --watch",

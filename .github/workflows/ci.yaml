@@ -60,9 +60,12 @@ jobs:
         with:
           node-version: ${{ env.NAT_UI_CI_NODE_VERSION }}
 
-      - run: npm ci
-      - run: npm run lint
-      - run: npx prettier --check .
-      - run: npm run typecheck
-      - run: npm run build
-      - run: npm run test:ci
+      - run: |
+          set -e
+          cd ${{ env.NAT_UI_CI_WORKSPACE }}
+          npm ci
+          npm run lint
+          npx run format:ci
+          npm run typecheck
+          npm run build
+          npm run test:ci
