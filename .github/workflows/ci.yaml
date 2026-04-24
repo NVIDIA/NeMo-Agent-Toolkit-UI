@@ -65,7 +65,7 @@ jobs:
           cd ${{ env.NAT_UI_CI_WORKSPACE }}
           npm ci
           npm run lint
-          npx run format:ci
+          npm run format:ci
           npm run typecheck
           npm run build
           npm run test:ci
