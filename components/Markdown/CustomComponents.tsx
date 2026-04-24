@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { isEqual } from 'lodash';
 
 import Chart from '@/components/Markdown/Chart';
 import { CodeBlock } from '@/components/Markdown/CodeBlock';
@@ -8,6 +7,7 @@ import { CustomSummary } from '@/components/Markdown/CustomSummary';
 import { Image } from '@/components/Markdown/Image';
 import { Video } from '@/components/Markdown/Video';
 
+import { isEqual } from 'lodash';
 
 export const getReactMarkDownCustomComponents = (
   messageIndex = 0,
@@ -113,21 +113,33 @@ export const getReactMarkDownCustomComponents = (
 
     ol: memo(
       function Ol({ children, ...props }) {
-        return <ol className="list-decimal" {...props}>{children}</ol>;
+        return (
+          <ol className="list-decimal" {...props}>
+            {children}
+          </ol>
+        );
       },
       (prevProps, nextProps) => isEqual(prevProps.children, nextProps.children),
     ),
 
     ul: memo(
       function Ul({ children, ...props }) {
-        return <ul className="list-disc" {...props}>{children}</ul>;
+        return (
+          <ul className="list-disc" {...props}>
+            {children}
+          </ul>
+        );
       },
       (prevProps, nextProps) => isEqual(prevProps.children, nextProps.children),
     ),
 
     li: memo(
       function Li({ children, ...props }) {
-        return <li className="leading-[1.35rem]" {...props}>{children}</li>;
+        return (
+          <li className="leading-[1.35rem]" {...props}>
+            {children}
+          </li>
+        );
       },
       (prevProps, nextProps) => isEqual(prevProps.children, nextProps.children),
     ),
@@ -179,19 +191,27 @@ export const getReactMarkDownCustomComponents = (
       (prevProps, nextProps) => isEqual(prevProps.children, nextProps.children),
     ),
     img: memo(
-      function Img(props) { return <Image {...props} />; },
+      function Img(props) {
+        return <Image {...props} />;
+      },
       (prevProps, nextProps) => isEqual(prevProps, nextProps),
     ),
     video: memo(
-      function Vid(props) { return <Video {...props} />; },
+      function Vid(props) {
+        return <Video {...props} />;
+      },
       (prevProps, nextProps) => isEqual(prevProps, nextProps),
     ),
     details: memo(
-      function Details(props) { return <CustomDetails messageIndex={messageIndex} {...props} />; },
+      function Details(props) {
+        return <CustomDetails messageIndex={messageIndex} {...props} />;
+      },
       (prevProps, nextProps) => isEqual(prevProps, nextProps),
     ),
     summary: memo(
-      function Summary(props) { return <CustomSummary {...props} />; },
+      function Summary(props) {
+        return <CustomSummary {...props} />;
+      },
       (prevProps, nextProps) => isEqual(prevProps, nextProps),
     ),
   };

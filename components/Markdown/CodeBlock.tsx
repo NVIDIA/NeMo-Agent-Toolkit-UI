@@ -2,6 +2,7 @@ import { IconCheck, IconClipboard, IconDownload } from '@tabler/icons-react';
 import { FC, memo, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter/dist/esm';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
 import { useTranslation } from 'next-i18next';
 
 import {

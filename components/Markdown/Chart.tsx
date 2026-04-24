@@ -1,7 +1,9 @@
 import { IconDownload } from '@tabler/icons-react';
 import React from 'react';
 import toast from 'react-hot-toast';
+
 import dynamic from 'next/dynamic';
+
 import * as htmlToImage from 'html-to-image';
 import {
   BarChart,

@@ -1,5 +1,6 @@
 import { IconX, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
+
 import { useTranslation } from 'next-i18next';
 
 import { fetchMCPClients, MCPClient } from '@/utils/api/mcpClient';

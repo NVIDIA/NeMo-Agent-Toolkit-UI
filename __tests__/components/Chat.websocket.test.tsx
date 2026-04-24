@@ -11,7 +11,9 @@ import {
   isOAuthConsentMessage,
   extractOAuthUrl,
 } from '@/types/websocket';
+
 import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
+
 import MockWebSocket from '@/__mocks__/websocket';
 import { SESSION_COOKIE_NAME } from '@/constants';
 

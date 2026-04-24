@@ -20,13 +20,16 @@ import {
   useState,
 } from 'react';
 import toast from 'react-hot-toast';
+
 import { useTranslation } from 'next-i18next';
 import { env } from 'next-runtime-env';
 
 import { appConfig } from '@/utils/app/const';
 import { loadContentFile } from '@/utils/app/content';
 import { compressImage, getWorkflowName } from '@/utils/app/helper';
+
 import { Message } from '@/types/chat';
+
 import HomeContext from '@/pages/api/home/home.context';
 
 import {
@@ -73,8 +76,7 @@ export const ChatInput = ({
   const [inputFile, setInputFile] = useState(null);
   const [, setInputFileExtension] = useState('');
   const [inputFileContent, setInputFileContent] = useState('');
-  const [, setInputFileContentCompressed] =
-    useState('');
+  const [, setInputFileContentCompressed] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef(null);
   const [promptSuggestions, setPromptSuggestions] =
@@ -84,7 +86,9 @@ export const ChatInput = ({
     fileInputRef?.current.click();
   };
 
-  const handleInputFileDelete = (_e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleInputFileDelete = (
+    _e: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
     setInputFile(null);
     setInputFileExtension('');
     setInputFileContent('');

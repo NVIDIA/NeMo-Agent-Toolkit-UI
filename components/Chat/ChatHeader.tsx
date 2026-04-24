@@ -9,15 +9,17 @@ import {
 } from '@tabler/icons-react';
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+
 import { env } from 'next-runtime-env';
 
 import { loadContentFile } from '@/utils/app/content';
 import { getWorkflowName } from '@/utils/app/helper';
+
 import HomeContext from '@/pages/api/home/home.context';
-import { useTheme } from '@/contexts/ThemeContext';
 
 import { DataStreamControls } from './DataStreamControls';
 
+import { useTheme } from '@/contexts/ThemeContext';
 
 ('use client');
 

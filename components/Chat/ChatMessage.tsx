@@ -21,24 +21,29 @@ import {
   useState,
 } from 'react';
 import ReactMarkdown from 'react-markdown';
+
 import { useTranslation } from 'next-i18next';
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
 
 import { useFeedback } from '@/hooks/useFeedback';
+
 import { updateConversation } from '@/utils/app/conversation';
 import {
   fixMalformedHtml,
   generateContentIntermediate,
 } from '@/utils/app/helper';
+
 import { Message } from '@/types/chat';
+
 import HomeContext from '@/pages/api/home/home.context';
+
 import { BotAvatar } from '@/components/Avatar/BotAvatar';
 
 import { getReactMarkDownCustomComponents } from '../Markdown/CustomComponents';
 import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
 
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 
 ('use client');
 
