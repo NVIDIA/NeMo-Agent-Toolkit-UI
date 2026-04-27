@@ -1,8 +1,4 @@
-import {
-  IconExclamationCircle,
-  IconMaximize,
-  IconX,
-} from '@tabler/icons-react';
+import { IconExclamationCircle } from '@tabler/icons-react';
 import React, { memo, useMemo, useRef, useState, useCallback } from 'react';
 
 import { isValidMediaURL } from '@/utils/media/validation';
@@ -108,5 +104,7 @@ export const Image = memo(
 
     return imageElement;
   },
-  (prevProps: ImageProps, nextProps: ImageProps) => prevProps.src === nextProps.src,
+  (prevProps: ImageProps, nextProps: ImageProps) =>
+    prevProps.src === nextProps.src,
 );
+Image.displayName = 'Image';

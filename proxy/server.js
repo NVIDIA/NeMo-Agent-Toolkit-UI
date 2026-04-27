@@ -3,11 +3,14 @@
 require('dotenv').config();
 
 const http = require('http');
-const httpProxy = require('http-proxy');
 const url = require('url');
 const querystring = require('querystring');
+
+/* eslint-disable import/order */
+const httpProxy = require('http-proxy');
 const { detectPort } = require('detect-port');
 const constants = require('../constants');
+/* eslint-enable import/order */
 
 const {
   HTTP_PROXY_PATH,
@@ -71,7 +74,7 @@ const NEXT_DEV_TARGET =
 // Validate NEXT_INTERNAL_URL format
 try {
   new URL(NEXT_DEV_TARGET);
-} catch (err) {
+} catch (_err) {
   console.error('ERROR: Invalid NEXT_INTERNAL_URL format:', NEXT_DEV_TARGET);
   console.error(
     'Expected format: http://hostname:port or https://hostname:port',
@@ -265,10 +268,7 @@ const server = http.createServer(async (req, res) => {
 
           if (!initRes.ok) {
             const detail = await initRes.text();
-            console.error(
-              `[CA RAG] /init failed (${initRes.status}):`,
-              detail,
-            );
+            console.error(`[CA RAG] /init failed (${initRes.status}):`, detail);
             if (!res.headersSent) {
               res.writeHead(initRes.status, {
                 'Content-Type': 'application/json',
@@ -361,12 +361,18 @@ server.on('upgrade', (req, socket, head) => {
 
     if (parsedUrl.query && parsedUrl.query._ws_headers) {
       try {
-        const raw = Buffer.from(parsedUrl.query._ws_headers, 'base64').toString('utf8');
+        const raw = Buffer.from(parsedUrl.query._ws_headers, 'base64').toString(
+          'utf8',
+        );
         const headers = JSON.parse(raw);
-        if (typeof headers === 'object' && headers !== null && !Array.isArray(headers)) {
+        if (
+          typeof headers === 'object' &&
+          headers !== null &&
+          !Array.isArray(headers)
+        ) {
           req._wsCustomHeaders = headers;
         }
-      } catch (e) {
+      } catch (_e) {
         // Ignore invalid _ws_headers
       }
       delete parsedUrl.query._ws_headers;

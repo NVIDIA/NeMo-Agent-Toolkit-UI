@@ -1,6 +1,6 @@
 /**
  * Consolidated tests for InteractionModal component, OAuth flows, and human-in-the-loop functionality
- * 
+ *
  * Tests cover:
  * - InteractionModal component rendering and behavior (text, binary choice, radio, notification types)
  * - OAuth flow integration (popup windows, event listeners, completion handling)
@@ -8,14 +8,21 @@
  * - Error handling (malformed messages, popup blocking, concurrent interactions)
  */
 
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from '@testing-library/react';
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
+
 import {
   isSystemInteractionMessage,
   isOAuthConsentMessage,
-  extractOAuthUrl
+  extractOAuthUrl,
 } from '@/types/websocket';
+import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
 
 // Mock react-hot-toast
 jest.mock('react-hot-toast', () => {
@@ -24,13 +31,13 @@ jest.mock('react-hot-toast', () => {
     error: jest.fn(),
     loading: jest.fn(),
     dismiss: jest.fn(),
-    custom: jest.fn()
+    custom: jest.fn(),
   };
-  
+
   return {
     __esModule: true,
     default: mockToastFunctions,
-    toast: mockToastFunctions
+    toast: mockToastFunctions,
   };
 });
 
@@ -41,23 +48,23 @@ const mockRemoveEventListener = jest.fn();
 
 Object.defineProperty(window, 'open', {
   value: mockWindowOpen,
-  writable: true
+  writable: true,
 });
 
 Object.defineProperty(window, 'addEventListener', {
   value: mockAddEventListener,
-  writable: true
+  writable: true,
 });
 
 Object.defineProperty(window, 'removeEventListener', {
   value: mockRemoveEventListener,
-  writable: true
+  writable: true,
 });
 
 describe('InteractionModal and Human-in-the-Loop Functionality', () => {
   const mockOnClose = jest.fn();
   const mockOnSubmit = jest.fn();
-  
+
   // Get the mocked toast object
   const mockToast = require('react-hot-toast').toast;
 
@@ -75,7 +82,10 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
      */
     test('OAuth message opens new tab with correct URL', () => {
       const handleWebSocketMessage = (message: any) => {
-        if (isSystemInteractionMessage(message) && message.content?.input_type === 'oauth_consent') {
+        if (
+          isSystemInteractionMessage(message) &&
+          message.content?.input_type === 'oauth_consent'
+        ) {
           const oauthUrl = extractOAuthUrl(message);
           if (oauthUrl) {
             window.open(oauthUrl, '_blank');
@@ -88,15 +98,16 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         conversation_id: 'test-conv',
         content: {
           input_type: 'oauth_consent',
-          oauth_url: 'https://oauth.provider.com/authorize?state=xyz&client_id=123'
-        }
+          oauth_url:
+            'https://oauth.provider.com/authorize?state=xyz&client_id=123',
+        },
       };
 
       handleWebSocketMessage(oauthMessage);
 
       expect(mockWindowOpen).toHaveBeenCalledWith(
         'https://oauth.provider.com/authorize?state=xyz&client_id=123',
-        '_blank'
+        '_blank',
       );
     });
 
@@ -109,7 +120,11 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         if (isOAuthConsentMessage(message)) {
           const oauthUrl = extractOAuthUrl(message);
           if (oauthUrl) {
-            const popup = window.open(oauthUrl, 'oauth-popup', 'width=600,height=700');
+            const popup = window.open(
+              oauthUrl,
+              'oauth-popup',
+              'width=600,height=700',
+            );
 
             const handleOAuthComplete = (event: MessageEvent) => {
               if (popup && !popup.closed) popup.close();
@@ -125,8 +140,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         type: 'system_interaction_message',
         content: {
           input_type: 'oauth_consent',
-          oauth_url: 'https://oauth.example.com/authorize'
-        }
+          oauth_url: 'https://oauth.example.com/authorize',
+        },
       };
 
       handleOAuthConsent(oauthMessage);
@@ -134,11 +149,11 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
       expect(mockWindowOpen).toHaveBeenCalledWith(
         'https://oauth.example.com/authorize',
         'oauth-popup',
-        'width=600,height=700'
+        'width=600,height=700',
       );
       expect(mockAddEventListener).toHaveBeenCalledWith(
         'message',
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
@@ -157,7 +172,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
 
       const mockPopup = {
         closed: false,
-        close: jest.fn()
+        close: jest.fn(),
       };
 
       mockWindowOpen.mockReturnValue(mockPopup);
@@ -166,7 +181,11 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         if (isOAuthConsentMessage(message)) {
           const oauthUrl = extractOAuthUrl(message);
           if (oauthUrl) {
-            const popup = window.open(oauthUrl, 'oauth-popup', 'width=600,height=700');
+            const popup = window.open(
+              oauthUrl,
+              'oauth-popup',
+              'width=600,height=700',
+            );
 
             const handleOAuthComplete = (event: MessageEvent) => {
               if (popup && !popup.closed) popup.close();
@@ -182,15 +201,15 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         type: 'system_interaction_message',
         content: {
           input_type: 'oauth_consent',
-          oauth_url: 'https://oauth.example.com/authorize'
-        }
+          oauth_url: 'https://oauth.example.com/authorize',
+        },
       };
 
       handleOAuthConsent(oauthMessage);
 
       // Simulate OAuth completion message
       const completionEvent = new MessageEvent('message', {
-        data: { type: 'oauth_complete', success: true }
+        data: { type: 'oauth_complete', success: true },
       });
 
       eventHandler(completionEvent);
@@ -198,7 +217,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
       expect(mockPopup.close).toHaveBeenCalled();
       expect(mockRemoveEventListener).toHaveBeenCalledWith(
         'message',
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
@@ -229,8 +248,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         type: 'system_interaction_message',
         content: {
           input_type: 'oauth_consent',
-          oauth_url: 'https://oauth.example.com/authorize'
-        }
+          oauth_url: 'https://oauth.example.com/authorize',
+        },
       };
 
       const consoleWarn = jest.spyOn(console, 'warn').mockImplementation();
@@ -238,7 +257,9 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
       const result = handleOAuthConsent(oauthMessage);
 
       expect(result).toBe(false);
-      expect(consoleWarn).toHaveBeenCalledWith('Popup blocked - please allow popups for OAuth');
+      expect(consoleWarn).toHaveBeenCalledWith(
+        'Popup blocked - please allow popups for OAuth',
+      );
 
       consoleWarn.mockRestore();
     });
@@ -255,8 +276,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           input_type: 'text',
           text: 'Please enter your name:',
           placeholder: 'Your full name here',
-          required: true
-        }
+          required: true,
+        },
       };
 
       render(
@@ -265,13 +286,19 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       expect(screen.getByText('Please enter your name:')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('Your full name here')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Submit' })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText('Your full name here'),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Submit' }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Cancel' }),
+      ).not.toBeInTheDocument();
     });
 
     it('should handle text input submission', async () => {
@@ -280,8 +307,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         content: {
           input_type: 'text',
           text: 'Enter feedback:',
-          required: false
-        }
+          required: false,
+        },
       };
 
       render(
@@ -290,7 +317,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       const textarea = screen.getByRole('textbox');
@@ -301,7 +328,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
 
       expect(mockOnSubmit).toHaveBeenCalledWith({
         interactionMessage: message,
-        userResponse: 'Great app!'
+        userResponse: 'Great app!',
       });
       expect(mockOnClose).toHaveBeenCalled();
     });
@@ -312,8 +339,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         content: {
           input_type: 'text',
           text: 'Required field:',
-          required: true
-        }
+          required: true,
+        },
       };
 
       render(
@@ -322,7 +349,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       const submitButton = screen.getByRole('button', { name: 'Submit' });
@@ -338,8 +365,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         type: 'system_interaction_message',
         content: {
           input_type: 'text',
-          text: 'Enter something:'
-        }
+          text: 'Enter something:',
+        },
       };
 
       render(
@@ -348,12 +375,16 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       // Modal should not have a Cancel button - only Submit
-      expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Submit' })).toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Cancel' }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Submit' }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -366,9 +397,9 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           text: 'Do you want to continue?',
           options: [
             { id: 'continue', label: 'Continue', value: 'continue' },
-            { id: 'cancel', label: 'Cancel', value: 'cancel' }
-          ]
-        }
+            { id: 'cancel', label: 'Cancel', value: 'cancel' },
+          ],
+        },
       };
 
       render(
@@ -377,12 +408,16 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       expect(screen.getByText('Do you want to continue?')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Continue' }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Cancel' }),
+      ).toBeInTheDocument();
     });
 
     it('should handle binary choice selection', () => {
@@ -393,9 +428,9 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           text: 'Proceed with action?',
           options: [
             { id: 'yes', label: 'Yes, proceed', value: 'proceed' },
-            { id: 'no', label: 'No, cancel', value: 'cancel' }
-          ]
-        }
+            { id: 'no', label: 'No, cancel', value: 'cancel' },
+          ],
+        },
       };
 
       render(
@@ -404,15 +439,17 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
-      const proceedButton = screen.getByRole('button', { name: 'Yes, proceed' });
+      const proceedButton = screen.getByRole('button', {
+        name: 'Yes, proceed',
+      });
       fireEvent.click(proceedButton);
 
       expect(mockOnSubmit).toHaveBeenCalledWith({
         interactionMessage: message,
-        userResponse: 'proceed'
+        userResponse: 'proceed',
       });
       expect(mockOnClose).toHaveBeenCalled();
     });
@@ -425,9 +462,9 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           text: 'Choose action:',
           options: [
             { id: 'cont', label: 'Continue', value: 'continue' },
-            { id: 'stop', label: 'Stop', value: 'stop' }
-          ]
-        }
+            { id: 'stop', label: 'Stop', value: 'stop' },
+          ],
+        },
       };
 
       render(
@@ -436,7 +473,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       const continueButton = screen.getByRole('button', { name: 'Continue' });
@@ -457,9 +494,9 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           options: [
             { id: 'email', label: 'Email', value: 'email' },
             { id: 'sms', label: 'SMS', value: 'sms' },
-            { id: 'push', label: 'Push Notification', value: 'push' }
-          ]
-        }
+            { id: 'push', label: 'Push Notification', value: 'push' },
+          ],
+        },
       };
 
       render(
@@ -468,15 +505,21 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
-      expect(screen.getByText('Select notification method:')).toBeInTheDocument();
+      expect(
+        screen.getByText('Select notification method:'),
+      ).toBeInTheDocument();
       expect(screen.getByLabelText('Email')).toBeInTheDocument();
       expect(screen.getByLabelText('SMS')).toBeInTheDocument();
       expect(screen.getByLabelText('Push Notification')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Submit' })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Submit' }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Cancel' }),
+      ).not.toBeInTheDocument();
     });
 
     it('should handle radio selection and submission', () => {
@@ -487,9 +530,9 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           text: 'Choose option:',
           options: [
             { id: 'opt1', label: 'Option 1', value: 'option1' },
-            { id: 'opt2', label: 'Option 2', value: 'option2' }
-          ]
-        }
+            { id: 'opt2', label: 'Option 2', value: 'option2' },
+          ],
+        },
       };
 
       render(
@@ -498,7 +541,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       const option1Radio = screen.getByLabelText('Option 1');
@@ -509,7 +552,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
 
       expect(mockOnSubmit).toHaveBeenCalledWith({
         interactionMessage: message,
-        userResponse: 'option1'
+        userResponse: 'option1',
       });
       expect(mockOnClose).toHaveBeenCalled();
     });
@@ -523,9 +566,9 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           required: true,
           options: [
             { id: 'opt1', label: 'Option 1', value: 'option1' },
-            { id: 'opt2', label: 'Option 2', value: 'option2' }
-          ]
-        }
+            { id: 'opt2', label: 'Option 2', value: 'option2' },
+          ],
+        },
       };
 
       render(
@@ -534,7 +577,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       const submitButton = screen.getByRole('button', { name: 'Submit' });
@@ -552,8 +595,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         type: 'system_interaction_message',
         content: {
           input_type: 'notification',
-          text: 'Operation completed successfully!'
-        }
+          text: 'Operation completed successfully!',
+        },
       };
 
       const result = render(
@@ -562,7 +605,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       expect(mockToast.custom).toHaveBeenCalled();
@@ -574,8 +617,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         type: 'system_interaction_message',
         content: {
           input_type: 'notification',
-          text: 'Custom notification message'
-        }
+          text: 'Custom notification message',
+        },
       };
 
       render(
@@ -584,25 +627,22 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
-      expect(mockToast.custom).toHaveBeenCalledWith(
-        expect.any(Function),
-        {
-          position: 'top-right',
-          duration: Infinity,
-          id: 'notification-toast'
-        }
-      );
+      expect(mockToast.custom).toHaveBeenCalledWith(expect.any(Function), {
+        position: 'top-right',
+        duration: Infinity,
+        id: 'notification-toast',
+      });
     });
 
     it('should handle notification without content gracefully', () => {
       const message = {
         type: 'system_interaction_message',
         content: {
-          input_type: 'notification'
-        }
+          input_type: 'notification',
+        },
       };
 
       render(
@@ -611,7 +651,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       expect(mockToast.custom).toHaveBeenCalled();
@@ -624,8 +664,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         type: 'system_interaction_message',
         content: {
           input_type: 'text',
-          text: 'Test message'
-        }
+          text: 'Test message',
+        },
       };
 
       const result = render(
@@ -634,7 +674,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       expect(result.container.firstChild).toBeNull();
@@ -647,7 +687,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={null}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       expect(result.container.firstChild).toBeNull();
@@ -658,8 +698,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         type: 'system_interaction_message',
         content: {
           input_type: 'unknown_type',
-          text: 'Unknown interaction type'
-        }
+          text: 'Unknown interaction type',
+        },
       };
 
       render(
@@ -668,7 +708,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       expect(screen.getByText('Unknown interaction type')).toBeInTheDocument();
@@ -678,8 +718,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
       const message = {
         type: 'system_interaction_message',
         content: {
-          text: 'General interaction message'
-        }
+          text: 'General interaction message',
+        },
       };
 
       render(
@@ -688,16 +728,18 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
-      expect(screen.getByText('General interaction message')).toBeInTheDocument();
+      expect(
+        screen.getByText('General interaction message'),
+      ).toBeInTheDocument();
     });
 
     it('should handle empty content gracefully', () => {
       const message = {
         type: 'system_interaction_message',
-        content: {}
+        content: {},
       };
 
       render(
@@ -706,7 +748,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       expect(document.querySelector('.fixed')).toBeInTheDocument();
@@ -720,8 +762,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         content: {
           input_type: 'text',
           text: 'Required field:',
-          required: true
-        }
+          required: true,
+        },
       };
 
       render(
@@ -730,7 +772,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       const textarea = screen.getByRole('textbox');
@@ -744,10 +786,12 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
       fireEvent.change(textarea, { target: { value: 'Valid input' } });
       fireEvent.click(submitButton);
 
-      expect(screen.queryByText('This field is required.')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('This field is required.'),
+      ).not.toBeInTheDocument();
       expect(mockOnSubmit).toHaveBeenCalledWith({
         interactionMessage: message,
-        userResponse: 'Valid input'
+        userResponse: 'Valid input',
       });
     });
 
@@ -760,9 +804,9 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           required: true,
           options: [
             { id: 'opt1', label: 'Option 1', value: '' },
-            { id: 'opt2', label: 'Option 2', value: 'valid' }
-          ]
-        }
+            { id: 'opt2', label: 'Option 2', value: 'valid' },
+          ],
+        },
       };
 
       render(
@@ -771,7 +815,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       const emptyOption = screen.getByRole('button', { name: 'Option 1' });
@@ -806,7 +850,10 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
       };
 
       const handleWebSocketMessage = (message: any) => {
-        if (isSystemInteractionMessage(message) && message.content?.input_type !== 'oauth_consent') {
+        if (
+          isSystemInteractionMessage(message) &&
+          message.content?.input_type !== 'oauth_consent'
+        ) {
           openModal(message);
         }
       };
@@ -819,8 +866,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         parent_id: 'parent-101',
         content: {
           input_type: 'user_confirmation',
-          text: 'Please confirm this action before proceeding'
-        }
+          text: 'Please confirm this action before proceeding',
+        },
       };
 
       handleWebSocketMessage(mockInteractionMessage);
@@ -850,11 +897,11 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         type: 'system_interaction_message',
         content: {
           input_type: 'user_confirmation',
-          text: 'Please confirm this action'
+          text: 'Please confirm this action',
         },
         thread_id: 'thread-123',
         parent_id: 'parent-456',
-        conversation_id: 'conv-789'
+        conversation_id: 'conv-789',
       };
 
       // Open modal
@@ -882,7 +929,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
 
       const handleUserInteraction = ({
         interactionMessage = {},
-        userResponse = ''
+        userResponse = '',
       }: any) => {
         const wsMessage = {
           type: 'user_interaction_message',
@@ -896,13 +943,13 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
                 content: [
                   {
                     type: 'text',
-                    text: userResponse
-                  }
-                ]
-              }
-            ]
+                    text: userResponse,
+                  },
+                ],
+              },
+            ],
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
 
         mockWebSocket.send(JSON.stringify(wsMessage));
@@ -911,12 +958,12 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
       const interactionMessage = {
         thread_id: 'thread-abc',
         parent_id: 'parent-def',
-        conversation_id: 'conv-ghi'
+        conversation_id: 'conv-ghi',
       };
 
       handleUserInteraction({
         interactionMessage,
-        userResponse: 'Approved for processing'
+        userResponse: 'Approved for processing',
       });
 
       expect(mockWebSocket.send).toHaveBeenCalledTimes(1);
@@ -926,7 +973,9 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
       expect(sentMessage.type).toBe('user_interaction_message');
       expect(sentMessage.thread_id).toBe('thread-abc');
       expect(sentMessage.parent_id).toBe('parent-def');
-      expect(sentMessage.content.messages[0].content[0].text).toBe('Approved for processing');
+      expect(sentMessage.content.messages[0].content[0].text).toBe(
+        'Approved for processing',
+      );
       expect(sentMessage.timestamp).toBeDefined();
     });
 
@@ -939,18 +988,18 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         {
           type: 'user_confirmation',
           text: 'Please confirm this action',
-          expectedButton: 'Confirm'
+          expectedButton: 'Confirm',
         },
         {
           type: 'user_input',
           text: 'Please provide additional information',
-          expectedButton: 'Submit'
+          expectedButton: 'Submit',
         },
         {
           type: 'approval_required',
           text: 'Manager approval required',
-          expectedButton: 'Approve'
-        }
+          expectedButton: 'Approve',
+        },
       ];
 
       interactionTypes.forEach(({ type, text, expectedButton }) => {
@@ -958,8 +1007,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           type: 'system_interaction_message',
           content: {
             input_type: type,
-            text: text
-          }
+            text: text,
+          },
         };
 
         const getModalConfig = (interactionMessage: any) => {
@@ -1001,8 +1050,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         content: {
           input_type: 'text',
           text: 'No timeout prompt',
-          timeout: null
-        }
+          timeout: null,
+        },
       };
 
       render(
@@ -1011,7 +1060,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       expect(screen.queryByText(/Time remaining/)).not.toBeInTheDocument();
@@ -1022,8 +1071,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         type: 'system_interaction_message',
         content: {
           input_type: 'text',
-          text: 'No timeout prompt'
-        }
+          text: 'No timeout prompt',
+        },
       };
 
       render(
@@ -1032,7 +1081,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       expect(screen.queryByText(/Time remaining/)).not.toBeInTheDocument();
@@ -1045,8 +1094,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           input_type: 'text',
           text: 'Timed prompt',
           timeout: 60,
-          error: 'Custom timeout error'
-        }
+          error: 'Custom timeout error',
+        },
       };
 
       render(
@@ -1055,7 +1104,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       expect(screen.getByText('Time remaining: 1:00')).toBeInTheDocument();
@@ -1074,8 +1123,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         content: {
           input_type: 'text',
           text: 'Timed prompt',
-          timeout: 60
-        }
+          timeout: 60,
+        },
       };
 
       render(
@@ -1084,7 +1133,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       // At 60 seconds (100%), should not be red
@@ -1114,8 +1163,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           input_type: 'text',
           text: 'Timed prompt',
           timeout: 3,
-          error: 'Custom timeout error message'
-        }
+          error: 'Custom timeout error message',
+        },
       };
 
       render(
@@ -1124,7 +1173,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       // Advance timer to 0
@@ -1132,7 +1181,9 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         jest.advanceTimersByTime(3000);
       });
 
-      expect(mockToast.error).toHaveBeenCalledWith('Custom timeout error message');
+      expect(mockToast.error).toHaveBeenCalledWith(
+        'Custom timeout error message',
+      );
       expect(mockOnClose).toHaveBeenCalled();
     });
 
@@ -1142,8 +1193,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         content: {
           input_type: 'text',
           text: 'Timed prompt',
-          timeout: 2
-        }
+          timeout: 2,
+        },
       };
 
       render(
@@ -1152,14 +1203,16 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       act(() => {
         jest.advanceTimersByTime(2000);
       });
 
-      expect(mockToast.error).toHaveBeenCalledWith('This prompt is no longer available.');
+      expect(mockToast.error).toHaveBeenCalledWith(
+        'This prompt is no longer available.',
+      );
     });
 
     it('should stop timer when user submits before timeout', () => {
@@ -1168,8 +1221,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         content: {
           input_type: 'text',
           text: 'Timed prompt',
-          timeout: 60
-        }
+          timeout: 60,
+        },
       };
 
       render(
@@ -1178,7 +1231,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       const textarea = screen.getByRole('textbox');
@@ -1189,10 +1242,10 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
 
       expect(mockOnSubmit).toHaveBeenCalledWith({
         interactionMessage: message,
-        userResponse: 'My response'
+        userResponse: 'My response',
       });
       expect(mockOnClose).toHaveBeenCalled();
-      
+
       // Timer should be cleared, so advancing time shouldn't trigger error toast
       act(() => {
         jest.advanceTimersByTime(60000);
@@ -1206,13 +1259,15 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         content: {
           input_type: 'text',
           text: 'Timed prompt',
-          timeout: 2
-        }
+          timeout: 2,
+        },
       };
 
       // Use a ref to track onClose calls so the modal stays visible
       let closeCount = 0;
-      const trackingOnClose = () => { closeCount++; };
+      const trackingOnClose = () => {
+        closeCount++;
+      };
 
       render(
         <InteractionModal
@@ -1220,7 +1275,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={trackingOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       // Advance timer, but not all the way to timeout
@@ -1242,8 +1297,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         content: {
           input_type: 'notification',
           text: 'Notification message',
-          timeout: 30
-        }
+          timeout: 30,
+        },
       };
 
       const result = render(
@@ -1252,7 +1307,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       // Notification type returns null and uses toast instead
@@ -1262,18 +1317,21 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
 
     it('should not have any Cancel buttons in any input type', () => {
       const inputTypes = ['text', 'binary_choice', 'radio'];
-      
+
       inputTypes.forEach((inputType) => {
         const message = {
           type: 'system_interaction_message',
           content: {
             input_type: inputType,
             text: 'Test prompt',
-            options: inputType !== 'text' ? [
-              { id: 'opt1', label: 'Option 1', value: 'value1' },
-              { id: 'opt2', label: 'Option 2', value: 'value2' }
-            ] : undefined
-          }
+            options:
+              inputType !== 'text'
+                ? [
+                    { id: 'opt1', label: 'Option 1', value: 'value1' },
+                    { id: 'opt2', label: 'Option 2', value: 'value2' },
+                  ]
+                : undefined,
+          },
         };
 
         const { unmount } = render(
@@ -1282,14 +1340,16 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
             interactionMessage={message}
             onClose={mockOnClose}
             onSubmit={mockOnSubmit}
-          />
+          />,
         );
 
         // No Cancel button should exist
-        const cancelButtons = screen.queryAllByRole('button', { name: 'Cancel' });
+        const cancelButtons = screen.queryAllByRole('button', {
+          name: 'Cancel',
+        });
         // Filter out binary_choice options that might have "Cancel" as a label
-        const actualCancelButtons = cancelButtons.filter(btn => 
-          btn.classList.contains('bg-gray-500')
+        const actualCancelButtons = cancelButtons.filter((btn) =>
+          btn.classList.contains('bg-gray-500'),
         );
         expect(actualCancelButtons).toHaveLength(0);
 
@@ -1302,8 +1362,8 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
         type: 'system_interaction_message',
         content: {
           input_type: 'text',
-          text: 'Non-dismissible modal'
-        }
+          text: 'Non-dismissible modal',
+        },
       };
 
       render(
@@ -1312,7 +1372,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
           interactionMessage={message}
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
-        />
+        />,
       );
 
       // Find the backdrop (the outer fixed div)
@@ -1340,7 +1400,7 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
     test('handles missing WebSocket connection for user responses', () => {
       const handleUserInteraction = ({
         interactionMessage = {},
-        userResponse = ''
+        userResponse = '',
       }: any) => {
         const webSocket = null;
 
@@ -1356,11 +1416,13 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
 
       const result = handleUserInteraction({
         interactionMessage: { thread_id: 'test' },
-        userResponse: 'Test response'
+        userResponse: 'Test response',
       });
 
       expect(result).toBe(false);
-      expect(consoleError).toHaveBeenCalledWith('Cannot send user response - WebSocket not connected');
+      expect(consoleError).toHaveBeenCalledWith(
+        'Cannot send user response - WebSocket not connected',
+      );
 
       consoleError.mockRestore();
     });
@@ -1374,7 +1436,10 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
       const interactionQueue: any[] = [];
 
       const handleWebSocketMessage = (message: any) => {
-        if (isSystemInteractionMessage(message) && message.content?.input_type !== 'oauth_consent') {
+        if (
+          isSystemInteractionMessage(message) &&
+          message.content?.input_type !== 'oauth_consent'
+        ) {
           if (activeInteraction) {
             interactionQueue.push(message);
           } else {
@@ -1393,9 +1458,21 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
 
       // Send multiple interactions
       const interactions = [
-        { type: 'system_interaction_message', id: '1', content: { input_type: 'user_confirmation', text: 'First' } },
-        { type: 'system_interaction_message', id: '2', content: { input_type: 'user_confirmation', text: 'Second' } },
-        { type: 'system_interaction_message', id: '3', content: { input_type: 'user_confirmation', text: 'Third' } }
+        {
+          type: 'system_interaction_message',
+          id: '1',
+          content: { input_type: 'user_confirmation', text: 'First' },
+        },
+        {
+          type: 'system_interaction_message',
+          id: '2',
+          content: { input_type: 'user_confirmation', text: 'Second' },
+        },
+        {
+          type: 'system_interaction_message',
+          id: '3',
+          content: { input_type: 'user_confirmation', text: 'Third' },
+        },
       ];
 
       interactions.forEach(handleWebSocketMessage);
@@ -1413,4 +1490,3 @@ describe('InteractionModal and Human-in-the-Loop Functionality', () => {
     });
   });
 });
-

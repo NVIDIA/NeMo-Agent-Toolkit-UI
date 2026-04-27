@@ -1,7 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+
 import { getMcpApiUrl } from '@/utils/app/const';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -35,7 +39,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const message = error instanceof Error ? error.message : 'Unknown error';
     const isConfigError = message.startsWith('Server URL is not configured');
     res.status(isConfigError ? 400 : 500).json({
-      error: isConfigError ? 'MCP is not configured' : 'Failed to fetch MCP clients',
+      error: isConfigError
+        ? 'MCP is not configured'
+        : 'Failed to fetch MCP clients',
     });
   }
 }

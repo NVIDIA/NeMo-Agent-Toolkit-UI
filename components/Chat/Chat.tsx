@@ -1,45 +1,23 @@
-
 'use client';
 
-import { ChatInput } from './ChatInput';
-import { ChatLoader } from './ChatLoader';
-import { MemoizedChatMessage } from './MemoizedChatMessage';
-import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
-import HomeContext from '@/pages/api/home/home.context';
-import { 
-  DEFAULT_CORE_ROUTE, 
-  WEBSOCKET_PROXY_PATH, 
-  HTTP_PROXY_PATH,
-  CORE_ROUTES,
-  EXTENDED_ROUTES,
-} from '@/constants';
-import { Conversation, Message } from '@/types/chat';
 import {
-  WebSocketInbound,
-  validateWebSocketMessage,
-  validateWebSocketMessageWithConversationId,
-  validateConversationId,
-  isSystemResponseMessage,
-  isSystemIntermediateMessage,
-  isSystemInteractionMessage,
-  isErrorMessage,
-  isSystemResponseInProgress,
-  isSystemResponseComplete,
-  isOAuthConsentMessage,
-  isObservabilityTraceMessage,
-  extractOAuthUrl,
-  shouldAppendResponseContent,
-} from '@/types/websocket';
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import toast from 'react-hot-toast';
+import { v4 as uuidv4 } from 'uuid';
+
 import { webSocketMessageTypes } from '@/utils/app/const';
 import {
   saveConversation,
   saveConversations,
-  updateConversation,
 } from '@/utils/app/conversation';
 import {
   fetchLastMessage,
   processIntermediateMessage,
-  updateConversationTitle,
 } from '@/utils/app/helper';
 import {
   shouldAppendResponse,
@@ -51,13 +29,28 @@ import {
   shouldRenderAssistantMessage,
 } from '@/utils/chatTransform';
 import { throttle } from '@/utils/data/throttle';
-import { useTranslation } from 'next-i18next';
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import toast from 'react-hot-toast';
-import { v4 as uuidv4 } from 'uuid';
-
-import { SESSION_COOKIE_NAME } from '@/constants';
 import { isValidConsentPromptURL } from '@/utils/security/oauth-validation';
+import { Conversation, Message } from '@/types/chat';
+import {
+  WebSocketInbound,
+  validateWebSocketMessageWithConversationId,
+  isSystemResponseMessage,
+  isSystemIntermediateMessage,
+  isSystemInteractionMessage,
+  isErrorMessage,
+  isSystemResponseComplete,
+  isObservabilityTraceMessage,
+} from '@/types/websocket';
+import HomeContext from '@/pages/api/home/home.context';
+import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
+import {
+  DEFAULT_CORE_ROUTE,
+  WEBSOCKET_PROXY_PATH,
+  HTTP_PROXY_PATH,
+  CORE_ROUTES,
+  EXTENDED_ROUTES,
+  SESSION_COOKIE_NAME,
+} from '@/constants';
 import {
   buildGeneratePayload,
   buildGenerateStreamPayload,
@@ -66,6 +59,9 @@ import {
   buildCaRagPayload,
 } from '@/proxy/request-transformers';
 
+import { ChatInput } from './ChatInput';
+import { ChatLoader } from './ChatLoader';
+import { MemoizedChatMessage } from './MemoizedChatMessage';
 
 
 // Streaming utilities for handling SSE and NDJSON safely
@@ -73,7 +69,6 @@ function normalizeNewlines(s: string): string {
   // turn CRLF into LF so splitting is predictable
   return s.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 }
-
 
 function extractSsePayloads(buffer: string): {
   frames: string[];
@@ -91,9 +86,9 @@ function extractSsePayloads(buffer: string): {
     // Keep only lines that start with "data:" possibly followed by a space
     const dataLines = block
       .split('\n')
-      .filter(line => /^data:\s*/.test(line))
-      .map(line => line.replace(/^data:\s*/, '').trim())
-      .filter(line => line.length > 0);
+      .filter((line) => /^data:\s*/.test(line))
+      .map((line) => line.replace(/^data:\s*/, '').trim())
+      .filter((line) => line.length > 0);
 
     if (dataLines.length === 0) continue;
 
@@ -114,7 +109,7 @@ function splitNdjson(buffer: string): { lines: string[]; rest: string } {
   const parts = buffer.split('\n');
   const rest = parts.pop() ?? '';
   // strip empty/whitespace lines
-  const lines = parts.map(l => l.trim()).filter(Boolean);
+  const lines = parts.map((l) => l.trim()).filter(Boolean);
   return { lines, rest };
 }
 
@@ -178,10 +173,17 @@ function parsePossiblyConcatenatedJson(payload: string): any[] {
 
 function getWebSocketCustomPayload(): Record<string, unknown> {
   try {
-    const raw = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('webSocketCustomParams') : null;
+    const raw =
+      typeof sessionStorage !== 'undefined'
+        ? sessionStorage.getItem('webSocketCustomParams')
+        : null;
     if (!raw?.trim()) return {};
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-    if (parsed?.payload != null && typeof parsed.payload === 'object' && !Array.isArray(parsed.payload)) {
+    if (
+      parsed?.payload != null &&
+      typeof parsed.payload === 'object' &&
+      !Array.isArray(parsed.payload)
+    ) {
       return parsed.payload as Record<string, unknown>;
     }
     return {};
@@ -191,7 +193,6 @@ function getWebSocketCustomPayload(): Record<string, unknown> {
 }
 
 export const Chat = () => {
-  const { t } = useTranslation('chat');
   const {
     state: {
       selectedConversation,
@@ -208,13 +209,11 @@ export const Chat = () => {
       intermediateStepOverride,
       enableIntermediateSteps,
     },
-    handleUpdateConversation,
     dispatch: homeDispatch,
   } = useContext(HomeContext);
 
   const [currentMessage, setCurrentMessage] = useState<Message>();
   const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true);
-  const [showSettings, setShowSettings] = useState<boolean>(false);
   const [showScrollDownButton, setShowScrollDownButton] =
     useState<boolean>(false);
 
@@ -230,7 +229,7 @@ export const Chat = () => {
   const webSocketRef = useRef<WebSocket | null>(null);
   const webSocketConnectedRef = useRef(false);
   const webSocketModeRef = useRef(
-    sessionStorage.getItem('webSocketMode') === 'false' ? false : webSocketMode
+    sessionStorage.getItem('webSocketMode') === 'false' ? false : webSocketMode,
   );
   let websocketLoadingToastId: string | null = null;
   const lastScrollTop = useRef(0); // Store last known scroll position
@@ -253,7 +252,10 @@ export const Chat = () => {
    */
   const handleStopConversation = useCallback(() => {
     if (webSocketModeRef?.current) {
-      console.log('Stopping generation for user message:', activeUserMessageId.current);
+      console.log(
+        'Stopping generation for user message:',
+        activeUserMessageId.current,
+      );
 
       // Set active user message ID to null to ignore subsequent messages
       activeUserMessageId.current = null;
@@ -289,7 +291,9 @@ export const Chat = () => {
     userResponse = '',
   }: any) => {
     if (!selectedConversation) {
-      console.error('Cannot send interaction response: no conversation selected');
+      console.error(
+        'Cannot send interaction response: no conversation selected',
+      );
       return;
     }
 
@@ -351,7 +355,7 @@ export const Chat = () => {
     const maxRetries = 3;
     const retryDelay = 1000; // 1-second delay between retries
 
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       // Get session cookie
       const getCookie = (name: string) => {
         const value = `; ${document.cookie}`;
@@ -361,7 +365,7 @@ export const Chat = () => {
 
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       let wsUrl = `${protocol}//${window.location.host}${WEBSOCKET_PROXY_PATH}`;
-      
+
       // Add session cookie as query parameter for backend authentication
       const sessionCookie = getCookie(SESSION_COOKIE_NAME);
       if (sessionCookie) {
@@ -371,34 +375,74 @@ export const Chat = () => {
       // Add conversation_id for reconnection support (HITL state restoration)
       const conversationId = selectedConversationRef.current?.id;
       if (conversationId) {
-        wsUrl += `${wsUrl.includes('?') ? '&' : '?'}conversation_id=${encodeURIComponent(conversationId)}`;
+        wsUrl += `${wsUrl.includes('?') ? '&' : '?'
+          }conversation_id=${encodeURIComponent(conversationId)}`;
       }
 
       // Append custom parameters from settings (query + headers encoded for proxy)
       const customParamsRaw = sessionStorage.getItem('webSocketCustomParams');
       if (customParamsRaw?.trim()) {
         try {
-          const customParams = JSON.parse(customParamsRaw) as Record<string, unknown>;
-          if (typeof customParams === 'object' && customParams !== null && !Array.isArray(customParams)) {
-            const hasStructured = 'query' in customParams || 'headers' in customParams || 'body' in customParams;
+          const customParams = JSON.parse(customParamsRaw) as Record<
+            string,
+            unknown
+          >;
+          if (
+            typeof customParams === 'object' &&
+            customParams !== null &&
+            !Array.isArray(customParams)
+          ) {
+            const hasStructured =
+              'query' in customParams ||
+              'headers' in customParams ||
+              'body' in customParams;
             const queryReserved = new Set(['session', 'conversation_id']);
 
-            if (hasStructured && customParams.query != null && typeof customParams.query === 'object' && !Array.isArray(customParams.query)) {
-              for (const [key, value] of Object.entries(customParams.query as Record<string, unknown>)) {
-                if (queryReserved.has(key) || value === null || value === undefined) continue;
-                wsUrl += `${wsUrl.includes('?') ? '&' : '?'}${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`;
+            if (
+              hasStructured &&
+              customParams.query != null &&
+              typeof customParams.query === 'object' &&
+              !Array.isArray(customParams.query)
+            ) {
+              for (const [key, value] of Object.entries(
+                customParams.query as Record<string, unknown>,
+              )) {
+                if (
+                  queryReserved.has(key) ||
+                  value === null ||
+                  value === undefined
+                )
+                  continue;
+                wsUrl += `${wsUrl.includes('?') ? '&' : '?'
+                  }${encodeURIComponent(key)}=${encodeURIComponent(
+                    String(value),
+                  )}`;
               }
             } else if (!hasStructured) {
               for (const [key, value] of Object.entries(customParams)) {
-                if (queryReserved.has(key) || value === null || value === undefined) continue;
-                wsUrl += `${wsUrl.includes('?') ? '&' : '?'}${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`;
+                if (
+                  queryReserved.has(key) ||
+                  value === null ||
+                  value === undefined
+                )
+                  continue;
+                wsUrl += `${wsUrl.includes('?') ? '&' : '?'
+                  }${encodeURIComponent(key)}=${encodeURIComponent(
+                    String(value),
+                  )}`;
               }
             }
 
-            if (hasStructured && customParams.headers != null && typeof customParams.headers === 'object' && !Array.isArray(customParams.headers)) {
+            if (
+              hasStructured &&
+              customParams.headers != null &&
+              typeof customParams.headers === 'object' &&
+              !Array.isArray(customParams.headers)
+            ) {
               const headersJson = JSON.stringify(customParams.headers);
               const encoded = btoa(unescape(encodeURIComponent(headersJson)));
-              wsUrl += `${wsUrl.includes('?') ? '&' : '?'}_ws_headers=${encodeURIComponent(encoded)}`;
+              wsUrl += `${wsUrl.includes('?') ? '&' : '?'
+                }_ws_headers=${encodeURIComponent(encoded)}`;
             }
           }
         } catch {
@@ -410,16 +454,13 @@ export const Chat = () => {
 
       websocketLoadingToastId = toast.loading(
         'WebSocket is not connected, trying to connect...',
-        { id: 'websocketLoadingToastId' }
+        { id: 'websocketLoadingToastId' },
       );
 
       ws.onopen = () => {
-        toast.success(
-          'WebSocket connected',
-          {
-            id: 'websocketSuccessToastId',
-          }
-        );
+        toast.success('WebSocket connected', {
+          id: 'websocketSuccessToastId',
+        });
         if (websocketLoadingToastId) toast.dismiss(websocketLoadingToastId);
 
         // using ref due to usecallback for handlesend which will be recreated during next render when dependency array changes
@@ -428,16 +469,18 @@ export const Chat = () => {
         webSocketConnectedRef.current = true;
         homeDispatch({ field: 'webSocketConnected', value: true });
         webSocketRef.current = ws;
-        
+
         // Restore activeUserMessageId from sessionStorage on reconnect
         const conversationId = selectedConversationRef.current?.id;
         if (conversationId) {
-          const storedMessageId = sessionStorage.getItem(`activeUserMessageId_${conversationId}`);
+          const storedMessageId = sessionStorage.getItem(
+            `activeUserMessageId_${conversationId}`,
+          );
           if (storedMessageId) {
             activeUserMessageId.current = storedMessageId;
           }
         }
-        
+
         resolve(true); // Resolve true only when connected
       };
 
@@ -446,21 +489,28 @@ export const Chat = () => {
         // Do not ws.close() here; let server/proxy drive closure
       };
 
-      ws.onmessage = event => {
+      ws.onmessage = (event) => {
         const message = JSON.parse(event.data);
         handleWebSocketMessage(message);
       };
 
       ws.onclose = async (event) => {
-        console.log('[WebSocket] Connection closed. Code:', event.code, 'Reason:', event.reason, 'Clean:', event.wasClean);
-        
+        console.log(
+          '[WebSocket] Connection closed. Code:',
+          event.code,
+          'Reason:',
+          event.reason,
+          'Clean:',
+          event.wasClean,
+        );
+
         if (retryCount < maxRetries) {
           retryCount++;
 
           // Retry and capture the result
           if (webSocketModeRef?.current) {
             // Wait for retry delay
-            await new Promise(res => setTimeout(res, retryDelay));
+            await new Promise((res) => setTimeout(res, retryDelay));
 
             const success = await connectWebSocket(retryCount);
             resolve(success);
@@ -472,10 +522,13 @@ export const Chat = () => {
           homeDispatch({ field: 'loading', value: false });
           homeDispatch({ field: 'messageIsStreaming', value: false });
           if (websocketLoadingToastId) toast.dismiss(websocketLoadingToastId);
-          
-          toast.error('WebSocket connection failed. Ensure the backend server is running.', {
-            id: 'websocketErrorToastId',
-          });
+
+          toast.error(
+            'WebSocket connection failed. Ensure the backend server is running.',
+            {
+              id: 'websocketErrorToastId',
+            },
+          );
           resolve(false);
         }
       };
@@ -485,7 +538,7 @@ export const Chat = () => {
   // Re-attach the WebSocket handler when intermediateStepOverride changes because we need updated value from settings
   useEffect(() => {
     if (webSocketRef.current) {
-      webSocketRef.current.onmessage = event => {
+      webSocketRef.current.onmessage = (event) => {
         const message = JSON.parse(event.data);
         handleWebSocketMessage(message);
       };
@@ -493,44 +546,12 @@ export const Chat = () => {
   }, [intermediateStepOverride]);
 
   /**
-   * Handles OAuth consent flow by opening popup window
-   */
-  const handleOAuthConsent = (message: WebSocketInbound) => {
-    if (!isSystemInteractionMessage(message)) return false;
-
-    if (message.content?.input_type === 'oauth_consent') {
-      const oauthUrl = extractOAuthUrl(message);
-      if (oauthUrl) {
-        // Validate URL before opening
-        if (!isValidConsentPromptURL(oauthUrl)) {
-          console.error('OAuth URL validation failed in popup handler, refusing to open potentially malicious URL.');
-          toast.error('OAuth URL validation failed.');
-          return false;
-        }
-        
-        const popup = window.open(
-          oauthUrl,
-          'oauth-popup',
-          'width=600,height=700,scrollbars=yes,resizable=yes,noopener,noreferrer'
-        );
-        const handleOAuthComplete = (event: MessageEvent) => {
-          if (popup && !popup.closed) popup.close();
-          window.removeEventListener('message', handleOAuthComplete);
-        };
-        window.addEventListener('message', handleOAuthComplete);
-      }
-      return true;
-    }
-    return false;
-  };
-
-  /**
    * Updates refs immediately before React dispatch to prevent stale reads
    */
   const updateRefsAndDispatch = (
     updatedConversations: Conversation[],
     updatedConversation: Conversation,
-    currentSelectedConversation: Conversation | null | undefined
+    currentSelectedConversation: Conversation | null | undefined,
   ) => {
     // Write-through to refs before dispatch to avoid stale reads on next WS tick
     conversationsRef.current = updatedConversations;
@@ -557,7 +578,7 @@ export const Chat = () => {
    */
   const processSystemResponseMessage = (
     message: WebSocketInbound,
-    messages: Message[]
+    messages: Message[],
   ): Message[] => {
     if (!shouldAppendResponse(message)) {
       return messages;
@@ -573,12 +594,12 @@ export const Chat = () => {
       // Append to existing assistant message using pure helper
       const combinedContent = appendAssistantText(
         lastMessage.content || '',
-        incomingText
+        incomingText,
       );
       return messages.map((m, idx) =>
         idx === messages.length - 1
           ? updateAssistantMessage(m, combinedContent)
-          : m
+          : m,
       );
     } else {
       // Create new assistant message using pure helper
@@ -594,7 +615,7 @@ export const Chat = () => {
    */
   const processIntermediateStepMessage = (
     message: WebSocketInbound,
-    messages: Message[]
+    messages: Message[],
   ): Message[] => {
     if (!isSystemIntermediateMessage(message)) return messages;
 
@@ -619,11 +640,11 @@ export const Chat = () => {
         message,
         sessionStorage.getItem('intermediateStepOverride') === 'false'
           ? false
-          : Boolean(intermediateStepOverride)
+          : Boolean(intermediateStepOverride),
       );
 
       return messages.map((m, idx) =>
-        idx === lastIdx ? updateAssistantMessage(m, m.content, mergedSteps) : m
+        idx === lastIdx ? updateAssistantMessage(m, m.content, mergedSteps) : m,
       );
     }
   };
@@ -633,7 +654,7 @@ export const Chat = () => {
    */
   const processErrorMessage = (
     message: WebSocketInbound,
-    messages: Message[]
+    messages: Message[],
   ): Message[] => {
     if (!isErrorMessage(message)) return messages;
 
@@ -645,12 +666,12 @@ export const Chat = () => {
       return messages.map((m, idx) =>
         idx === messages.length - 1
           ? {
-              ...m,
-              errorMessages: [...(m.errorMessages || []), message],
-              observabilityTraceId: m.observabilityTraceId,
-              timestamp: Date.now(),
-            }
-          : m
+            ...m,
+            errorMessages: [...(m.errorMessages || []), message],
+            observabilityTraceId: m.observabilityTraceId,
+            timestamp: Date.now(),
+          }
+          : m,
       );
     } else {
       // Create new assistant message for error using pure helper
@@ -662,7 +683,7 @@ export const Chat = () => {
           '',
           [],
           [],
-          [message]
+          [message],
         ),
       ];
     }
@@ -673,7 +694,7 @@ export const Chat = () => {
    */
   const processObservabilityTraceMessage = (
     message: WebSocketInbound,
-    messages: Message[]
+    messages: Message[],
   ): Message[] => {
     if (!isObservabilityTraceMessage(message)) return messages;
 
@@ -686,11 +707,11 @@ export const Chat = () => {
     return messages.map((m, idx) =>
       idx === messages.length - 1
         ? {
-            ...m,
-            observabilityTraceId: traceId,
-            timestamp: Date.now(),
-          }
-        : m
+          ...m,
+          observabilityTraceId: traceId,
+          timestamp: Date.now(),
+        }
+        : m,
     );
   };
 
@@ -710,17 +731,20 @@ export const Chat = () => {
       console.error('Raw message data:', message);
       console.error(
         'Available conversations:',
-        conversationsRef.current?.map(c => ({ id: c.id, name: c.name }))
+        conversationsRef.current?.map((c) => ({ id: c.id, name: c.name })),
       );
 
       return; // Don't process invalid messages
     }
 
-        // Filter messages based on active conversation for stop generating functionality
+    // Filter messages based on active conversation for stop generating functionality
     const messageConversationId = message.conversation_id;
     const currentConversationId = selectedConversationRef.current?.id;
 
-    if (activeUserMessageId.current === null || messageConversationId !== currentConversationId) {
+    if (
+      activeUserMessageId.current === null ||
+      messageConversationId !== currentConversationId
+    ) {
       return;
     }
 
@@ -732,7 +756,9 @@ export const Chat = () => {
         // Clear active tracking when response is complete
         activeUserMessageId.current = null;
         // Clear from sessionStorage
-        sessionStorage.removeItem(`activeUserMessageId_${message.conversation_id}`);
+        sessionStorage.removeItem(
+          `activeUserMessageId_${message.conversation_id}`,
+        );
       }, 200);
     }
 
@@ -751,13 +777,16 @@ export const Chat = () => {
             // Open the validated OAuth URL in a new tab
             window.open(oauthUrl, '_blank', 'noopener,noreferrer');
           } else {
-            console.error('OAuth URL validation failed, refusing to open potentially malicious URL:', oauthUrl);
+            console.error(
+              'OAuth URL validation failed, refusing to open potentially malicious URL:',
+              oauthUrl,
+            );
             toast.error('Invalid OAuth URL received. Please contact support.');
           }
         } else {
           console.error(
             'OAuth consent message received but no URL found in content:',
-            message?.content
+            message?.content,
           );
           toast.error('OAuth URL not found in message content');
         }
@@ -783,7 +812,7 @@ export const Chat = () => {
     // Find target conversation with enhanced error reporting
     const currentConversations = conversationsRef.current;
     const targetConversation = currentConversations.find(
-      c => c.id === message.conversation_id
+      (c) => c.id === message.conversation_id,
     );
 
     if (!targetConversation) {
@@ -796,7 +825,7 @@ export const Chat = () => {
       });
       console.error(
         'Available conversations:',
-        currentConversations?.map(c => ({ id: c.id, name: c.name }))
+        currentConversations?.map((c) => ({ id: c.id, name: c.name })),
       );
 
       return;
@@ -807,36 +836,42 @@ export const Chat = () => {
     updatedMessages = processSystemResponseMessage(message, updatedMessages);
     updatedMessages = processIntermediateStepMessage(message, updatedMessages);
     updatedMessages = processErrorMessage(message, updatedMessages);
-    updatedMessages = processObservabilityTraceMessage(message, updatedMessages);
+    updatedMessages = processObservabilityTraceMessage(
+      message,
+      updatedMessages,
+    );
 
     // Update conversation with new messages and title using pure helper
     const updatedConversation = applyMessageUpdate(
       targetConversation,
-      updatedMessages
+      updatedMessages,
     );
 
     // Update conversations array
-    const updatedConversations = currentConversations.map(c =>
-      c.id === updatedConversation.id ? updatedConversation : c
+    const updatedConversations = currentConversations.map((c) =>
+      c.id === updatedConversation.id ? updatedConversation : c,
     );
 
     // Update state and persistence
     updateRefsAndDispatch(
       updatedConversations,
       updatedConversation,
-      selectedConversationRef.current
+      selectedConversationRef.current,
     );
   };
 
   const handleSend = useCallback(
-    async (message: Message, deleteCount = 0, retry = false) => {
+    async (message: Message, deleteCount = 0, _retry = false) => {
       message.id = uuidv4();
 
       // Set the active user message ID for WebSocket message tracking
       activeUserMessageId.current = message.id;
       // Persist to sessionStorage for reconnection recovery
       if (selectedConversation?.id) {
-        sessionStorage.setItem(`activeUserMessageId_${selectedConversation.id}`, message.id);
+        sessionStorage.setItem(
+          `activeUserMessageId_${selectedConversation.id}`,
+          message.id,
+        );
       }
       // chat with bot
       if (selectedConversation) {
@@ -890,18 +925,19 @@ export const Chat = () => {
           saveConversation(updatedConversation);
           // Use conversations from closure (it's in useCallback deps) so that
           // conversations created via handleNewConversation are included
-          const updatedConversations: Conversation[] =
-            conversations.map(conversation => {
+          const updatedConversations: Conversation[] = conversations.map(
+            (conversation) => {
               if (conversation.id === selectedConversation.id) {
                 return updatedConversation;
               }
               return conversation;
-            });
-          
+            },
+          );
+
           // Update ref immediately to prevent stale reads
           conversationsRef.current = updatedConversations;
           selectedConversationRef.current = updatedConversation;
-          
+
           // Removed fallback block that was wiping conversations
           homeDispatch({
             field: 'conversations',
@@ -921,28 +957,28 @@ export const Chat = () => {
                       text: message?.content?.trim() || '',
                     },
                     ...(typeof message?.content === 'object' &&
-                    message?.content &&
-                    'attachments' in message.content &&
-                    (message.content as any).attachments?.length > 0
+                      message?.content &&
+                      'attachments' in message.content &&
+                      (message.content as any).attachments?.length > 0
                       ? (message.content as any).attachments?.map(
-                          (attachment: any) => ({
-                            type: 'image',
-                            image_url: attachment?.content,
-                          })
-                        )
+                        (attachment: any) => ({
+                          type: 'image',
+                          image_url: attachment?.content,
+                        }),
+                      )
                       : []),
                   ],
                 };
-              }
+              },
             );
           }
           // else set only the user last message
           else {
             chatMessages = [
               updatedConversation?.messages[
-                updatedConversation?.messages?.length - 1
+              updatedConversation?.messages?.length - 1
               ],
-            ].map(message => {
+            ].map((message) => {
               return {
                 role: message.role,
                 content: [
@@ -955,7 +991,7 @@ export const Chat = () => {
             });
           }
 
-                              const wsMessage = {
+          const wsMessage = {
             ...getWebSocketCustomPayload(),
             type: webSocketMessageTypes.userMessage,
             schema_type:
@@ -974,33 +1010,40 @@ export const Chat = () => {
         }
 
         // Get selected endpoint from settings
-        const httpEndpointPath = sessionStorage.getItem('httpEndpoint') || httpEndpoint;
-        const optionalParams = sessionStorage.getItem('optionalGenerationParameters') || optionalGenerationParameters;
-        
+        const httpEndpointPath =
+          sessionStorage.getItem('httpEndpoint') || httpEndpoint;
+        const optionalParams =
+          sessionStorage.getItem('optionalGenerationParameters') ||
+          optionalGenerationParameters;
+
         // Clean messages for chat endpoints
-        const messagesCleaned = updatedConversation.messages.map(msg => ({
+        const messagesCleaned = updatedConversation.messages.map((msg) => ({
           role: msg.role,
           content: (typeof msg.content === 'string' ? msg.content : '').trim(),
         }));
-        
+
         // Build endpoint-specific payload using dedicated builder functions
         let requestPayload: any;
-        
+
         if (httpEndpointPath === CORE_ROUTES.GENERATE) {
           requestPayload = buildGeneratePayload(message?.content || '');
         } else if (httpEndpointPath === CORE_ROUTES.GENERATE_STREAM) {
           requestPayload = buildGenerateStreamPayload(message?.content || '');
         } else if (httpEndpointPath === CORE_ROUTES.CHAT) {
           requestPayload = buildChatPayload(
-            chatHistory ? messagesCleaned : [{ role: 'user', content: message?.content }],
+            chatHistory
+              ? messagesCleaned
+              : [{ role: 'user', content: message?.content }],
             chatHistory,
-            optionalParams || ''
+            optionalParams || '',
           );
         } else if (httpEndpointPath === CORE_ROUTES.CHAT_STREAM) {
           requestPayload = buildChatStreamPayload(
-            chatHistory ? messagesCleaned : [{ role: 'user', content: message?.content }],
+            chatHistory
+              ? messagesCleaned
+              : [{ role: 'user', content: message?.content }],
             chatHistory,
-            optionalParams || ''
+            optionalParams || '',
           );
         } else if (httpEndpointPath === EXTENDED_ROUTES.CHAT_CA_RAG) {
           requestPayload = buildCaRagPayload(message?.content || '');
@@ -1031,14 +1074,14 @@ export const Chat = () => {
           if (!response?.ok) {
             homeDispatch({ field: 'loading', value: false });
             homeDispatch({ field: 'messageIsStreaming', value: false });
-            
+
             // Handle 422 workflow errors - display in assistant message
             if (response.status === 422) {
               try {
                 const errorBody = await response.json();
                 if (isWorkflowError(errorBody)) {
                   const errorContent = formatWorkflowError(errorBody);
-                  
+
                   const updatedMessages: Message[] = [
                     ...updatedConversation.messages,
                     {
@@ -1047,22 +1090,25 @@ export const Chat = () => {
                       content: errorContent,
                     },
                   ];
-                  
+
                   updatedConversation = {
                     ...updatedConversation,
                     messages: updatedMessages,
                   };
-                  
+
                   homeDispatch({
                     field: 'selectedConversation',
                     value: updatedConversation,
                   });
-                  
+
                   saveConversation(updatedConversation);
                   const updatedConversations = conversations.map((c) =>
-                    c.id === updatedConversation.id ? updatedConversation : c
+                    c.id === updatedConversation.id ? updatedConversation : c,
                   );
-                  homeDispatch({ field: 'conversations', value: updatedConversations });
+                  homeDispatch({
+                    field: 'conversations',
+                    value: updatedConversations,
+                  });
                   saveConversations(updatedConversations);
                   return;
                 }
@@ -1070,11 +1116,12 @@ export const Chat = () => {
                 // Fall through to default error handling if JSON parse fails
               }
             }
-            
+
             // Default: show toast for other errors (404, 500, etc.)
-            const errorMsg = response.status === 404
-              ? 'API communication not available at this URL. Access the application at the default URL http://localhost:3000 (or check terminal startup logs for the correct web application URL).'
-              : response.statusText;
+            const errorMsg =
+              response.status === 404
+                ? 'API communication not available at this URL. Access the application at the default URL http://localhost:3000 (or check terminal startup logs for the correct web application URL).'
+                : response.statusText;
 
             toast.error(errorMsg, { duration: 8000 });
             return;
@@ -1087,10 +1134,11 @@ export const Chat = () => {
             toast.error('Error: No data received from server');
             return;
           }
-          
+
           // Extract Observability-Trace-Id from response headers
-          const observabilityTraceId = response.headers.get('Observability-Trace-Id') || undefined;
-          
+          const observabilityTraceId =
+            response.headers.get('Observability-Trace-Id') || undefined;
+
           if (!false) {
             if (updatedConversation.messages.length === 1) {
               const { content } = message;
@@ -1109,12 +1157,15 @@ export const Chat = () => {
             let done = false;
             let isFirst = true;
             let text = '';
-            let counter = 1;
             let partialIntermediateStep = ''; // Add this to store partial chunks
 
             // Initialize streaming buffers
-            const selectedEndpoint = sessionStorage.getItem('httpEndpoint') || httpEndpoint || DEFAULT_CORE_ROUTE;
-            const isGenerateStream = selectedEndpoint.includes('/generate/stream');
+            const selectedEndpoint =
+              sessionStorage.getItem('httpEndpoint') ||
+              httpEndpoint ||
+              DEFAULT_CORE_ROUTE;
+            const isGenerateStream =
+              selectedEndpoint.includes('/generate/stream');
             let sseBuffer = '';
             let ndjsonBuffer = '';
             let extractedObservabilityTraceId: string | undefined = undefined;
@@ -1176,8 +1227,6 @@ export const Chat = () => {
                 chunkValue = String(chunkValue ?? '');
               }
 
-              counter++;
-
               // First, handle any partial chunk from previous iteration
               if (partialIntermediateStep) {
                 chunkValue = partialIntermediateStep + chunkValue;
@@ -1185,9 +1234,9 @@ export const Chat = () => {
               }
 
               // Process complete observability_trace_id tags
-              let observabilityTraceIdMatches =
+              const observabilityTraceIdMatches =
                 chunkValue.match(
-                  /<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g
+                  /<observabilitytraceid>([\s\S]*?)<\/observabilitytraceid>/g,
                 ) || [];
               for (const match of observabilityTraceIdMatches) {
                 try {
@@ -1198,7 +1247,7 @@ export const Chat = () => {
                   if (idString && !extractedObservabilityTraceId) {
                     extractedObservabilityTraceId = idString;
                   }
-                } catch (error) {
+                } catch (_error) {
                   // Ignore parse errors
                 }
               }
@@ -1207,7 +1256,7 @@ export const Chat = () => {
               if (observabilityTraceIdMatches.length > 0) {
                 chunkValue = chunkValue.replace(
                   /<observabilitytraceid>[\s\S]*?<\/observabilitytraceid>/g,
-                  ''
+                  '',
                 );
               }
 
@@ -1215,7 +1264,7 @@ export const Chat = () => {
               const openingTagIndex =
                 chunkValue.lastIndexOf('<intermediatestep>');
               const closingTagIndex = chunkValue.lastIndexOf(
-                '</intermediatestep>'
+                '</intermediatestep>',
               );
 
               // If we have an opening tag without a closing tag (or closing tag comes before opening)
@@ -1227,10 +1276,10 @@ export const Chat = () => {
               }
 
               // Process complete intermediate steps
-              let rawIntermediateSteps: any[] = [];
-              let stepMatches =
+              const rawIntermediateSteps: any[] = [];
+              const stepMatches =
                 chunkValue.match(
-                  /<intermediatestep>([\s\S]*?)<\/intermediatestep>/g
+                  /<intermediatestep>([\s\S]*?)<\/intermediatestep>/g,
                 ) || [];
               for (const stepMatch of stepMatches) {
                 try {
@@ -1238,12 +1287,12 @@ export const Chat = () => {
                     .replace('<intermediatestep>', '')
                     .replace('</intermediatestep>', '')
                     .trim();
-                  let rawIntermediateMessage = tryParseJson<any>(jsonString);
+                  const rawIntermediateMessage = tryParseJson<any>(jsonString);
                   // handle intermediate data
                   if (rawIntermediateMessage?.type === 'system_intermediate') {
                     rawIntermediateSteps.push(rawIntermediateMessage);
                   }
-                } catch (error) {
+                } catch (_error) {
                   // console.log('Stream response parse error:', error.message);
                 }
               }
@@ -1252,7 +1301,7 @@ export const Chat = () => {
               if (stepMatches.length > 0) {
                 chunkValue = chunkValue.replace(
                   /<intermediatestep>[\s\S]*?<\/intermediatestep>/g,
-                  ''
+                  '',
                 );
               }
 
@@ -1270,14 +1319,14 @@ export const Chat = () => {
 
                 // loop through rawIntermediateSteps and add them to the processedIntermediateSteps
                 let processedIntermediateSteps: any[] = [];
-                rawIntermediateSteps.forEach(step => {
+                rawIntermediateSteps.forEach((step) => {
                   processedIntermediateSteps = processIntermediateMessage(
                     processedIntermediateSteps,
                     step,
                     sessionStorage.getItem('intermediateStepOverride') ===
                       'false'
                       ? false
-                      : intermediateStepOverride
+                      : intermediateStepOverride,
                   );
                 });
 
@@ -1288,7 +1337,8 @@ export const Chat = () => {
                     role: 'assistant',
                     content: text, // main response content without intermediate steps
                     intermediateSteps: [...processedIntermediateSteps], // intermediate steps
-                    observabilityTraceId: extractedObservabilityTraceId || observabilityTraceId, // Trace ID from stream or headers
+                    observabilityTraceId:
+                      extractedObservabilityTraceId || observabilityTraceId, // Trace ID from stream or headers
                   },
                 ];
 
@@ -1308,18 +1358,18 @@ export const Chat = () => {
                       // process intermediate steps
                       // need to loop through raw rawIntermediateSteps and add them to the updatedIntermediateSteps
                       let updatedIntermediateSteps = Array.isArray(
-                        message?.intermediateSteps
+                        message?.intermediateSteps,
                       )
                         ? [...message.intermediateSteps]
                         : [];
-                      rawIntermediateSteps.forEach(step => {
+                      rawIntermediateSteps.forEach((step) => {
                         updatedIntermediateSteps = processIntermediateMessage(
                           updatedIntermediateSteps,
                           step,
                           sessionStorage.getItem('intermediateStepOverride') ===
                             'false'
                             ? false
-                            : intermediateStepOverride
+                            : intermediateStepOverride,
                         );
                       });
 
@@ -1328,7 +1378,8 @@ export const Chat = () => {
                         ...message,
                         content: text, // main response content
                         intermediateSteps: updatedIntermediateSteps, // intermediate steps
-                        observabilityTraceId: extractedObservabilityTraceId || observabilityTraceId, // Trace ID from stream or headers
+                        observabilityTraceId:
+                          extractedObservabilityTraceId || observabilityTraceId, // Trace ID from stream or headers
                       };
                       return msg;
                     }
@@ -1347,12 +1398,12 @@ export const Chat = () => {
 
             saveConversation(updatedConversation);
             const updatedConversations: Conversation[] = conversations.map(
-              conversation => {
+              (conversation) => {
                 if (conversation.id === selectedConversation.id) {
                   return updatedConversation;
                 }
                 return conversation;
-              }
+              },
             );
             if (updatedConversations.length === 0) {
               updatedConversations.push(updatedConversation);
@@ -1383,12 +1434,12 @@ export const Chat = () => {
             });
             saveConversation(updatedConversation);
             const updatedConversations: Conversation[] = conversations.map(
-              conversation => {
+              (conversation) => {
                 if (conversation.id === selectedConversation.id) {
                   return updatedConversation;
                 }
                 return conversation;
-              }
+              },
             );
             if (updatedConversations.length === 0) {
               updatedConversations.push(updatedConversation);
@@ -1425,14 +1476,17 @@ export const Chat = () => {
       expandIntermediateSteps,
       intermediateStepOverride,
       enableIntermediateSteps,
-    ]
+    ],
   );
 
   // Create stable onEdit callback to prevent unnecessary re-renders
-  const handleEditMessage = useCallback((editedMessage: Message, deleteCount?: number) => {
-    setCurrentMessage(editedMessage);
-    handleSend(editedMessage, deleteCount || 0);
-  }, [handleSend]);
+  const handleEditMessage = useCallback(
+    (editedMessage: Message, deleteCount?: number) => {
+      setCurrentMessage(editedMessage);
+      handleSend(editedMessage, deleteCount || 0);
+    },
+    [handleSend],
+  );
 
   // Add a new effect to handle streaming state changes
   useEffect(() => {
@@ -1551,7 +1605,7 @@ export const Chat = () => {
       {
         root: null,
         threshold: 0.5,
-      }
+      },
     );
 
     const messagesEndElement = messagesEndRef.current;
@@ -1595,7 +1649,7 @@ export const Chat = () => {
         </div>
         <ChatInput
           textareaRef={textareaRef}
-          onSend={message => {
+          onSend={(message) => {
             setCurrentMessage(message);
             handleSend(message, 0);
           }}

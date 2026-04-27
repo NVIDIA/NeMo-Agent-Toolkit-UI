@@ -1,4 +1,4 @@
-import { IconPasswordUser, IconUserPentagon } from '@tabler/icons-react';
+import { IconPasswordUser } from '@tabler/icons-react';
 import React from 'react';
 
 export const SystemAgentAvatar = ({ height = 7, width = 7 }) => {

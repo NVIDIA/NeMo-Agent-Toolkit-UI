@@ -8,7 +8,9 @@ import { MAX_FILE_SIZE_BYTES } from '@/constants';
  * @param rawJson - Raw JSON string from file
  * @returns Validated export format or null if invalid
  */
-export function validateImportData(rawJson: string): SupportedExportFormats | null {
+export function validateImportData(
+  rawJson: string,
+): SupportedExportFormats | null {
   // Basic input validation
   if (!rawJson || typeof rawJson !== 'string') {
     return null;
@@ -25,7 +27,7 @@ export function validateImportData(rawJson: string): SupportedExportFormats | nu
   try {
     // Parse JSON safely
     parsed = JSON.parse(rawJson);
-  } catch (error) {
+  } catch (_error) {
     toast.error('Invalid JSON format');
     return null;
   }
@@ -40,9 +42,9 @@ export function validateImportData(rawJson: string): SupportedExportFormats | nu
   const dangerousKeys = ['__proto__', 'constructor', 'prototype'];
   function sanitizeObject(obj: any): any {
     if (obj === null || typeof obj !== 'object') return obj;
-    
+
     if (Array.isArray(obj)) {
-      return obj.map(item => sanitizeObject(item));
+      return obj.map((item) => sanitizeObject(item));
     }
 
     const sanitized: any = {};
@@ -52,7 +54,7 @@ export function validateImportData(rawJson: string): SupportedExportFormats | nu
         console.warn(`Blocked dangerous key during import: ${key}`);
         continue;
       }
-      
+
       // Recursively sanitize nested objects
       sanitized[key] = sanitizeObject(value);
     }
@@ -65,33 +67,42 @@ export function validateImportData(rawJson: string): SupportedExportFormats | nu
   // Validate export format structure
   if (Array.isArray(sanitized)) {
     // ExportFormatV1 - array of conversations
-    if (sanitized.every(item => 
-      typeof item === 'object' && 
-      item !== null &&
-      typeof item.id === 'number' &&
-      typeof item.name === 'string' &&
-      Array.isArray(item.messages)
-    )) {
+    if (
+      sanitized.every(
+        (item) =>
+          typeof item === 'object' &&
+          item !== null &&
+          typeof item.id === 'number' &&
+          typeof item.name === 'string' &&
+          Array.isArray(item.messages),
+      )
+    ) {
       return sanitized as SupportedExportFormats;
     }
   } else if (typeof sanitized === 'object' && sanitized !== null) {
     // Check for V2, V3, V4 formats
-    if (sanitized.version === 4 && 
-        Array.isArray(sanitized.history) && 
-        Array.isArray(sanitized.folders) && 
-        Array.isArray(sanitized.prompts)) {
+    if (
+      sanitized.version === 4 &&
+      Array.isArray(sanitized.history) &&
+      Array.isArray(sanitized.folders) &&
+      Array.isArray(sanitized.prompts)
+    ) {
       return sanitized as SupportedExportFormats;
     }
-    
-    if (sanitized.version === 3 && 
-        Array.isArray(sanitized.history) && 
-        Array.isArray(sanitized.folders)) {
+
+    if (
+      sanitized.version === 3 &&
+      Array.isArray(sanitized.history) &&
+      Array.isArray(sanitized.folders)
+    ) {
       return sanitized as SupportedExportFormats;
     }
-    
+
     // V2 format (history and folders properties)
-    if ((sanitized.history === null || Array.isArray(sanitized.history)) &&
-        (sanitized.folders === null || Array.isArray(sanitized.folders))) {
+    if (
+      (sanitized.history === null || Array.isArray(sanitized.history)) &&
+      (sanitized.folders === null || Array.isArray(sanitized.folders))
+    ) {
       return sanitized as SupportedExportFormats;
     }
   }

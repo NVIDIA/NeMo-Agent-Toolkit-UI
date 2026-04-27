@@ -36,7 +36,7 @@ function validateProxyHttpPath(pathname) {
   try {
     const url = new URL(pathname, 'http://localhost');
     normalizedPath = url.pathname;
-  } catch (err) {
+  } catch (_err) {
     return {
       isValid: false,
       error: 'Invalid or malformed path',
@@ -112,7 +112,7 @@ function validateBackendUrl(url) {
 
   try {
     parsedUrl = new URL(url);
-  } catch (err) {
+  } catch (_err) {
     return {
       isValid: false,
       error: 'Invalid URL format',

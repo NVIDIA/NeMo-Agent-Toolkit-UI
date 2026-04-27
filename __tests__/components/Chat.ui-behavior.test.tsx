@@ -2,8 +2,9 @@
  * Tests for UI behavior, auto-scroll functionality, and user interaction patterns
  */
 
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import React from 'react';
+
 import { throttle } from '@/utils/data/throttle';
 
 // Mock intersection observer for auto-scroll tests
@@ -16,7 +17,7 @@ mockIntersectionObserver.mockReturnValue({
 window.IntersectionObserver = mockIntersectionObserver;
 
 // Mock requestAnimationFrame
-global.requestAnimationFrame = jest.fn(cb => setTimeout(cb, 16));
+global.requestAnimationFrame = jest.fn((cb) => setTimeout(cb, 16));
 
 describe('Auto-scroll and UI Behavior', () => {
   let mockScrollIntoView: jest.Mock;
@@ -35,7 +36,7 @@ describe('Auto-scroll and UI Behavior', () => {
     Object.defineProperties(mockChatContainer, {
       scrollTop: { value: 0, writable: true },
       scrollHeight: { value: 1000, writable: true },
-      clientHeight: { value: 500, writable: true }
+      clientHeight: { value: 500, writable: true },
     });
 
     messagesEndRef = { current: { scrollIntoView: mockScrollIntoView } as any };
@@ -52,14 +53,14 @@ describe('Auto-scroll and UI Behavior', () => {
      * Success: scrollIntoView is called on messagesEndRef when auto-scroll is enabled during streaming
      */
     test('auto-scrolls during message streaming', () => {
-      let autoScrollEnabled = true;
-      let messageIsStreaming = true;
+      const autoScrollEnabled = true;
+      const messageIsStreaming = true;
 
       const scrollDown = () => {
         if (autoScrollEnabled) {
           messagesEndRef.current?.scrollIntoView({
             behavior: 'smooth',
-            block: 'end'
+            block: 'end',
           });
         }
       };
@@ -73,7 +74,7 @@ describe('Auto-scroll and UI Behavior', () => {
 
       expect(mockScrollIntoView).toHaveBeenCalledWith({
         behavior: 'smooth',
-        block: 'end'
+        block: 'end',
       });
     });
 
@@ -109,13 +110,14 @@ describe('Auto-scroll and UI Behavior', () => {
     test('stops auto-scroll when user scrolls up manually', () => {
       let autoScrollEnabled = true;
       let showScrollDownButton = false;
-      let messageIsStreaming = true;
+      const messageIsStreaming = true;
       let lastScrollTop = 400;
 
       const handleScroll = () => {
         if (!chatContainerRef.current) return;
 
-        const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+        const { scrollTop, scrollHeight, clientHeight } =
+          chatContainerRef.current;
         const isScrollingUp = scrollTop < lastScrollTop;
         const isAtBottom = scrollHeight - scrollTop - clientHeight < 20;
 
@@ -157,7 +159,8 @@ describe('Auto-scroll and UI Behavior', () => {
       const handleScroll = () => {
         if (!chatContainerRef.current) return;
 
-        const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+        const { scrollTop, scrollHeight, clientHeight } =
+          chatContainerRef.current;
         const isAtBottom = scrollHeight - scrollTop - clientHeight < 20;
 
         if (isAtBottom && !autoScrollEnabled) {
@@ -189,7 +192,7 @@ describe('Auto-scroll and UI Behavior', () => {
       const handleScrollDown = () => {
         chatContainerRef.current?.scrollTo({
           top: chatContainerRef.current.scrollHeight,
-          behavior: 'smooth'
+          behavior: 'smooth',
         });
         autoScrollEnabled = true;
       };
@@ -203,7 +206,7 @@ describe('Auto-scroll and UI Behavior', () => {
 
       expect(mockScrollTo).toHaveBeenCalledWith({
         top: 1000, // scrollHeight
-        behavior: 'smooth'
+        behavior: 'smooth',
       });
       expect(autoScrollEnabled).toBe(true);
     });
@@ -276,12 +279,26 @@ describe('Auto-scroll and UI Behavior', () => {
 
       // Setup event listeners (simulating useEffect)
       if (chatContainerRef.current) {
-        chatContainerRef.current.addEventListener('wheel', handleUserInput, { passive: true });
-        chatContainerRef.current.addEventListener('touchmove', handleUserInput, { passive: true });
+        chatContainerRef.current.addEventListener('wheel', handleUserInput, {
+          passive: true,
+        });
+        chatContainerRef.current.addEventListener(
+          'touchmove',
+          handleUserInput,
+          { passive: true },
+        );
       }
 
-      expect(mockAddEventListener).toHaveBeenCalledWith('wheel', handleUserInput, { passive: true });
-      expect(mockAddEventListener).toHaveBeenCalledWith('touchmove', handleUserInput, { passive: true });
+      expect(mockAddEventListener).toHaveBeenCalledWith(
+        'wheel',
+        handleUserInput,
+        { passive: true },
+      );
+      expect(mockAddEventListener).toHaveBeenCalledWith(
+        'touchmove',
+        handleUserInput,
+        { passive: true },
+      );
 
       // Simulate user interaction
       handleUserInput();
@@ -312,7 +329,7 @@ describe('Auto-scroll and UI Behavior', () => {
     });
   });
 
-    describe('Throttled Scroll Behavior - REAL FUNCTION TESTS', () => {
+  describe('Throttled Scroll Behavior - REAL FUNCTION TESTS', () => {
     /**
      * Description: Verifies that the throttle function limits call frequency to prevent performance issues
      * Success: First call executes immediately, subsequent calls within time window are ignored, calls after window execute normally
@@ -324,7 +341,7 @@ describe('Auto-scroll and UI Behavior', () => {
         scrollCallCount++;
         messagesEndRef.current?.scrollIntoView({
           behavior: 'smooth',
-          block: 'end'
+          block: 'end',
         });
       };
 
@@ -387,7 +404,7 @@ describe('Auto-scroll and UI Behavior', () => {
       const mockObserver = {
         observe: jest.fn(),
         unobserve: jest.fn(),
-        disconnect: jest.fn()
+        disconnect: jest.fn(),
       };
 
       mockIntersectionObserver.mockImplementation((callback) => {
@@ -398,8 +415,8 @@ describe('Auto-scroll and UI Behavior', () => {
         return mockObserver;
       });
 
-      let autoScrollEnabled = true;
-      let messageIsStreaming = true;
+      const autoScrollEnabled = true;
+      const messageIsStreaming = true;
 
       // Setup observer (simulating useEffect)
       const observer = new IntersectionObserver(
@@ -408,15 +425,15 @@ describe('Auto-scroll and UI Behavior', () => {
             requestAnimationFrame(() => {
               messagesEndRef.current?.scrollIntoView({
                 behavior: 'smooth',
-                block: 'end'
+                block: 'end',
               });
             });
           }
         },
         {
           root: null,
-          threshold: 0.5
-        }
+          threshold: 0.5,
+        },
       );
 
       if (messagesEndRef.current) {
@@ -434,7 +451,7 @@ describe('Auto-scroll and UI Behavior', () => {
       const mockObserver = {
         observe: jest.fn(),
         unobserve: jest.fn(),
-        disconnect: jest.fn()
+        disconnect: jest.fn(),
       };
 
       mockIntersectionObserver.mockReturnValue(mockObserver);
@@ -450,7 +467,9 @@ describe('Auto-scroll and UI Behavior', () => {
         observer.unobserve(messagesEndRef.current);
       }
 
-      expect(mockObserver.unobserve).toHaveBeenCalledWith(messagesEndRef.current);
+      expect(mockObserver.unobserve).toHaveBeenCalledWith(
+        messagesEndRef.current,
+      );
     });
   });
 
@@ -463,7 +482,7 @@ describe('Auto-scroll and UI Behavior', () => {
       let scrollState = {
         autoScrollEnabled: true,
         showScrollDownButton: false,
-        lastScrollTop: 0
+        lastScrollTop: 0,
       };
 
       const updateScrollState = (updates: Partial<typeof scrollState>) => {
@@ -471,7 +490,10 @@ describe('Auto-scroll and UI Behavior', () => {
       };
 
       // Simulate state changes
-      updateScrollState({ autoScrollEnabled: false, showScrollDownButton: true });
+      updateScrollState({
+        autoScrollEnabled: false,
+        showScrollDownButton: true,
+      });
       expect(scrollState.autoScrollEnabled).toBe(false);
       expect(scrollState.showScrollDownButton).toBe(true);
 
@@ -486,24 +508,51 @@ describe('Auto-scroll and UI Behavior', () => {
      */
     test('handles scroll position edge cases', () => {
       const testCases = [
-        { scrollTop: 0, scrollHeight: 1000, clientHeight: 500, expectedAtBottom: false },
-        { scrollTop: 485, scrollHeight: 1000, clientHeight: 500, expectedAtBottom: true }, // Within 15px tolerance (1000-485-500 = 15 < 20)
-        { scrollTop: 500, scrollHeight: 1000, clientHeight: 500, expectedAtBottom: true }, // Exact bottom (1000-500-500 = 0 < 20)
-        { scrollTop: 450, scrollHeight: 1000, clientHeight: 500, expectedAtBottom: false }, // Outside tolerance (1000-450-500 = 50 >= 20)
-        { scrollTop: 0, scrollHeight: 400, clientHeight: 500, expectedAtBottom: true }, // Content shorter than container (400-0-500 = -100 < 20)
+        {
+          scrollTop: 0,
+          scrollHeight: 1000,
+          clientHeight: 500,
+          expectedAtBottom: false,
+        },
+        {
+          scrollTop: 485,
+          scrollHeight: 1000,
+          clientHeight: 500,
+          expectedAtBottom: true,
+        }, // Within 15px tolerance (1000-485-500 = 15 < 20)
+        {
+          scrollTop: 500,
+          scrollHeight: 1000,
+          clientHeight: 500,
+          expectedAtBottom: true,
+        }, // Exact bottom (1000-500-500 = 0 < 20)
+        {
+          scrollTop: 450,
+          scrollHeight: 1000,
+          clientHeight: 500,
+          expectedAtBottom: false,
+        }, // Outside tolerance (1000-450-500 = 50 >= 20)
+        {
+          scrollTop: 0,
+          scrollHeight: 400,
+          clientHeight: 500,
+          expectedAtBottom: true,
+        }, // Content shorter than container (400-0-500 = -100 < 20)
       ];
 
-      testCases.forEach(({ scrollTop, scrollHeight, clientHeight, expectedAtBottom }) => {
-        const isAtBottom = scrollHeight - scrollTop - clientHeight < 20;
-        expect(isAtBottom).toBe(expectedAtBottom);
-      });
+      testCases.forEach(
+        ({ scrollTop, scrollHeight, clientHeight, expectedAtBottom }) => {
+          const isAtBottom = scrollHeight - scrollTop - clientHeight < 20;
+          expect(isAtBottom).toBe(expectedAtBottom);
+        },
+      );
     });
     /**
      * Description: Verifies that concurrent scroll state updates don't cause race conditions
      * Success: Scroll state updates are processed sequentially without conflicts or data loss
      */
     test('prevents scroll state race conditions', () => {
-      let scrollState = { processing: false, pendingUpdate: null as any };
+      const scrollState = { processing: false, pendingUpdate: null as any };
 
       const canProcessUpdate = () => {
         return !scrollState.processing;
@@ -539,13 +588,13 @@ describe('Auto-scroll and UI Behavior', () => {
      * Success: Textarea focus method is called when intersection observer detects messages end is intersecting
      */
     test('focuses textarea when messages end is intersecting', () => {
-      let textareaRef = { current: { focus: jest.fn() } as any };
+      const textareaRef = { current: { focus: jest.fn() } as any };
       let observerCallback: ((entries: any[]) => void) | null = null;
 
       const mockObserver = {
         observe: jest.fn(),
         unobserve: jest.fn(),
-        disconnect: jest.fn()
+        disconnect: jest.fn(),
       };
 
       mockIntersectionObserver.mockImplementation((callback) => {
@@ -560,7 +609,7 @@ describe('Auto-scroll and UI Behavior', () => {
             textareaRef.current?.focus();
           }
         },
-        { root: null, threshold: 0.5 }
+        { root: null, threshold: 0.5 },
       );
 
       if (messagesEndRef.current) {

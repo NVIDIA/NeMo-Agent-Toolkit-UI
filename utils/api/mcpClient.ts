@@ -41,7 +41,8 @@ export const fetchMCPClients = async (): Promise<MCPClientResponse> => {
     }
 
     if (!response.ok) {
-      const serverMessage = body?.error || body?.details || text || `HTTP ${response.status}`;
+      const serverMessage =
+        body?.error || body?.details || text || `HTTP ${response.status}`;
       throw new Error(serverMessage);
     }
 

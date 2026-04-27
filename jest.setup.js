@@ -74,7 +74,7 @@ global.TextEncoder = class TextEncoder {
 };
 
 global.TextDecoder = class TextDecoder {
-  decode(bytes, options = {}) {
+  decode(bytes, _options = {}) {
     return Buffer.from(bytes).toString('utf8');
   }
 };
