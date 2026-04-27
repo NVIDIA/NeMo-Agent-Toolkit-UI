@@ -28,10 +28,14 @@ const mockSessionStorage = {
 
 Object.defineProperty(window, 'localStorage', {
   value: mockLocalStorage,
+  writable: true,
+  configurable: true,
 });
 
 Object.defineProperty(window, 'sessionStorage', {
   value: mockSessionStorage,
+  writable: true,
+  configurable: true,
 });
 
 describe('Conversation State Management', () => {
