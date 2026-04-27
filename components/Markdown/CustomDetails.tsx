@@ -1,9 +1,10 @@
+'use client';
+
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { fetchLastMessage } from '@/utils/app/helper';
 import HomeContext from '@/pages/api/home/home.context';
 
-('use client');
 
 export const CustomDetails = ({ children, id, messageIndex, index }) => {
   let parsedIndex = index;
@@ -100,20 +101,17 @@ export const CustomDetails = ({ children, id, messageIndex, index }) => {
         className={`
                     intermediate-step-details m-2 w-full max-w-full min-w-0 bg-neutral-100 dark:bg-zinc-700 shadow border border-neutral-300 dark:border-zinc-600 rounded-lg p-2
                     transition-[max-height,opacity] duration-500 ease-in-out overflow-auto
-                    ${
-                      isOpen
-                        ? `opacity-100 h-auto`
-                        : `${
-                            messageIsStreaming && isLastMessage && 'opacity-60'
-                          }`
-                    }
-                    ${
-                      parsedIndex === -1
-                        ? messageIsStreaming && isLastMessage
-                          ? 'max-h-[30rem]'
-                          : 'h-auto overflow-auto'
-                        : ''
-                    }
+                    ${isOpen
+            ? `opacity-100 h-auto`
+            : `${messageIsStreaming && isLastMessage && 'opacity-60'
+            }`
+          }
+                    ${parsedIndex === -1
+            ? messageIsStreaming && isLastMessage
+              ? 'max-h-[30rem]'
+              : 'h-auto overflow-auto'
+            : ''
+          }
                 `}
         onClick={(e) => {
           e.preventDefault(); // Prevent default toggle if needed

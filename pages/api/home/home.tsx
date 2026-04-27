@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef } from 'react';
 import { GetServerSideProps } from 'next';
 import { useTranslation } from 'next-i18next';
@@ -32,8 +34,6 @@ import HomeContext from './home.context';
 import { HomeInitialState, initialState } from './home.state';
 
 
-('use client');
-
 const webSocketMode = initialState.webSocketMode;
 
 const Home = (_props: any) => {
@@ -61,9 +61,9 @@ const Home = (_props: any) => {
   const webSocketModeRef = useRef(
     typeof window !== 'undefined'
       ? (() => {
-          const stored = sessionStorage.getItem('webSocketMode');
-          return stored !== null ? stored === 'true' : webSocketMode;
-        })()
+        const stored = sessionStorage.getItem('webSocketMode');
+        return stored !== null ? stored === 'true' : webSocketMode;
+      })()
       : webSocketMode,
   );
 

@@ -1,3 +1,5 @@
+'use client';
+
 import {
   IconCpu,
   IconTool,
@@ -7,7 +9,6 @@ import {
 } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 
-('use client');
 
 // Import IconLoader for the loading state
 
@@ -64,7 +65,7 @@ export const CustomSummary = ({ children, id }) => {
         {isLoading ? (
           <IconLoader size={16} className="animate-spin text-[#76b900]" />
         ) : // <IconCheck size={16} className="text-[#76b900]" />
-        null}
+          null}
         {shouldOpen() ? (
           <IconChevronUp
             size={16}

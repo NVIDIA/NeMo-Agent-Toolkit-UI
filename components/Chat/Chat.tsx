@@ -1,3 +1,5 @@
+'use client';
+
 import {
   useCallback,
   useContext,
@@ -61,8 +63,6 @@ import { ChatInput } from './ChatInput';
 import { ChatLoader } from './ChatLoader';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
 
-
-('use client');
 
 // Streaming utilities for handling SSE and NDJSON safely
 function normalizeNewlines(s: string): string {
@@ -375,9 +375,8 @@ export const Chat = () => {
       // Add conversation_id for reconnection support (HITL state restoration)
       const conversationId = selectedConversationRef.current?.id;
       if (conversationId) {
-        wsUrl += `${
-          wsUrl.includes('?') ? '&' : '?'
-        }conversation_id=${encodeURIComponent(conversationId)}`;
+        wsUrl += `${wsUrl.includes('?') ? '&' : '?'
+          }conversation_id=${encodeURIComponent(conversationId)}`;
       }
 
       // Append custom parameters from settings (query + headers encoded for proxy)
@@ -414,11 +413,10 @@ export const Chat = () => {
                   value === undefined
                 )
                   continue;
-                wsUrl += `${
-                  wsUrl.includes('?') ? '&' : '?'
-                }${encodeURIComponent(key)}=${encodeURIComponent(
-                  String(value),
-                )}`;
+                wsUrl += `${wsUrl.includes('?') ? '&' : '?'
+                  }${encodeURIComponent(key)}=${encodeURIComponent(
+                    String(value),
+                  )}`;
               }
             } else if (!hasStructured) {
               for (const [key, value] of Object.entries(customParams)) {
@@ -428,11 +426,10 @@ export const Chat = () => {
                   value === undefined
                 )
                   continue;
-                wsUrl += `${
-                  wsUrl.includes('?') ? '&' : '?'
-                }${encodeURIComponent(key)}=${encodeURIComponent(
-                  String(value),
-                )}`;
+                wsUrl += `${wsUrl.includes('?') ? '&' : '?'
+                  }${encodeURIComponent(key)}=${encodeURIComponent(
+                    String(value),
+                  )}`;
               }
             }
 
@@ -444,9 +441,8 @@ export const Chat = () => {
             ) {
               const headersJson = JSON.stringify(customParams.headers);
               const encoded = btoa(unescape(encodeURIComponent(headersJson)));
-              wsUrl += `${
-                wsUrl.includes('?') ? '&' : '?'
-              }_ws_headers=${encodeURIComponent(encoded)}`;
+              wsUrl += `${wsUrl.includes('?') ? '&' : '?'
+                }_ws_headers=${encodeURIComponent(encoded)}`;
             }
           }
         } catch {
@@ -670,11 +666,11 @@ export const Chat = () => {
       return messages.map((m, idx) =>
         idx === messages.length - 1
           ? {
-              ...m,
-              errorMessages: [...(m.errorMessages || []), message],
-              observabilityTraceId: m.observabilityTraceId,
-              timestamp: Date.now(),
-            }
+            ...m,
+            errorMessages: [...(m.errorMessages || []), message],
+            observabilityTraceId: m.observabilityTraceId,
+            timestamp: Date.now(),
+          }
           : m,
       );
     } else {
@@ -711,10 +707,10 @@ export const Chat = () => {
     return messages.map((m, idx) =>
       idx === messages.length - 1
         ? {
-            ...m,
-            observabilityTraceId: traceId,
-            timestamp: Date.now(),
-          }
+          ...m,
+          observabilityTraceId: traceId,
+          timestamp: Date.now(),
+        }
         : m,
     );
   };
@@ -961,15 +957,15 @@ export const Chat = () => {
                       text: message?.content?.trim() || '',
                     },
                     ...(typeof message?.content === 'object' &&
-                    message?.content &&
-                    'attachments' in message.content &&
-                    (message.content as any).attachments?.length > 0
+                      message?.content &&
+                      'attachments' in message.content &&
+                      (message.content as any).attachments?.length > 0
                       ? (message.content as any).attachments?.map(
-                          (attachment: any) => ({
-                            type: 'image',
-                            image_url: attachment?.content,
-                          }),
-                        )
+                        (attachment: any) => ({
+                          type: 'image',
+                          image_url: attachment?.content,
+                        }),
+                      )
                       : []),
                   ],
                 };
@@ -980,7 +976,7 @@ export const Chat = () => {
           else {
             chatMessages = [
               updatedConversation?.messages[
-                updatedConversation?.messages?.length - 1
+              updatedConversation?.messages?.length - 1
               ],
             ].map((message) => {
               return {

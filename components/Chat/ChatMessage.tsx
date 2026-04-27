@@ -1,3 +1,5 @@
+'use client';
+
 import {
   IconCheck,
   IconCopy,
@@ -39,8 +41,6 @@ import { BotAvatar } from '@/components/Avatar/BotAvatar';
 import { getReactMarkDownCustomComponents } from '../Markdown/CustomComponents';
 import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
 
-
-('use client');
 
 interface WebSocketError {
   content?: {
@@ -258,11 +258,10 @@ export const ChatMessage: FC<Props> = memo(
 
     return (
       <div
-        className={`group md:px-4 ${
-          message.role === 'assistant'
+        className={`group md:px-4 ${message.role === 'assistant'
             ? 'border-b border-black/10 bg-gray-50 text-gray-800 dark:border-gray-900/50 dark:bg-[#444654] dark:text-gray-100'
             : 'border-b border-black/10 bg-white text-gray-800 dark:border-gray-900/50 dark:bg-[#343541] dark:text-gray-100'
-        }`}
+          }`}
         style={{ overflowWrap: 'anywhere' }}
       >
         <div className="relative m-auto flex text-base sm:w-[95%] 2xl:w-[60%] md:gap-6 sm:p-2 md:py-6 lg:px-0">

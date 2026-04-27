@@ -1,3 +1,5 @@
+'use client';
+
 import {
   IconArrowsSort,
   IconMobiledataOff,
@@ -17,9 +19,6 @@ import HomeContext from '@/pages/api/home/home.context';
 import { useTheme } from '@/contexts/ThemeContext';
 
 import { DataStreamControls } from './DataStreamControls';
-
-
-('use client');
 
 interface Props {
   webSocketModeRef?: React.MutableRefObject<boolean>;
@@ -89,11 +88,10 @@ export const ChatHeader = ({ webSocketModeRef }: Props) => {
 
   return (
     <div
-      className={`top-0 z-10 flex justify-center items-center h-12 ${
-        selectedConversation?.messages?.length === 0
+      className={`top-0 z-10 flex justify-center items-center h-12 ${selectedConversation?.messages?.length === 0
           ? 'bg-none'
           : 'bg-[#76b900] sticky'
-      }  py-2 px-4 text-sm text-white dark:border-none dark:bg-black dark:text-neutral-200`}
+        }  py-2 px-4 text-sm text-white dark:border-none dark:bg-black dark:text-neutral-200`}
     >
       {selectedConversation?.messages?.length > 0 ? (
         <div
@@ -123,13 +121,11 @@ export const ChatHeader = ({ webSocketModeRef }: Props) => {
 
       {/* Collapsible Menu */}
       <div
-        className={`fixed right-0 top-0 h-12 flex items-center transition-all duration-300 ${
-          isExpanded ? 'mr-2' : 'mr-2'
-        } ${
-          selectedConversation?.messages?.length === 0
+        className={`fixed right-0 top-0 h-12 flex items-center transition-all duration-300 ${isExpanded ? 'mr-2' : 'mr-2'
+          } ${selectedConversation?.messages?.length === 0
             ? 'bg-none'
             : 'bg-[#76b900] dark:bg-black'
-        }`}
+          }`}
       >
         <button
           onClick={() => {
@@ -145,9 +141,8 @@ export const ChatHeader = ({ webSocketModeRef }: Props) => {
         </button>
 
         <div
-          className={`flex sm: gap-1 md:gap-4 overflow-hidden transition-all duration-300 ${
-            isExpanded ? 'w-auto opacity-100' : 'w-0 opacity-0'
-          }`}
+          className={`flex sm: gap-1 md:gap-4 overflow-hidden transition-all duration-300 ${isExpanded ? 'w-auto opacity-100' : 'w-0 opacity-0'
+            }`}
         >
           {/* Chat History Toggle */}
           <div className="flex items-center gap-2 whitespace-nowrap">
@@ -162,14 +157,12 @@ export const ChatHeader = ({ webSocketModeRef }: Props) => {
                     value: !chatHistory,
                   });
                 }}
-                className={`relative inline-flex h-5 w-10 items-center cursor-pointer rounded-full transition-colors duration-300 ease-in-out ${
-                  chatHistory ? 'bg-black dark:bg-[#76b900]' : 'bg-gray-200'
-                }`}
+                className={`relative inline-flex h-5 w-10 items-center cursor-pointer rounded-full transition-colors duration-300 ease-in-out ${chatHistory ? 'bg-black dark:bg-[#76b900]' : 'bg-gray-200'
+                  }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ease-in-out ${
-                    chatHistory ? 'translate-x-6' : 'translate-x-0'
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ease-in-out ${chatHistory ? 'translate-x-6' : 'translate-x-0'
+                    }`}
                 />
               </div>
             </label>
@@ -204,14 +197,12 @@ export const ChatHeader = ({ webSocketModeRef }: Props) => {
                     value: newWebSocketMode,
                   });
                 }}
-                className={`relative inline-flex h-5 w-10 items-center cursor-pointer rounded-full transition-colors duration-300 ease-in-out ${
-                  webSocketMode ? 'bg-black dark:bg-[#76b900]' : 'bg-gray-200'
-                }`}
+                className={`relative inline-flex h-5 w-10 items-center cursor-pointer rounded-full transition-colors duration-300 ease-in-out ${webSocketMode ? 'bg-black dark:bg-[#76b900]' : 'bg-gray-200'
+                  }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ease-in-out ${
-                    webSocketMode ? 'translate-x-6' : 'translate-x-0'
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ease-in-out ${webSocketMode ? 'translate-x-6' : 'translate-x-0'
+                    }`}
                 />
               </div>
             </label>
