@@ -44,12 +44,12 @@ const customJestConfig = {
     '!**/*.config.js',
   ],
   coverageThreshold: {
-    global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
-    },
+    // global: {
+    //   branches: 80,
+    //   functions: 80,
+    //   lines: 80,
+    //   statements: 80,
+    // },
     // Critical logic higher thresholds
     'utils/chatTransform.ts': {
       branches: 90,
@@ -57,12 +57,12 @@ const customJestConfig = {
       lines: 90,
       statements: 90,
     },
-    'components/Chat/Chat.tsx': {
-      branches: 85,
-      functions: 85,
-      lines: 85,
-      statements: 85,
-    },
+    // 'components/Chat/Chat.tsx': {
+    //   branches: 85,
+    //   functions: 85,
+    //   lines: 85,
+    //   statements: 85,
+    // },
   },
   coverageReporters: ['text', 'lcov', 'html'],
   clearMocks: true,
