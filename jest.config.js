@@ -65,7 +65,6 @@ const customJestConfig = {
     // },
   },
   coverageReporters: ['text', 'lcov', 'html'],
-  verbose: true,
   clearMocks: true,
   restoreMocks: true,
 };
