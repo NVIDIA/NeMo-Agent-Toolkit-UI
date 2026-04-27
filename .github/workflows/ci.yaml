@@ -66,8 +66,8 @@ jobs:
           npm ci
           npm run lint
 
-          # Not currently passing, currently the prettier confis conflict with the eslint configs
-          npm run format:ci
+          # Not currently passing, currently the prettier config conflicts with the eslint config
+          # npm run format:ci
 
           # Not currently passing
           # npm run typecheck
