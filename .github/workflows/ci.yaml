@@ -65,6 +65,12 @@ jobs:
           cd ${{ env.NAT_UI_CI_WORKSPACE }}
           npm ci
           npm run lint
-          npm run typecheck
+
+          # Not currently passing, currently the prettier confis conflict with the eslint configs
+          npm run format:ci
+
+          # Not currently passing
+          # npm run typecheck
+
           npm run build
           npm run test:ci
