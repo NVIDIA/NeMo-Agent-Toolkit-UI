@@ -15,7 +15,7 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci --coverage --runInBand",
+    "test:ci": "jest --ci --verbose --coverage --runInBand",
     "test:proxy": "jest __tests__/proxy --runInBand --testTimeout=15000"
   },
   "dependencies": {
