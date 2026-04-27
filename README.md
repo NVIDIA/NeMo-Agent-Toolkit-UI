@@ -26,7 +26,7 @@ This project builds upon the work of:
 
 - [NeMo Agent Toolkit](https://github.com/NVIDIA/NeMo-Agent-Toolkit) installed and configured
 - Git
-- Node.js (v18 or higher)
+- Node.js (v20 or higher)
 - npm or Docker
 
 ### Installation
