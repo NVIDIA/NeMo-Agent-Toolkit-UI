@@ -1,6 +1,6 @@
 /**
  * Tests for PromptSuggestions component
- * 
+ *
  * Tests cover:
  * - Component rendering and visibility toggling
  * - Flat list of prompts (array format)
@@ -12,8 +12,9 @@
  * - Prompt selection and callback handling
  */
 
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import React from 'react';
+
 import { PromptSuggestions } from '@/components/Chat/PromptSuggestions';
 import type { PromptSuggestionsData } from '@/components/Chat/PromptSuggestions';
 
@@ -37,31 +38,31 @@ describe('PromptSuggestions Component', () => {
           promptSuggestions={prompts}
           messageIsStreaming={false}
           onPromptSelect={mockOnPromptSelect}
-        />
+        />,
       );
 
       const button = screen.getByRole('button');
       expect(button).toBeInTheDocument();
       expect(button).not.toBeDisabled();
-      
+
       // Menu not visible initially
       expect(screen.queryByText('Prompt Suggestions')).not.toBeInTheDocument();
-      
+
       // Toggle open
       fireEvent.click(button);
       expect(screen.getByText('Prompt Suggestions')).toBeInTheDocument();
-      
+
       // Toggle closed
       fireEvent.click(button);
       expect(screen.queryByText('Prompt Suggestions')).not.toBeInTheDocument();
-      
+
       // Disabled when streaming
       rerender(
         <PromptSuggestions
           promptSuggestions={prompts}
           messageIsStreaming={true}
           onPromptSelect={mockOnPromptSelect}
-        />
+        />,
       );
       expect(screen.getByRole('button')).toBeDisabled();
     });
@@ -75,7 +76,7 @@ describe('PromptSuggestions Component', () => {
     test('renders and handles flat prompt selection', () => {
       const flatPrompts: PromptSuggestionsData = [
         'What is the weather today?',
-        'Tell me a joke'
+        'Tell me a joke',
       ];
 
       render(
@@ -83,18 +84,22 @@ describe('PromptSuggestions Component', () => {
           promptSuggestions={flatPrompts}
           messageIsStreaming={false}
           onPromptSelect={mockOnPromptSelect}
-        />
+        />,
       );
 
       const button = screen.getByRole('button');
       fireEvent.click(button);
 
       // All prompts visible
-      expect(screen.getByText('What is the weather today?')).toBeInTheDocument();
+      expect(
+        screen.getByText('What is the weather today?'),
+      ).toBeInTheDocument();
       expect(screen.getByText('Tell me a joke')).toBeInTheDocument();
 
       // No chevrons for flat prompts
-      const promptButton = screen.getByText('What is the weather today?').closest('button');
+      const promptButton = screen
+        .getByText('What is the weather today?')
+        .closest('button');
       expect(promptButton).not.toBeNull();
       expect(promptButton!.querySelector('svg')).not.toBeInTheDocument();
 
@@ -104,7 +109,7 @@ describe('PromptSuggestions Component', () => {
       // Callback invoked correctly
       expect(mockOnPromptSelect).toHaveBeenCalledWith('Tell me a joke');
       expect(mockOnPromptSelect).toHaveBeenCalledTimes(1);
-      
+
       // Menu closed after selection
       expect(screen.queryByText('Prompt Suggestions')).not.toBeInTheDocument();
     });
@@ -117,7 +122,7 @@ describe('PromptSuggestions Component', () => {
       const mixedFlatPrompts: PromptSuggestionsData = [
         { 'Category A': ['Nested prompt 1', 'Nested prompt 2'] },
         'Direct prompt in flat array',
-        { 'Category B': ['Another nested'] }
+        { 'Category B': ['Another nested'] },
       ];
 
       render(
@@ -125,7 +130,7 @@ describe('PromptSuggestions Component', () => {
           promptSuggestions={mixedFlatPrompts}
           messageIsStreaming={false}
           onPromptSelect={mockOnPromptSelect}
-        />
+        />,
       );
 
       const button = screen.getByRole('button');
@@ -133,7 +138,9 @@ describe('PromptSuggestions Component', () => {
 
       // Both subcategories and direct prompts visible at top level
       expect(screen.getByText('Category A')).toBeInTheDocument();
-      expect(screen.getByText('Direct prompt in flat array')).toBeInTheDocument();
+      expect(
+        screen.getByText('Direct prompt in flat array'),
+      ).toBeInTheDocument();
       expect(screen.getByText('Category B')).toBeInTheDocument();
 
       // Subcategory has chevron, direct prompt does not
@@ -141,7 +148,9 @@ describe('PromptSuggestions Component', () => {
       expect(categoryButton).not.toBeNull();
       expect(categoryButton!.querySelector('svg')).toBeInTheDocument();
 
-      const directButton = screen.getByText('Direct prompt in flat array').closest('button');
+      const directButton = screen
+        .getByText('Direct prompt in flat array')
+        .closest('button');
       expect(directButton).not.toBeNull();
       expect(directButton!.querySelector('svg')).not.toBeInTheDocument();
 
@@ -159,8 +168,8 @@ describe('PromptSuggestions Component', () => {
      */
     test('renders categories and handles navigation', () => {
       const categorizedPrompts: PromptSuggestionsData = {
-        'General': ['Hello', 'Goodbye'],
-        'Technical': ['Debug this', 'Optimize code']
+        General: ['Hello', 'Goodbye'],
+        Technical: ['Debug this', 'Optimize code'],
       };
 
       render(
@@ -168,7 +177,7 @@ describe('PromptSuggestions Component', () => {
           promptSuggestions={categorizedPrompts}
           messageIsStreaming={false}
           onPromptSelect={mockOnPromptSelect}
-        />
+        />,
       );
 
       const button = screen.getByRole('button');
@@ -199,11 +208,11 @@ describe('PromptSuggestions Component', () => {
      */
     test('navigates through nested subcategories', () => {
       const nestedPrompts: PromptSuggestionsData = {
-        'Programming': [
+        Programming: [
           'Direct prompt',
-          { 'JavaScript': ['Async/await', 'Promises'] },
-          { 'Python': ['List comprehension'] }
-        ]
+          { JavaScript: ['Async/await', 'Promises'] },
+          { Python: ['List comprehension'] },
+        ],
       };
 
       render(
@@ -211,7 +220,7 @@ describe('PromptSuggestions Component', () => {
           promptSuggestions={nestedPrompts}
           messageIsStreaming={false}
           onPromptSelect={mockOnPromptSelect}
-        />
+        />,
       );
 
       const button = screen.getByRole('button');
@@ -224,11 +233,15 @@ describe('PromptSuggestions Component', () => {
       expect(screen.getByText('Python')).toBeInTheDocument();
 
       // Direct prompt has no chevron, subcategories have chevrons
-      const directPromptButton = screen.getByText('Direct prompt').closest('button');
+      const directPromptButton = screen
+        .getByText('Direct prompt')
+        .closest('button');
       expect(directPromptButton).not.toBeNull();
       expect(directPromptButton!.querySelector('svg')).not.toBeInTheDocument();
-      
-      const subcategoryButton = screen.getByText('JavaScript').closest('button');
+
+      const subcategoryButton = screen
+        .getByText('JavaScript')
+        .closest('button');
       expect(subcategoryButton).not.toBeNull();
       expect(subcategoryButton!.querySelector('svg')).toBeInTheDocument();
 
@@ -247,8 +260,8 @@ describe('PromptSuggestions Component', () => {
      */
     test('displays correct breadcrumb text at each level', () => {
       const nestedPrompts: PromptSuggestionsData = {
-        'A': [{ 'B': ['Prompt'] }],
-        'Other': ['Prompt']
+        A: [{ B: ['Prompt'] }],
+        Other: ['Prompt'],
       };
 
       render(
@@ -256,7 +269,7 @@ describe('PromptSuggestions Component', () => {
           promptSuggestions={nestedPrompts}
           messageIsStreaming={false}
           onPromptSelect={mockOnPromptSelect}
-        />
+        />,
       );
 
       const button = screen.getByRole('button');
@@ -283,8 +296,8 @@ describe('PromptSuggestions Component', () => {
      */
     test('navigates back when clicking breadcrumb items', () => {
       const nestedPrompts: PromptSuggestionsData = {
-        'A': [{ 'B': [{ 'C': ['Deep prompt'] }] }],
-        'Other': ['Other prompt']
+        A: [{ B: [{ C: ['Deep prompt'] }] }],
+        Other: ['Other prompt'],
       };
 
       render(
@@ -292,7 +305,7 @@ describe('PromptSuggestions Component', () => {
           promptSuggestions={nestedPrompts}
           messageIsStreaming={false}
           onPromptSelect={mockOnPromptSelect}
-        />
+        />,
       );
 
       const button = screen.getByRole('button');
@@ -305,12 +318,14 @@ describe('PromptSuggestions Component', () => {
       expect(screen.getByText('Deep prompt')).toBeInTheDocument();
 
       // Click intermediate breadcrumb - find it within breadcrumb nav
-      const breadcrumbNav = screen.getByRole('navigation', { name: 'Breadcrumb' });
+      const breadcrumbNav = screen.getByRole('navigation', {
+        name: 'Breadcrumb',
+      });
       const allButtonsInNav = breadcrumbNav.querySelectorAll('button');
-      const breadcrumbB = Array.from(allButtonsInNav).find(btn => 
-        btn.textContent === 'B'
+      const breadcrumbB = Array.from(allButtonsInNav).find(
+        (btn) => btn.textContent === 'B',
       );
-      
+
       expect(breadcrumbB).toBeDefined();
       fireEvent.click(breadcrumbB!);
       expect(screen.getByText('C')).toBeInTheDocument();
@@ -340,7 +355,7 @@ describe('PromptSuggestions Component', () => {
             messageIsStreaming={false}
             onPromptSelect={mockOnPromptSelect}
           />
-        </div>
+        </div>,
       );
 
       const button = screen.getByRole('button');
@@ -355,7 +370,9 @@ describe('PromptSuggestions Component', () => {
       // Click outside - closes
       fireEvent.mouseDown(screen.getByTestId('outside'));
       await waitFor(() => {
-        expect(screen.queryByText('Prompt Suggestions')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('Prompt Suggestions'),
+        ).not.toBeInTheDocument();
       });
     });
 
@@ -365,7 +382,7 @@ describe('PromptSuggestions Component', () => {
      */
     test('closes menu on Escape key', () => {
       const prompts: PromptSuggestionsData = {
-        'Category': ['Prompt']
+        Category: ['Prompt'],
       };
 
       render(
@@ -373,7 +390,7 @@ describe('PromptSuggestions Component', () => {
           promptSuggestions={prompts}
           messageIsStreaming={false}
           onPromptSelect={mockOnPromptSelect}
-        />
+        />,
       );
 
       const button = screen.getByRole('button');
@@ -402,8 +419,8 @@ describe('PromptSuggestions Component', () => {
      */
     test('resets path on close and prompt selection', () => {
       const prompts: PromptSuggestionsData = {
-        'Category': ['Prompt 1', 'Prompt 2'],
-        'EmptyCategory': []
+        Category: ['Prompt 1', 'Prompt 2'],
+        EmptyCategory: [],
       };
 
       render(
@@ -411,11 +428,11 @@ describe('PromptSuggestions Component', () => {
           promptSuggestions={prompts}
           messageIsStreaming={false}
           onPromptSelect={mockOnPromptSelect}
-        />
+        />,
       );
 
       const button = screen.getByRole('button');
-      
+
       // Navigate and close via toggle - path should reset
       fireEvent.click(button);
       fireEvent.click(screen.getByText('Category'));
@@ -429,11 +446,11 @@ describe('PromptSuggestions Component', () => {
       fireEvent.click(screen.getByText('Category'));
       expect(screen.getByText('All Categories')).toBeInTheDocument();
       fireEvent.click(screen.getByText('Prompt 1'));
-      
+
       // Menu should close and callback should be invoked
       expect(screen.queryByText('Prompt Suggestions')).not.toBeInTheDocument();
       expect(mockOnPromptSelect).toHaveBeenCalledWith('Prompt 1');
-      
+
       // Reopen - should be at root, not in Category
       fireEvent.click(button);
       expect(screen.getByText('Prompt Suggestions')).toBeInTheDocument();
@@ -444,16 +461,18 @@ describe('PromptSuggestions Component', () => {
       fireEvent.click(screen.getByText('EmptyCategory'));
       expect(screen.getByText('All Categories')).toBeInTheDocument();
       expect(screen.getByText('EmptyCategory')).toBeInTheDocument();
-      
+
       // Verify no prompt or category buttons are displayed (only breadcrumb navigation buttons exist)
       const menu = screen.getByTestId('prompt-suggestions-menu');
       expect(menu).toBeInTheDocument();
-      
+
       // Get all buttons and filter out breadcrumb buttons
       const allButtons = screen.getAllByRole('button');
-      const breadcrumbNav = screen.getByRole('navigation', { name: 'Breadcrumb' });
-      const menuButtons = allButtons.filter(btn => 
-        !breadcrumbNav.contains(btn) && menu.contains(btn)
+      const breadcrumbNav = screen.getByRole('navigation', {
+        name: 'Breadcrumb',
+      });
+      const menuButtons = allButtons.filter(
+        (btn) => !breadcrumbNav.contains(btn) && menu.contains(btn),
       );
       expect(menuButtons.length).toBe(0);
     });
@@ -466,7 +485,7 @@ describe('PromptSuggestions Component', () => {
      */
     test('applies correct styling and accessibility', () => {
       const prompts: PromptSuggestionsData = {
-        'Category': ['Prompt']
+        Category: ['Prompt'],
       };
 
       render(
@@ -474,7 +493,7 @@ describe('PromptSuggestions Component', () => {
           promptSuggestions={prompts}
           messageIsStreaming={false}
           onPromptSelect={mockOnPromptSelect}
-        />
+        />,
       );
 
       const button = screen.getByRole('button');
@@ -486,7 +505,7 @@ describe('PromptSuggestions Component', () => {
 
       // Navigate to see prompts
       fireEvent.click(categoryText);
-      
+
       // Prompts have font-light
       const promptText = screen.getByText('Prompt');
       expect(promptText).toHaveClass('font-light');

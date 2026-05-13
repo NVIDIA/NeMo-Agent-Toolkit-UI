@@ -8,7 +8,7 @@ import {
   appendAssistantText,
   mergeIntermediateSteps,
   shouldRenderAssistantMessage,
-  applyMessageUpdate
+  applyMessageUpdate,
 } from '@/utils/chatTransform';
 
 // Mock both localStorage and sessionStorage
@@ -27,11 +27,11 @@ const mockSessionStorage = {
 };
 
 Object.defineProperty(window, 'localStorage', {
-  value: mockLocalStorage
+  value: mockLocalStorage,
 });
 
 Object.defineProperty(window, 'sessionStorage', {
-  value: mockSessionStorage
+  value: mockSessionStorage,
 });
 
 describe('Conversation State Management', () => {
@@ -39,7 +39,7 @@ describe('Conversation State Management', () => {
     jest.clearAllMocks();
   });
 
-    describe('Conversation Persistence - INTEGRATION TESTS', () => {
+  describe('Conversation Persistence - INTEGRATION TESTS', () => {
     /**
      * Description: Verifies that saveConversations correctly stores conversation arrays to sessionStorage
      * Success: sessionStorage.setItem is called with 'conversationHistory' key and properly serialized JSON data
@@ -47,14 +47,14 @@ describe('Conversation State Management', () => {
     test('saveConversations persists to sessionStorage correctly', () => {
       const mockConversations = [
         { id: 'conv-1', name: 'Test Chat', messages: [], folderId: null },
-        { id: 'conv-2', name: 'Another Chat', messages: [], folderId: null }
+        { id: 'conv-2', name: 'Another Chat', messages: [], folderId: null },
       ];
 
       saveConversations(mockConversations);
 
       expect(mockSessionStorage.setItem).toHaveBeenCalledWith(
         'conversationHistory',
-        JSON.stringify(mockConversations)
+        JSON.stringify(mockConversations),
       );
     });
 
@@ -68,16 +68,16 @@ describe('Conversation State Management', () => {
         name: 'Test Chat',
         messages: [
           { role: 'user', content: 'Hello' },
-          { role: 'assistant', content: 'Hi there!' }
+          { role: 'assistant', content: 'Hi there!' },
         ],
-        folderId: null
+        folderId: null,
       };
 
       saveConversation(mockConversation);
 
       expect(mockSessionStorage.setItem).toHaveBeenCalledWith(
         'selectedConversation',
-        JSON.stringify(mockConversation)
+        JSON.stringify(mockConversation),
       );
     });
 
@@ -92,17 +92,21 @@ describe('Conversation State Management', () => {
           name: 'Persistent Chat',
           messages: [
             { role: 'user', content: 'Hello' },
-            { role: 'assistant', content: 'Hi there!' }
+            { role: 'assistant', content: 'Hi there!' },
           ],
-          folderId: null
-        }
+          folderId: null,
+        },
       ];
 
       // Mock sessionStorage returning saved data (not localStorage)
-      mockSessionStorage.getItem.mockReturnValue(JSON.stringify(mockConversations));
+      mockSessionStorage.getItem.mockReturnValue(
+        JSON.stringify(mockConversations),
+      );
 
       // Simulate page refresh by reloading conversations
-      const loadedConversations = JSON.parse(mockSessionStorage.getItem('conversationHistory') || '[]');
+      const loadedConversations = JSON.parse(
+        mockSessionStorage.getItem('conversationHistory') || '[]',
+      );
 
       expect(loadedConversations).toEqual(mockConversations);
       expect(loadedConversations[0].messages).toHaveLength(2);
@@ -113,7 +117,12 @@ describe('Conversation State Management', () => {
      * Success: Function does not throw exceptions when sessionStorage.setItem fails due to quota limits
      */
     test('handles sessionStorage errors gracefully', () => {
-      const mockConversation = { id: 'conv-1', name: 'Test', messages: [], folderId: null };
+      const mockConversation = {
+        id: 'conv-1',
+        name: 'Test',
+        messages: [],
+        folderId: null,
+      };
 
       // Mock sessionStorage throwing quota exceeded error
       mockSessionStorage.setItem.mockImplementation(() => {
@@ -126,7 +135,7 @@ describe('Conversation State Management', () => {
     });
   });
 
-    describe('Data Cleaning and Validation - REAL FUNCTION TESTS', () => {
+  describe('Data Cleaning and Validation - REAL FUNCTION TESTS', () => {
     /**
      * Description: Verifies that cleanConversationHistory filters out null/undefined entries while repairing objects with missing properties
      * Success: Function returns array with only valid conversations, missing properties filled with defaults (messages: [], folderId: null)
@@ -136,17 +145,22 @@ describe('Conversation State Management', () => {
         { id: 'valid-conv', name: 'Valid', messages: [], folderId: null },
         null, // Corrupted entry - will be filtered out
         { id: 'missing-messages', name: 'Invalid' }, // Missing messages array - will be repaired
-        { id: 'another-valid', name: 'Another Valid', messages: [], folderId: null },
+        {
+          id: 'another-valid',
+          name: 'Another Valid',
+          messages: [],
+          folderId: null,
+        },
         undefined, // Another corrupted entry - will be filtered out
-        { id: 'no-folder', name: 'No Folder', messages: [] } // Missing folderId - will be repaired
+        { id: 'no-folder', name: 'No Folder', messages: [] }, // Missing folderId - will be repaired
       ];
 
       const cleaned = cleanConversationHistory(corruptedHistory);
 
       // Should have 4 items: 2 valid + 2 repaired (null/undefined are filtered out during reduce)
       expect(cleaned).toHaveLength(4);
-      expect(cleaned.every(conv => conv.messages !== undefined)).toBe(true);
-      expect(cleaned.every(conv => conv.folderId !== undefined)).toBe(true);
+      expect(cleaned.every((conv) => conv.messages !== undefined)).toBe(true);
+      expect(cleaned.every((conv) => conv.folderId !== undefined)).toBe(true);
     });
 
     /**
@@ -156,7 +170,7 @@ describe('Conversation State Management', () => {
     test('cleanConversationHistory handles non-array input', () => {
       const invalidInputs = [null, undefined, 'not an array', 123, {}];
 
-      invalidInputs.forEach(input => {
+      invalidInputs.forEach((input) => {
         const result = cleanConversationHistory(input as any);
         expect(Array.isArray(result)).toBe(true);
         expect(result).toHaveLength(0);
@@ -173,14 +187,14 @@ describe('Conversation State Management', () => {
           id: 'conv-1',
           name: 'Chat 1',
           messages: [{ role: 'user', content: 'Hello' }],
-          folderId: 'folder-1'
+          folderId: 'folder-1',
         },
         {
           id: 'conv-2',
           name: 'Chat 2',
           messages: [],
-          folderId: null
-        }
+          folderId: null,
+        },
       ];
 
       const cleaned = cleanConversationHistory(validHistory);
@@ -190,7 +204,7 @@ describe('Conversation State Management', () => {
     });
   });
 
-    describe('Conversation Title Management', () => {
+  describe('Conversation Title Management', () => {
     /**
      * Description: Verifies that conversation title is updated from the first user message content
      * Success: Conversation name changes from 'New Conversation' to the first 30 characters of the user's message
@@ -200,9 +214,9 @@ describe('Conversation State Management', () => {
         id: 'conv-123',
         name: 'New Conversation',
         messages: [
-          { role: 'user', content: 'What is the weather like today?' }
+          { role: 'user', content: 'What is the weather like today?' },
         ],
-        folderId: null
+        folderId: null,
       };
 
       const updated = applyMessageUpdate(conversation, conversation.messages);
@@ -215,13 +229,14 @@ describe('Conversation State Management', () => {
      * Success: Title is cut to exactly 30 characters using substring method
      */
     test('long conversation titles are truncated', () => {
-      const longMessage = 'This is a very long user message that should be truncated when used as conversation title because it exceeds the maximum length allowed';
+      const longMessage =
+        'This is a very long user message that should be truncated when used as conversation title because it exceeds the maximum length allowed';
 
       const conversation = {
         id: 'conv-123',
         name: 'New Conversation',
         messages: [{ role: 'user', content: longMessage }],
-        folderId: null
+        folderId: null,
       };
 
       const updated = applyMessageUpdate(conversation, conversation.messages);
@@ -239,9 +254,9 @@ describe('Conversation State Management', () => {
         id: 'conv-123',
         name: 'Existing Title',
         messages: [
-          { role: 'user', content: 'This should not change the title' }
+          { role: 'user', content: 'This should not change the title' },
         ],
-        folderId: null
+        folderId: null,
       };
 
       const updated = applyMessageUpdate(conversation, conversation.messages);
@@ -258,9 +273,12 @@ describe('Conversation State Management', () => {
         id: 'conv-123',
         name: 'New Conversation',
         messages: [
-          { role: 'assistant', content: 'Assistant message should not set title' }
+          {
+            role: 'assistant',
+            content: 'Assistant message should not set title',
+          },
         ],
-        folderId: null
+        folderId: null,
       };
 
       const updated = applyMessageUpdate(conversation, conversation.messages);
@@ -278,13 +296,17 @@ describe('Message Content Processing - REAL FUNCTION TESTS', () => {
      */
     test('mergeIntermediateSteps preserves step order', () => {
       const existingSteps = [
-        { id: 'step-1', content: { name: 'Planning', payload: 'Step 1' }, index: 0 }
+        {
+          id: 'step-1',
+          content: { name: 'Planning', payload: 'Step 1' },
+          index: 0,
+        },
       ];
 
       const newStep = {
         type: 'system_intermediate_message',
         id: 'step-2',
-        content: { name: 'Execution', payload: 'Step 2' }
+        content: { name: 'Execution', payload: 'Step 2' },
       };
 
       const merged = mergeIntermediateSteps(existingSteps, newStep, true);
@@ -301,30 +323,46 @@ describe('Message Content Processing - REAL FUNCTION TESTS', () => {
     test('mergeIntermediateSteps handles override setting', () => {
       // Test with override enabled - should replace existing step
       const existingStepsWithOverride = [
-        { id: 'step-1', content: { name: 'Planning', payload: 'Original' }, index: 0 }
+        {
+          id: 'step-1',
+          content: { name: 'Planning', payload: 'Original' },
+          index: 0,
+        },
       ];
 
       const newStepForOverride = {
         type: 'system_intermediate_message',
         id: 'step-1',
-        content: { name: 'Planning', payload: 'Updated' }
+        content: { name: 'Planning', payload: 'Updated' },
       };
 
-      const mergedWithOverride = mergeIntermediateSteps(existingStepsWithOverride, newStepForOverride, true);
+      const mergedWithOverride = mergeIntermediateSteps(
+        existingStepsWithOverride,
+        newStepForOverride,
+        true,
+      );
       expect(mergedWithOverride[0].content.payload).toBe('Updated');
 
       // Test with override disabled - should add new step (not replace)
       const existingStepsWithoutOverride = [
-        { id: 'step-1', content: { name: 'Planning', payload: 'Original' }, index: 0 }
+        {
+          id: 'step-1',
+          content: { name: 'Planning', payload: 'Original' },
+          index: 0,
+        },
       ];
 
       const newStepForNoOverride = {
         type: 'system_intermediate_message',
         id: 'step-2', // Different ID to avoid replacement
-        content: { name: 'Execution', payload: 'New Step' }
+        content: { name: 'Execution', payload: 'New Step' },
       };
 
-      const mergedWithoutOverride = mergeIntermediateSteps(existingStepsWithoutOverride, newStepForNoOverride, false);
+      const mergedWithoutOverride = mergeIntermediateSteps(
+        existingStepsWithoutOverride,
+        newStepForNoOverride,
+        false,
+      );
       expect(mergedWithoutOverride).toHaveLength(2); // Should have both steps
       expect(mergedWithoutOverride[0].content.payload).toBe('Original');
       expect(mergedWithoutOverride[1].content.payload).toBe('New Step');
@@ -337,13 +375,25 @@ describe('Message Content Processing - REAL FUNCTION TESTS', () => {
     test('mergeIntermediateSteps assigns correct indices', () => {
       const existingSteps = [];
       const steps = [
-        { type: 'system_intermediate_message', id: 'step-1', content: { name: 'Step 1' } },
-        { type: 'system_intermediate_message', id: 'step-2', content: { name: 'Step 2' } },
-        { type: 'system_intermediate_message', id: 'step-3', content: { name: 'Step 3' } }
+        {
+          type: 'system_intermediate_message',
+          id: 'step-1',
+          content: { name: 'Step 1' },
+        },
+        {
+          type: 'system_intermediate_message',
+          id: 'step-2',
+          content: { name: 'Step 2' },
+        },
+        {
+          type: 'system_intermediate_message',
+          id: 'step-3',
+          content: { name: 'Step 3' },
+        },
       ];
 
       let merged = existingSteps;
-      steps.forEach(step => {
+      steps.forEach((step) => {
         merged = mergeIntermediateSteps(merged, step, true);
       });
 

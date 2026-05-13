@@ -2,7 +2,7 @@
  * Mock for next-i18next to avoid ESM transformation issues in Jest
  */
 
-export const useTranslation = (ns) => ({
+export const useTranslation = (_ns) => ({
   t: (key) => key,
   i18n: {
     language: 'en',

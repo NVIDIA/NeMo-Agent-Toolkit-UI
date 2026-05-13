@@ -1,0 +1,76 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Build pull request
+
+on:
+  push:
+    branches:
+      - 'pull-request/**'
+      - 'main'
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+permissions:
+  actions: none
+  checks: none
+  contents: read
+  deployments: none
+  discussions: none
+  id-token: write
+  issues: none
+  packages: read
+  pages: none
+  pull-requests: read
+  repository-projects: none
+  security-events: none
+  statuses: none
+
+env:
+  NAT_UI_CI_NODE_VERSION: "20"
+  NAT_UI_CI_WORKSPACE: "${{ github.workspace }}/nat-ui"
+  NAT_UI_CI_WORKSPACE_TMP: "${{ github.workspace }}/tmp"
+  UV_PYTHON_DOWNLOADS: never
+
+jobs:
+  checks:
+    runs-on: linux-amd64-cpu4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          path: ${{ env.NAT_UI_CI_WORKSPACE }}
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: ${{ env.NAT_UI_CI_NODE_VERSION }}
+
+      - run: |
+          set -e
+          cd ${{ env.NAT_UI_CI_WORKSPACE }}
+          npm ci
+          npm run lint
+
+          # Not currently passing, currently the prettier config conflicts with the eslint config
+          # npm run format:ci
+
+          # Not currently passing
+          # npm run typecheck
+
+          npm run build
+          npm run test:ci

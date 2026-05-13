@@ -1,4 +1,5 @@
 import path from 'path';
+
 import { FlatCompat } from '@eslint/eslintrc';
 
 // Reuse the existing .eslintrc.js settings via the compatibility helper, but
@@ -39,7 +40,7 @@ export default [
     },
     rules: {
       // TypeScript specific rules (using ESLint equivalents)
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
 
       // React specific rules
       'react/react-in-jsx-scope': 'off',
@@ -93,4 +94,3 @@ export default [
     },
   }),
 ];
-

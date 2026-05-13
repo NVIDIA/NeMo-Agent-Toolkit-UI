@@ -25,9 +25,10 @@ export const WEBSOCKET_PAYLOAD_RESERVED_KEYS = [
   'timestamp',
 ] as const;
 
-export function validateOptionalGenerationJson(
-  jsonString: string,
-): { isValid: boolean; error: string } {
+export function validateOptionalGenerationJson(jsonString: string): {
+  isValid: boolean;
+  error: string;
+} {
   if (!jsonString.trim()) {
     return { isValid: true, error: '' };
   }
@@ -35,11 +36,20 @@ export function validateOptionalGenerationJson(
   try {
     const parsed = JSON.parse(jsonString);
 
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      return { isValid: false, error: 'JSON must be a valid object (not array or null)' };
+    if (
+      typeof parsed !== 'object' ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
+      return {
+        isValid: false,
+        error: 'JSON must be a valid object (not array or null)',
+      };
     }
 
-    const optionalReserved = new Set<string>(CHAT_OPTIONAL_GENERATION_RESERVED_FIELDS);
+    const optionalReserved = new Set<string>(
+      CHAT_OPTIONAL_GENERATION_RESERVED_FIELDS,
+    );
     const conflictingFields = Object.keys(parsed).filter((key) =>
       optionalReserved.has(key),
     );
@@ -47,7 +57,9 @@ export function validateOptionalGenerationJson(
     if (conflictingFields.length > 0) {
       return {
         isValid: false,
-        error: `Cannot override reserved fields: ${conflictingFields.join(', ')}`,
+        error: `Cannot override reserved fields: ${conflictingFields.join(
+          ', ',
+        )}`,
       };
     }
 
@@ -57,13 +69,18 @@ export function validateOptionalGenerationJson(
   }
 }
 
-export function validateWebSocketCustomParams(
-  jsonString: string,
-): { isValid: boolean; error: string } {
+export function validateWebSocketCustomParams(jsonString: string): {
+  isValid: boolean;
+  error: string;
+} {
   if (!jsonString.trim()) return { isValid: true, error: '' };
   try {
     const parsed = JSON.parse(jsonString);
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    if (
+      typeof parsed !== 'object' ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
       return { isValid: false, error: 'Must be a JSON object' };
     }
     const allowedTopKeys = new Set<string>(WEBSOCKET_CUSTOM_PARAMS_TOP_KEYS);
@@ -71,7 +88,9 @@ export function validateWebSocketCustomParams(
     if (extraKeys.length > 0) {
       return {
         isValid: false,
-        error: `Top-level keys must be one of: query, headers, payload. Found: ${extraKeys.join(', ')}`,
+        error: `Top-level keys must be one of: query, headers, payload. Found: ${extraKeys.join(
+          ', ',
+        )}`,
       };
     }
     if (parsed.query != null) {
@@ -79,7 +98,9 @@ export function validateWebSocketCustomParams(
         return { isValid: false, error: 'query must be an object' };
       }
       const queryReserved = new Set<string>(WEBSOCKET_QUERY_RESERVED_KEYS);
-      const used = Object.keys(parsed.query).filter((k) => queryReserved.has(k));
+      const used = Object.keys(parsed.query).filter((k) =>
+        queryReserved.has(k),
+      );
       if (used.length > 0) {
         return {
           isValid: false,
@@ -95,7 +116,10 @@ export function validateWebSocketCustomParams(
         ([, v]) => typeof v !== 'string' && typeof v !== 'number',
       );
       if (nonString) {
-        return { isValid: false, error: 'headers values must be strings or numbers.' };
+        return {
+          isValid: false,
+          error: 'headers values must be strings or numbers.',
+        };
       }
     }
     if (parsed.payload != null) {
@@ -109,7 +133,9 @@ export function validateWebSocketCustomParams(
       if (payloadUsed.length > 0) {
         return {
           isValid: false,
-          error: `payload: reserved keys (${payloadUsed.join(', ')}) cannot be used.`,
+          error: `payload: reserved keys (${payloadUsed.join(
+            ', ',
+          )}) cannot be used.`,
         };
       }
     }

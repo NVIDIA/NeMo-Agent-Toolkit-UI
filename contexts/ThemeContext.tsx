@@ -1,9 +1,16 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
+
 import { getSettings, saveSettings } from '@/utils/app/settings';
 
 interface ThemeContextType {
   lightMode: 'light' | 'dark';
-  setLightMode: (mode: 'light' | 'dark') => void;
+  setLightMode: (_mode: 'light' | 'dark') => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -16,7 +23,9 @@ export const useTheme = () => {
   return context;
 };
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [lightMode, setLightModeState] = useState<'light' | 'dark'>('light');
 
   // Wrapper function that saves settings when theme changes

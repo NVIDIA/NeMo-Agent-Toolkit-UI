@@ -144,7 +144,11 @@ describe('WebSocket Type Guards', () => {
     it('returns true for error messages', () => {
       const message: ErrorMessage = {
         type: 'error_message',
-        content: { code: 'unknown_error', message: 'Something went wrong', details: 'Details here' },
+        content: {
+          code: 'unknown_error',
+          message: 'Something went wrong',
+          details: 'Details here',
+        },
       };
 
       expect(isErrorMessage(message)).toBe(true);
@@ -224,7 +228,11 @@ describe('WebSocket Type Guards', () => {
     it('validates error messages', () => {
       const message = {
         type: 'error_message',
-        content: { code: 'unknown_error', message: 'Error occurred', details: 'Details' },
+        content: {
+          code: 'unknown_error',
+          message: 'Error occurred',
+          details: 'Details',
+        },
       };
 
       expect(validateWebSocketMessage(message)).toBe(true);
@@ -444,7 +452,9 @@ describe('WebSocket Type Guards', () => {
     };
 
     it('returns true for valid message with conversation ID', () => {
-      expect(validateWebSocketMessageWithConversationId(validMessage)).toBe(true);
+      expect(validateWebSocketMessageWithConversationId(validMessage)).toBe(
+        true,
+      );
     });
 
     it('throws error for invalid message structure', () => {
@@ -453,18 +463,21 @@ describe('WebSocket Type Guards', () => {
         conversation_id: 'valid-conversation-123',
       };
 
-      expect(() => validateWebSocketMessageWithConversationId(invalidMessage))
-        .toThrow('Invalid WebSocket message structure');
+      expect(() =>
+        validateWebSocketMessageWithConversationId(invalidMessage),
+      ).toThrow('Invalid WebSocket message structure');
     });
 
     it('throws error for null message', () => {
-      expect(() => validateWebSocketMessageWithConversationId(null))
-        .toThrow('Invalid WebSocket message structure');
+      expect(() => validateWebSocketMessageWithConversationId(null)).toThrow(
+        'Invalid WebSocket message structure',
+      );
     });
 
     it('throws error for undefined message', () => {
-      expect(() => validateWebSocketMessageWithConversationId(undefined))
-        .toThrow('Invalid WebSocket message structure');
+      expect(() =>
+        validateWebSocketMessageWithConversationId(undefined),
+      ).toThrow('Invalid WebSocket message structure');
     });
 
     it('throws error for missing conversation_id', () => {
@@ -474,8 +487,11 @@ describe('WebSocket Type Guards', () => {
         content: { text: 'Hello' },
       };
 
-      expect(() => validateWebSocketMessageWithConversationId(messageWithoutConversationId))
-        .toThrow('WebSocket message missing required conversation_id');
+      expect(() =>
+        validateWebSocketMessageWithConversationId(
+          messageWithoutConversationId,
+        ),
+      ).toThrow('WebSocket message missing required conversation_id');
     });
 
     it('throws error for empty conversation_id', () => {
@@ -486,8 +502,11 @@ describe('WebSocket Type Guards', () => {
         content: { text: 'Hello' },
       };
 
-      expect(() => validateWebSocketMessageWithConversationId(messageWithEmptyConversationId))
-        .toThrow('WebSocket message missing required conversation_id');
+      expect(() =>
+        validateWebSocketMessageWithConversationId(
+          messageWithEmptyConversationId,
+        ),
+      ).toThrow('WebSocket message missing required conversation_id');
     });
 
     it('throws error for whitespace-only conversation_id', () => {
@@ -498,8 +517,11 @@ describe('WebSocket Type Guards', () => {
         content: { text: 'Hello' },
       };
 
-      expect(() => validateWebSocketMessageWithConversationId(messageWithWhitespaceConversationId))
-        .toThrow('WebSocket message missing required conversation_id');
+      expect(() =>
+        validateWebSocketMessageWithConversationId(
+          messageWithWhitespaceConversationId,
+        ),
+      ).toThrow('WebSocket message missing required conversation_id');
     });
 
     it('error message includes message type and conversation_id for debugging', () => {
@@ -510,7 +532,9 @@ describe('WebSocket Type Guards', () => {
       };
 
       try {
-        validateWebSocketMessageWithConversationId(messageWithoutConversationId);
+        validateWebSocketMessageWithConversationId(
+          messageWithoutConversationId,
+        );
         fail('Expected error to be thrown');
       } catch (error: any) {
         expect(error.message).toContain('system_intermediate_message');
@@ -537,10 +561,10 @@ describe('WebSocket Type Guards', () => {
         'system_response_message',
         'system_intermediate_message',
         'system_interaction_message',
-        'error_message'
+        'error_message',
       ];
 
-      messageTypes.forEach(type => {
+      messageTypes.forEach((type) => {
         const message = {
           type,
           conversation_id: 'valid-conversation-123',

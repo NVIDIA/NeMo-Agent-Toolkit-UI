@@ -1,6 +1,5 @@
 import {
   IconArrowDown,
-  IconBolt,
   IconPaperclip,
   IconPhoto,
   IconPlayerStop,
@@ -9,7 +8,6 @@ import {
   IconTrash,
   IconMicrophone,
   IconPlayerStopFilled,
-  IconMicrophone2,
 } from '@tabler/icons-react';
 import {
   KeyboardEvent,
@@ -22,22 +20,22 @@ import {
   useState,
 } from 'react';
 import toast from 'react-hot-toast';
-
-import { env } from 'next-runtime-env';
 import { useTranslation } from 'next-i18next';
+import { env } from 'next-runtime-env';
 
 import { appConfig } from '@/utils/app/const';
 import { loadContentFile } from '@/utils/app/content';
 import { compressImage, getWorkflowName } from '@/utils/app/helper';
-
 import { Message } from '@/types/chat';
-
 import HomeContext from '@/pages/api/home/home.context';
 
-import { PromptSuggestions, type PromptSuggestionsData } from './PromptSuggestions';
+import {
+  PromptSuggestions,
+  type PromptSuggestionsData,
+} from './PromptSuggestions';
 
 interface Props {
-  onSend: (message: Message) => void;
+  onSend: (_message: Message) => void;
   onRegenerate: () => void;
   onScrollDownClick: () => void;
   textareaRef: MutableRefObject<HTMLTextAreaElement | null>;
@@ -52,18 +50,19 @@ export const ChatInput = ({
   onScrollDownClick,
   textareaRef,
   showScrollDownButton,
-  controller,
+  controller: _controller,
   onStopConversation,
 }: Props) => {
   const { t } = useTranslation('chat');
 
   const {
-    state: { selectedConversation, messageIsStreaming, loading, webSocketMode },
-    dispatch: homeDispatch,
+    state: { selectedConversation, messageIsStreaming },
   } = useContext(HomeContext);
 
   const workflow = getWorkflowName();
-  const disclaimerMessage = env('NEXT_PUBLIC_NAT_DISCLAIMER_MESSAGE') || process?.env?.NEXT_PUBLIC_NAT_DISCLAIMER_MESSAGE;
+  const disclaimerMessage =
+    env('NEXT_PUBLIC_NAT_DISCLAIMER_MESSAGE') ||
+    process?.env?.NEXT_PUBLIC_NAT_DISCLAIMER_MESSAGE;
 
   // todo add the audio file
   const recordingStartSound = new Audio('audio/recording.wav');
@@ -72,19 +71,20 @@ export const ChatInput = ({
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const fileInputRef = useRef(null);
   const [inputFile, setInputFile] = useState(null);
-  const [inputFileExtension, setInputFileExtension] = useState('');
+  const [, setInputFileExtension] = useState('');
   const [inputFileContent, setInputFileContent] = useState('');
-  const [inputFileContentCompressed, setInputFileContentCompressed] =
+  const [, setInputFileContentCompressed] =
     useState('');
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef(null);
-  const [promptSuggestions, setPromptSuggestions] = useState<PromptSuggestionsData | null>(null);
+  const [promptSuggestions, setPromptSuggestions] =
+    useState<PromptSuggestionsData | null>(null);
 
   const triggerFileUpload = () => {
     fileInputRef?.current.click();
   };
 
-  const handleInputFileDelete = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleInputFileDelete = (_e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputFile(null);
     setInputFileExtension('');
     setInputFileContent('');
@@ -166,7 +166,7 @@ export const ChatInput = ({
     }
   };
 
-      // Use the passed callback for stop conversation
+  // Use the passed callback for stop conversation
   const handleStopConversation = onStopConversation;
 
   const isMobile = () => {
@@ -226,31 +226,6 @@ export const ChatInput = ({
     }
   };
 
-  const parseVariables = (content: string) => {
-    const regex = /{{(.*?)}}/g;
-    const foundVariables = [];
-    let match;
-
-    while ((match = regex.exec(content)) !== null) {
-      foundVariables.push(match[1]);
-    }
-
-    return foundVariables;
-  };
-
-  const handleSubmit = (updatedVariables: string[]) => {
-    const newContent = content?.replace(/{{(.*?)}}/g, (match, variable) => {
-      const index = variables.indexOf(variable);
-      return updatedVariables[index];
-    });
-
-    setContent(newContent);
-
-    if (textareaRef && textareaRef.current) {
-      textareaRef.current.focus();
-    }
-  };
-
   // Additional handlers for drag and drop
   const handleDragOver = (e: React.DragEvent<HTMLTextAreaElement>) => {
     e.preventDefault(); // Necessary to allow the drop event
@@ -276,7 +251,7 @@ export const ChatInput = ({
   }) => {
     const clipboardData =
       event.clipboardData || event.originalEvent.clipboardData;
-    let items = clipboardData.items;
+    const items = clipboardData.items;
     let isImagePasted = false;
 
     if (items) {
@@ -298,7 +273,7 @@ export const ChatInput = ({
 
     // Handle text only if no image was pasted
     if (!isImagePasted) {
-      let text = clipboardData.getData('text/plain');
+      const text = clipboardData.getData('text/plain');
       if (text) {
         // setContent(text); // Set text content only if text is pasted
       }
@@ -359,15 +334,20 @@ export const ChatInput = ({
   };
 
   const loadPromptSuggestions = async () => {
-    const customSuggestions = await loadContentFile<PromptSuggestionsData>('promptSuggestions.json', true);
+    const customSuggestions = await loadContentFile<PromptSuggestionsData>(
+      'promptSuggestions.json',
+      true,
+    );
     if (customSuggestions) {
       setPromptSuggestions(customSuggestions);
     }
   };
 
   useEffect(() => {
-    if (env('NEXT_PUBLIC_NAT_PROMPT_SUGGESTIONS_ON') === 'true' ||
-        process?.env?.NEXT_PUBLIC_NAT_PROMPT_SUGGESTIONS_ON === 'true') {
+    if (
+      env('NEXT_PUBLIC_NAT_PROMPT_SUGGESTIONS_ON') === 'true' ||
+      process?.env?.NEXT_PUBLIC_NAT_PROMPT_SUGGESTIONS_ON === 'true'
+    ) {
       loadPromptSuggestions();
     }
 
@@ -409,7 +389,9 @@ export const ChatInput = ({
         <div className="relative mx-2 flex w-full flex-grow flex-col rounded-md border border-black/10 bg-white shadow-[0_0_10px_rgba(0,0,0,0.10)] dark:border-gray-900/50 dark:bg-[#40414F] dark:text-white dark:shadow-[0_0_15px_rgba(0,0,0,0.10)] sm:mx-4">
           <textarea
             ref={textareaRef}
-            className={`m-0 w-full resize-none border-0 sm:p-3 sm:pl-8 bg-transparent p-0 py-2 pr-8 ${promptSuggestions ? 'pl-20 md:pl-20' : 'pl-10 md:pl-10'} text-black dark:bg-transparent dark:text-white md:py-3 outline-none`}
+            className={`m-0 w-full resize-none border-0 sm:p-3 sm:pl-8 bg-transparent p-0 py-2 pr-8 ${
+              promptSuggestions ? 'pl-20 md:pl-20' : 'pl-10 md:pl-10'
+            } text-black dark:bg-transparent dark:text-white md:py-3 outline-none`}
             style={{
               resize: 'none',
               bottom: `${textareaRef?.current?.scrollHeight}px`,

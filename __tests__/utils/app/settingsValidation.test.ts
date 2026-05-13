@@ -29,15 +29,21 @@ describe('validateOptionalGenerationJson', () => {
   });
 
   it('rejects both reserved fields and reports both in error', () => {
-    const r = validateOptionalGenerationJson('{"messages": [], "stream": true}');
+    const r = validateOptionalGenerationJson(
+      '{"messages": [], "stream": true}',
+    );
     expect(r.isValid).toBe(false);
     expect(r.error).toContain('messages');
     expect(r.error).toContain('stream');
   });
 
   it('accepts valid custom params', () => {
-    expect(validateOptionalGenerationJson('{"temperature": 0.7}').isValid).toBe(true);
-    expect(validateOptionalGenerationJson('{"max_tokens": 100}').isValid).toBe(true);
+    expect(validateOptionalGenerationJson('{"temperature": 0.7}').isValid).toBe(
+      true,
+    );
+    expect(validateOptionalGenerationJson('{"max_tokens": 100}').isValid).toBe(
+      true,
+    );
   });
 });
 
@@ -64,7 +70,9 @@ describe('validateWebSocketCustomParams', () => {
         '{"query": {"tenant_id": "acme", "session": "should-fail"}}',
       );
       expect(r.isValid).toBe(false);
-      expect(r.error).toContain('query: reserved keys (session) cannot be used');
+      expect(r.error).toContain(
+        'query: reserved keys (session) cannot be used',
+      );
       expect(r.error).not.toContain('conversation_id');
     });
 
@@ -73,7 +81,9 @@ describe('validateWebSocketCustomParams', () => {
         '{"query": {"conversation_id": "abc"}}',
       );
       expect(r.isValid).toBe(false);
-      expect(r.error).toContain('query: reserved keys (conversation_id) cannot be used');
+      expect(r.error).toContain(
+        'query: reserved keys (conversation_id) cannot be used',
+      );
       expect(r.error).not.toContain('session');
     });
 
@@ -88,7 +98,8 @@ describe('validateWebSocketCustomParams', () => {
 
     it('accepts query without reserved keys', () => {
       expect(
-        validateWebSocketCustomParams('{"query": {"tenant_id": "acme"}}').isValid,
+        validateWebSocketCustomParams('{"query": {"tenant_id": "acme"}}')
+          .isValid,
       ).toBe(true);
     });
   });
@@ -108,7 +119,9 @@ describe('validateWebSocketCustomParams', () => {
         '{"payload": {"content": "hello"}}',
       );
       expect(r.isValid).toBe(false);
-      expect(r.error).toContain('payload: reserved keys (content) cannot be used');
+      expect(r.error).toContain(
+        'payload: reserved keys (content) cannot be used',
+      );
     });
 
     it('rejects multiple reserved keys and error mentions only those used', () => {
@@ -123,7 +136,8 @@ describe('validateWebSocketCustomParams', () => {
 
     it('accepts payload without reserved keys', () => {
       expect(
-        validateWebSocketCustomParams('{"payload": {"tenant_id": "acme"}}').isValid,
+        validateWebSocketCustomParams('{"payload": {"tenant_id": "acme"}}')
+          .isValid,
       ).toBe(true);
     });
   });

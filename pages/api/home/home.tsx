@@ -1,17 +1,13 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-
 import { GetServerSideProps } from 'next';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
+import { v4 as uuidv4 } from 'uuid';
 
 import { useCreateReducer } from '@/hooks/useCreateReducer';
-import { DataStreamManager } from '@/components/DataStreamDisplay/DataStreamManager';
-import { ChatHeader } from '@/components/Chat/ChatHeader';
-import { useTheme } from '@/contexts/ThemeContext';
-
 import {
   cleanConversationHistory,
   cleanSelectedConversation,
@@ -24,25 +20,23 @@ import {
 import { saveFolders } from '@/utils/app/folders';
 import { getWorkflowName } from '@/utils/app/helper';
 import { getSettings } from '@/utils/app/settings';
-
-import { APPLICATION_NAME } from '@/constants';
-
 import { Conversation } from '@/types/chat';
 import { KeyValuePair } from '@/types/data';
 import { FolderInterface, FolderType } from '@/types/folder';
-
 import { Chat } from '@/components/Chat/Chat';
+import { ChatHeader } from '@/components/Chat/ChatHeader';
 import { Chatbar } from '@/components/Chatbar/Chatbar';
+import { DataStreamManager } from '@/components/DataStreamDisplay/DataStreamManager';
 import { Navbar } from '@/components/Mobile/Navbar';
+import { useTheme } from '@/contexts/ThemeContext';
 
 import HomeContext from './home.context';
 import { HomeInitialState, initialState } from './home.state';
 
-import { v4 as uuidv4 } from 'uuid';
 
 const webSocketMode = initialState.webSocketMode;
 
-const Home = (props: any) => {
+const Home = (_props: any) => {
   const { t } = useTranslation('chat');
 
   const contextValue = useCreateReducer<HomeInitialState>({
@@ -52,21 +46,25 @@ const Home = (props: any) => {
   const workflow = getWorkflowName();
 
   const {
-    state: { folders, conversations, selectedConversation, enableStreamingRagVizOptions },
+    state: {
+      folders,
+      conversations,
+      selectedConversation,
+      enableStreamingRagVizOptions,
+    },
     dispatch,
   } = contextValue;
 
   const { lightMode, setLightMode } = useTheme();
 
-  const stopConversationRef = useRef<boolean>(false);
 
   const webSocketModeRef = useRef(
     typeof window !== 'undefined'
       ? (() => {
-          const stored = sessionStorage.getItem('webSocketMode');
-          return stored !== null ? stored === 'true' : webSocketMode;
-        })()
-      : webSocketMode
+        const stored = sessionStorage.getItem('webSocketMode');
+        return stored !== null ? stored === 'true' : webSocketMode;
+      })()
+      : webSocketMode,
   );
 
   const handleSelectConversation = (conversation: Conversation) => {
@@ -138,15 +136,18 @@ const Home = (props: any) => {
 
   const handleNewConversation = () => {
     // Check if current conversation is a homepage conversation with no messages
-    if (selectedConversation?.isHomepageConversation && selectedConversation.messages.length === 0) {
+    if (
+      selectedConversation?.isHomepageConversation &&
+      selectedConversation.messages.length === 0
+    ) {
       // Just remove the homepage flag to make it visible in sidebar, don't create a new conversation
       const updatedConversation = {
         ...selectedConversation,
         isHomepageConversation: undefined,
       };
 
-      const updatedConversations = conversations.map(c =>
-        c.id === selectedConversation.id ? updatedConversation : c
+      const updatedConversations = conversations.map((c) =>
+        c.id === selectedConversation.id ? updatedConversation : c,
       );
 
       dispatch({ field: 'selectedConversation', value: updatedConversation });
@@ -157,8 +158,6 @@ const Home = (props: any) => {
 
       return;
     }
-
-    const lastConversation = conversations[conversations.length - 1];
 
     const newConversation: Conversation = {
       id: uuidv4(),
@@ -215,19 +214,34 @@ const Home = (props: any) => {
       dispatch({ field: 'showChatbar', value: showChatbar === 'true' });
     }
 
-    const enableIntermediateSteps = sessionStorage.getItem('enableIntermediateSteps');
+    const enableIntermediateSteps = sessionStorage.getItem(
+      'enableIntermediateSteps',
+    );
     if (enableIntermediateSteps !== null) {
-      dispatch({ field: 'enableIntermediateSteps', value: enableIntermediateSteps === 'true' });
+      dispatch({
+        field: 'enableIntermediateSteps',
+        value: enableIntermediateSteps === 'true',
+      });
     }
 
-    const expandIntermediateSteps = sessionStorage.getItem('expandIntermediateSteps');
+    const expandIntermediateSteps = sessionStorage.getItem(
+      'expandIntermediateSteps',
+    );
     if (expandIntermediateSteps !== null) {
-      dispatch({ field: 'expandIntermediateSteps', value: expandIntermediateSteps === 'true' });
+      dispatch({
+        field: 'expandIntermediateSteps',
+        value: expandIntermediateSteps === 'true',
+      });
     }
 
-    const intermediateStepOverride = sessionStorage.getItem('intermediateStepOverride');
+    const intermediateStepOverride = sessionStorage.getItem(
+      'intermediateStepOverride',
+    );
     if (intermediateStepOverride !== null) {
-      dispatch({ field: 'intermediateStepOverride', value: intermediateStepOverride === 'true' });
+      dispatch({
+        field: 'intermediateStepOverride',
+        value: intermediateStepOverride === 'true',
+      });
     }
 
     const folders = sessionStorage.getItem('folders');

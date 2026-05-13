@@ -1,17 +1,15 @@
 import { IconFileImport } from '@tabler/icons-react';
 import { FC } from 'react';
 import toast from 'react-hot-toast';
-
 import { useTranslation } from 'next-i18next';
 
+import { validateImportData } from '@/utils/security/import-validation';
 import { SupportedExportFormats } from '@/types/export';
 
 import { SidebarButton } from '../Sidebar/SidebarButton';
 
-import { validateImportData } from '@/utils/security/import-validation';
-
 interface Props {
-  onImport: (data: SupportedExportFormats) => void;
+  onImport: (_data: SupportedExportFormats) => void;
 }
 
 export const Import: FC<Props> = ({ onImport }) => {
@@ -32,10 +30,10 @@ export const Import: FC<Props> = ({ onImport }) => {
           reader.onload = (e) => {
             try {
               const rawContent = e.target?.result as string;
-              
+
               // Validate and sanitize the imported data
               const validatedData = validateImportData(rawContent);
-              
+
               if (validatedData) {
                 onImport(validatedData);
                 toast.success('Import successful!');
@@ -43,14 +41,16 @@ export const Import: FC<Props> = ({ onImport }) => {
               // Error messages are handled by validateImportData
             } catch (error) {
               console.error('Import error:', error);
-              toast.error('Failed to import file. Please check the file format.');
+              toast.error(
+                'Failed to import file. Please check the file format.',
+              );
             }
           };
-          
+
           reader.onerror = () => {
             toast.error('Failed to read file. Please try again.');
           };
-          
+
           reader.readAsText(file);
         }}
       />

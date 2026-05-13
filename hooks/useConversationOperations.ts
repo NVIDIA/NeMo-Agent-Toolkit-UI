@@ -1,16 +1,17 @@
+import { v4 as uuidv4 } from 'uuid';
+
 import {
   saveConversation,
   saveConversations,
   updateConversation,
 } from '@/utils/app/conversation';
 
-import { v4 as uuidv4 } from 'uuid';
 
 export const useConversationOperations = ({
   conversations,
   dispatch,
   t,
-  appConfig,
+  appConfig: _appConfig,
 }) => {
   const handleSelectConversation = (conversation) => {
     // Clear any streaming states before switching conversations
@@ -28,8 +29,6 @@ export const useConversationOperations = ({
   };
 
   const handleNewConversation = () => {
-    const lastConversation = conversations[conversations.length - 1];
-
     const newConversation = {
       id: uuidv4(),
       name: t('New Conversation'),

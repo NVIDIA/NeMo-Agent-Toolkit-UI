@@ -13,23 +13,34 @@ import {
   IconVolume2,
   IconX,
 } from '@tabler/icons-react';
-import { FC, memo, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  FC,
+  memo,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import ReactMarkdown from 'react-markdown';
-
 import { useTranslation } from 'next-i18next';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 
+import { useFeedback } from '@/hooks/useFeedback';
 import { updateConversation } from '@/utils/app/conversation';
 import {
   fixMalformedHtml,
   generateContentIntermediate,
 } from '@/utils/app/helper';
-
 import { Message } from '@/types/chat';
-import { useFeedback } from '@/hooks/useFeedback';
-
 import HomeContext from '@/pages/api/home/home.context';
-
 import { BotAvatar } from '@/components/Avatar/BotAvatar';
+
+import { getReactMarkDownCustomComponents } from '../Markdown/CustomComponents';
+import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
+
 
 interface WebSocketError {
   content?: {
@@ -39,24 +50,20 @@ interface WebSocketError {
   };
 }
 
-function formatWebSocketError(err: WebSocketError): { title: string; details: string } {
+function formatWebSocketError(err: WebSocketError): {
+  title: string;
+  details: string;
+} {
   return {
     title: err.content?.message || 'Error',
     details: err.content?.details || 'An unexpected error occurred',
   };
 }
 
-import { getReactMarkDownCustomComponents } from '../Markdown/CustomComponents';
-import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
-
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-
 export interface Props {
   message: Message;
   messageIndex: number;
-  onEdit?: (editedMessage: Message, deleteCount?: number) => void;
+  onEdit?: (_editedMessage: Message, _deleteCount?: number) => void;
 }
 
 export const ChatMessage: FC<Props> = memo(
@@ -77,12 +84,31 @@ export const ChatMessage: FC<Props> = memo(
     const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
     const [showFeedbackInput, setShowFeedbackInput] = useState(false);
     const [feedbackComment, setFeedbackComment] = useState('');
-    const {submitFeedback} = useFeedback();
+    const { submitFeedback } = useFeedback();
 
     // Memoize the markdown components to prevent recreation on every render
     const markdownComponents = useMemo(() => {
       return getReactMarkDownCustomComponents(messageIndex, message?.id);
     }, [messageIndex, message?.id]);
+
+    useEffect(() => {
+      setMessageContent(message.content);
+    }, [message.content]);
+
+    useEffect(() => {
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'inherit';
+        textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      }
+    }, [isEditing]);
+
+    useEffect(() => {
+      return () => {
+        if (speechSynthesisRef.current) {
+          window.speechSynthesis.cancel();
+        }
+      };
+    }, []);
 
     // return if the there is nothing to show
     // no message and no intermediate steps
@@ -107,7 +133,8 @@ export const ChatMessage: FC<Props> = memo(
     const handleEditMessage = () => {
       if (message.content != messageContent) {
         if (selectedConversation && onEdit) {
-          const deleteCount = (selectedConversation.messages.length || 0) - messageIndex;
+          const deleteCount =
+            (selectedConversation.messages.length || 0) - messageIndex;
           onEdit({ ...message, content: messageContent }, deleteCount);
         }
       }
@@ -161,17 +188,6 @@ export const ChatMessage: FC<Props> = memo(
       });
     };
 
-    useEffect(() => {
-      setMessageContent(message.content);
-    }, [message.content]);
-
-    useEffect(() => {
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'inherit';
-        textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-      }
-    }, [isEditing]);
-
     const removeLinks = (text: string) => {
       // This regex matches http/https URLs
       const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -197,21 +213,17 @@ export const ChatMessage: FC<Props> = memo(
       }
     };
 
-    useEffect(() => {
-      return () => {
-        if (speechSynthesisRef.current) {
-          window.speechSynthesis.cancel();
-        }
-      };
-    }, []);
-
     const handleSubmitFeedbackComment = async () => {
       if (!message.observabilityTraceId || !feedbackComment.trim()) return;
-      
+
       try {
-        await submitFeedback(message.observabilityTraceId, undefined, feedbackComment);
+        await submitFeedback(
+          message.observabilityTraceId,
+          undefined,
+          feedbackComment,
+        );
         closeFeedbackInput();
-      } catch (error) {
+      } catch (_error) {
         // Error is already handled in the hook
       }
     };
@@ -246,11 +258,10 @@ export const ChatMessage: FC<Props> = memo(
 
     return (
       <div
-        className={`group md:px-4 ${
-          message.role === 'assistant'
+        className={`group md:px-4 ${message.role === 'assistant'
             ? 'border-b border-black/10 bg-gray-50 text-gray-800 dark:border-gray-900/50 dark:bg-[#444654] dark:text-gray-100'
             : 'border-b border-black/10 bg-white text-gray-800 dark:border-gray-900/50 dark:bg-[#343541] dark:text-gray-100'
-        }`}
+          }`}
         style={{ overflowWrap: 'anywhere' }}
       >
         <div className="relative m-auto flex text-base sm:w-[95%] 2xl:w-[60%] md:gap-6 sm:p-2 md:py-6 lg:px-0">
@@ -385,15 +396,20 @@ export const ChatMessage: FC<Props> = memo(
                   </div>
                   {message.errorMessages?.length > 0 && (
                     <div className="mt-2 space-y-1">
-                      {message.errorMessages.map((err: WebSocketError, idx: number) => {
-                        const { title, details } = formatWebSocketError(err);
-                        return (
-                          <div key={idx} className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-2 rounded">
-                            <span className="font-semibold">{title}: </span>
-                            <span>{details}</span>
-                          </div>
-                        );
-                      })}
+                      {message.errorMessages.map(
+                        (err: WebSocketError, idx: number) => {
+                          const { title, details } = formatWebSocketError(err);
+                          return (
+                            <div
+                              key={idx}
+                              className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-2 rounded"
+                            >
+                              <span className="font-semibold">{title}: </span>
+                              <span>{details}</span>
+                            </div>
+                          );
+                        },
+                      )}
                     </div>
                   )}
                   <div className="mt-1 flex gap-1">
@@ -431,35 +447,54 @@ export const ChatMessage: FC<Props> = memo(
                             <IconVolume2 size={20} />
                           )}
                         </button>
-                        {message.observabilityTraceId &&  (
+                        {message.observabilityTraceId && (
                           <>
                             <button
-                              className={"text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300"}
-                              onClick={() => submitFeedback(message.observabilityTraceId!, '👍')}
+                              className={
+                                'text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300'
+                              }
+                              onClick={() =>
+                                submitFeedback(
+                                  message.observabilityTraceId!,
+                                  '👍',
+                                )
+                              }
                               title="Give thumbs up"
                             >
-                              <IconThumbUp size={20}/>
+                              <IconThumbUp size={20} />
                             </button>
                             <button
-                              className={"text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300"}
+                              className={
+                                'text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300'
+                              }
                               onClick={() => {
-                                submitFeedback(message.observabilityTraceId!, '👎');
+                                submitFeedback(
+                                  message.observabilityTraceId!,
+                                  '👎',
+                                );
                                 setShowFeedbackInput(true);
                               }}
                               title="Give thumbs down"
                             >
-                              <IconThumbDown size={20}/>
+                              <IconThumbDown size={20} />
                             </button>
                             <button
-                              className={"text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300"}
-                              onClick={() => setShowFeedbackInput(!showFeedbackInput)}
+                              className={
+                                'text-[#76b900] hover:text-gray-700 dark:text-[#76b900] dark:hover:text-gray-300'
+                              }
+                              onClick={() =>
+                                setShowFeedbackInput(!showFeedbackInput)
+                              }
                               title="Write feedback comment"
                             >
-                              {showFeedbackInput ? <IconX size={20}/> : <IconMessage size={20}/>}
+                              {showFeedbackInput ? (
+                                <IconX size={20} />
+                              ) : (
+                                <IconMessage size={20} />
+                              )}
                             </button>
                           </>
                         )}
-
                       </>
                     )}
                   </div>

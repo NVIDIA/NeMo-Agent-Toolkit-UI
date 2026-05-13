@@ -6,7 +6,6 @@ import {
   isExportFormatV4,
   isLatestExportFormat,
 } from '@/utils/app/importExport';
-
 import { ExportFormatV1, ExportFormatV2, ExportFormatV4 } from '@/types/export';
 
 // Jest syntax - no need to import describe, expect, it

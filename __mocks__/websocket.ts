@@ -8,16 +8,16 @@ export interface MockWebSocket {
   close: any;
   addEventListener: any;
   removeEventListener: any;
-  onopen: ((event: Event) => void) | null;
-  onmessage: ((event: MessageEvent) => void) | null;
-  onclose: ((event: CloseEvent) => void) | null;
-  onerror: ((event: Event) => void) | null;
+  onopen: ((_event: Event) => void) | null;
+  onmessage: ((_event: MessageEvent) => void) | null;
+  onclose: ((_event: CloseEvent) => void) | null;
+  onerror: ((_event: Event) => void) | null;
   readyState: number;
   url: string;
-  
+
   // Test helpers
   mockOpen: () => void;
-  mockMessage: (data: any) => void;
+  mockMessage: (_data: any) => void;
   mockClose: () => void;
   mockError: () => void;
 }
@@ -32,12 +32,12 @@ class MockWebSocketClass implements MockWebSocket {
   public close = (() => {}) as any;
   public addEventListener = (() => {}) as any;
   public removeEventListener = (() => {}) as any;
-  
-  public onopen: ((event: Event) => void) | null = null;
-  public onmessage: ((event: MessageEvent) => void) | null = null;
-  public onclose: ((event: CloseEvent) => void) | null = null;
-  public onerror: ((event: Event) => void) | null = null;
-  
+
+  public onopen: ((_event: Event) => void) | null = null;
+  public onmessage: ((_event: MessageEvent) => void) | null = null;
+  public onclose: ((_event: CloseEvent) => void) | null = null;
+  public onerror: ((_event: Event) => void) | null = null;
+
   public readyState = MockWebSocketClass.CONNECTING;
   public url: string;
 
@@ -57,8 +57,8 @@ class MockWebSocketClass implements MockWebSocket {
 
   public mockMessage(data: any) {
     if (this.onmessage) {
-      const event = new MessageEvent('message', { 
-        data: typeof data === 'string' ? data : JSON.stringify(data) 
+      const event = new MessageEvent('message', {
+        data: typeof data === 'string' ? data : JSON.stringify(data),
       });
       this.onmessage(event);
     }

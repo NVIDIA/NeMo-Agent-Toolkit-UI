@@ -1,13 +1,7 @@
-// Import html-to-image for generating images
 import { IconDownload } from '@tabler/icons-react';
-import React, { useContext } from 'react';
+import React from 'react';
 import toast from 'react-hot-toast';
-
 import dynamic from 'next/dynamic';
-
-// Import dynamic from Next.js
-import HomeContext from '@/pages/api/home/home.context';
-
 import * as htmlToImage from 'html-to-image';
 import {
   BarChart,
@@ -72,11 +66,6 @@ const Chart = (props: any) => {
     Links = [],
   } = data;
 
-  const {
-    state: { selectedConversation, conversations },
-    dispatch,
-  } = useContext(HomeContext);
-
   const colors = {
     fill: '#76b900',
     stroke: 'black',
@@ -95,12 +84,13 @@ const Chart = (props: any) => {
     height: 100,
     interval: 0, // disable auto-hiding of labels
     tickFormatter: (label: string) => {
-        // truncate long xAxis labels with ellipsis
+      // truncate long xAxis labels with ellipsis
       const maxLength = 20;
-      return label.length > maxLength ? `${label.substring(0, maxLength)}...` : label;
+      return label.length > maxLength
+        ? `${label.substring(0, maxLength)}...`
+        : label;
     },
   };
-
 
   const handleDownload = async () => {
     try {
@@ -151,7 +141,12 @@ const Chart = (props: any) => {
               <YAxis />
               <Tooltip />
               <Legend {...LegendProps} />
-              <Line type="monotone" dataKey={YAxisKey} name={SeriesLabel} stroke={colors.fill}  />
+              <Line
+                type="monotone"
+                dataKey={YAxisKey}
+                name={SeriesLabel}
+                stroke={colors.fill}
+              />
             </LineChart>
           </ResponsiveContainer>
         );
@@ -239,8 +234,17 @@ const Chart = (props: any) => {
               <YAxis />
               <Tooltip />
               <Legend {...LegendProps} />
-              <Bar dataKey={BarKey} name={SeriesLabelMap.bar} fill={colors.fill} />
-              <Line dataKey={LineKey} name={SeriesLabelMap.line} stroke={colors.stroke} type="monotone" />
+              <Bar
+                dataKey={BarKey}
+                name={SeriesLabelMap.bar}
+                fill={colors.fill}
+              />
+              <Line
+                dataKey={LineKey}
+                name={SeriesLabelMap.line}
+                stroke={colors.stroke}
+                type="monotone"
+              />
             </ComposedChart>
           </ResponsiveContainer>
         );

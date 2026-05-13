@@ -1,6 +1,6 @@
 import toast from 'react-hot-toast';
 
-import { Conversation, Role } from '@/types/chat';
+import { Conversation } from '@/types/chat';
 
 export const updateConversation = (
   updatedConversation: Conversation,

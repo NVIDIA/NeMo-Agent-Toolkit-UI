@@ -1,10 +1,11 @@
 'use client';
 
-import { memo, useMemo, useRef } from 'react';
 import { IconExclamationCircle } from '@tabler/icons-react';
+import { memo, useMemo, useRef } from 'react';
 
-import Loading from '@/components/Markdown/Loading';
 import { isValidMediaURL } from '@/utils/media/validation';
+import Loading from '@/components/Markdown/Loading';
+
 
 // First, define the Video component at module level
 
@@ -54,3 +55,4 @@ export const Video = memo(
     return prevProps.src === nextProps.src;
   },
 );
+Video.displayName = 'Video';

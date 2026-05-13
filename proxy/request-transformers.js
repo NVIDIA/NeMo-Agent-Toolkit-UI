@@ -94,7 +94,7 @@ function buildChatPayload(messages, useChatHistory, optionalParams) {
           payload[key] = parsedParams[key];
         }
       });
-    } catch (error) {
+    } catch (_error) {
       // Silently ignore parse errors - payload will use defaults
     }
   }
@@ -133,7 +133,7 @@ function buildChatStreamPayload(messages, useChatHistory, optionalParams) {
           payload[key] = parsedParams[key];
         }
       });
-    } catch (error) {
+    } catch (_error) {
       // Silently ignore parse errors - payload will use defaults
     }
   }

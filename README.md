@@ -26,7 +26,7 @@ This project builds upon the work of:
 
 - [NeMo Agent Toolkit](https://github.com/NVIDIA/NeMo-Agent-Toolkit) installed and configured
 - Git
-- Node.js (v18 or higher)
+- Node.js (v20 or higher)
 - npm or Docker
 
 ### Installation
@@ -77,12 +77,14 @@ docker run --env-file .env -p 3000:3000 nemo-agent-toolkit-ui
 The application uses a unified proxy architecture for improved security. All configuration is done via environment variables in a `.env` file.
 
 **Backend Configuration (Required):**
+
 - `NAT_BACKEND_URL` - **Required** - Full backend URL including protocol (e.g., `http://127.0.0.1:8000` or `https://api.example.com`)
   - This is server-only and never exposed to the browser
   - Used for both HTTP API and WebSocket connections
   - Replaces the old `NEXT_PUBLIC_NAT_BACKEND_ADDRESS` variable
 
 **Application Configuration:**
+
 - `NEXT_PUBLIC_NAT_WORKFLOW` - Application workflow name displayed in the UI
 - `NEXT_PUBLIC_NAT_GREETING_TITLE` - Optional custom greeting title shown on empty chat
 - `NEXT_PUBLIC_NAT_GREETING_SUBTITLE` - Optional custom greeting subtitle shown on empty chat
@@ -92,6 +94,7 @@ The application uses a unified proxy architecture for improved security. All con
 - `NEXT_PUBLIC_NAT_PROMPT_SUGGESTIONS_ON` - Enable prompt suggestions feature (see [Prompt Suggestions Customization](#prompt-suggestions-customization))
 
 **Feature Toggles:**
+
 - `NEXT_PUBLIC_NAT_WEB_SOCKET_DEFAULT_ON` - Enable WebSocket mode by default (true/false)
 - `NEXT_PUBLIC_NAT_CHAT_HISTORY_DEFAULT_ON` - Enable chat history persistence by default (true/false)
 - `NEXT_PUBLIC_NAT_RIGHT_MENU_OPEN` - Show right menu panel by default (true/false)
@@ -100,12 +103,14 @@ The application uses a unified proxy architecture for improved security. All con
 - `NEXT_PUBLIC_NAT_SHOW_DATA_STREAM_DEFAULT_ON` - Show data stream display by default (true/false)
 
 **Proxy Configuration**
+
 - `PORT` - Public gateway port that the browser connects to (default: 3000, auto-detects if busy)
 - `NEXT_INTERNAL_URL` - Internal Next.js dev server URL (default: `http://localhost:3099`). Must match the port in `package.json`.
 - `HTTP_PUBLIC_PATH` - Public HTTP path prefix for API requests (default: `/api`)
 - `WS_PUBLIC_PATH` - Public WebSocket path (default: `/ws`)
 
 **Optional Configuration:**
+
 - `NAT_DEFAULT_MODEL` - Default AI model identifier for server-side rendering
 - `NAT_MAX_FILE_SIZE_STRING` - Maximum file upload size for all operations (e.g., '5mb', '10mb', '1gb')
 - `NEXT_TELEMETRY_DISABLED` - Disable Next.js telemetry data collection (1 to disable)
@@ -116,11 +121,13 @@ The application uses a unified proxy architecture for improved security. All con
 This application can optionally display a welcome message on the initial chat screen. Follow the instructions below to enable and customize the message:
 
 1. Enable the welcome message by setting the environment variable:
+
    ```bash
    NEXT_PUBLIC_NAT_WELCOME_MESSAGE_ON=true
    ```
 
 2. Copy the example file:
+
    ```bash
    cp public/content/welcome.md.example public/content/welcome.md
    ```
@@ -131,26 +138,27 @@ This application can optionally display a welcome message on the initial chat sc
      docker run -v /path/to/your/welcome.md:/app/public/content/welcome.md -p 3000:3000 nemo-agent-toolkit-ui
      ```
 
-
 ### Prompt Suggestions Customization
 
 This application can optionally display a prompt suggestions feature that suggests prompts to users. Follow the instructions below to enable and customize it:
 
 1. Enable the prompt suggestions by setting the environment variable:
+
    ```bash
    NEXT_PUBLIC_NAT_PROMPT_SUGGESTIONS_ON=true
    ```
 
 2. Copy the example configuration:
+
    ```bash
    cp public/content/promptSuggestions.json.example public/content/promptSuggestions.json
    ```
 
 3. Edit `public/content/promptSuggestions.json` to add your custom categories and prompts. The file uses a simple JSON format with category names as keys and arrays of prompt strings as values.
-    - If deploying with Docker, mount your custom prompt suggestions:
-      ```bash
-      docker run -v /path/to/your/promptSuggestions.json:/app/public/content/promptSuggestions.json -p 3000:3000 nemo-agent-toolkit-ui
-      ```
+   - If deploying with Docker, mount your custom prompt suggestions:
+     ```bash
+     docker run -v /path/to/your/promptSuggestions.json:/app/public/content/promptSuggestions.json -p 3000:3000 nemo-agent-toolkit-ui
+     ```
 
 ### API Connection
 
@@ -163,12 +171,14 @@ Settings can be configured by selecting the `Settings` icon located on the botto
 The UI supports two communication modes:
 
 **HTTP/REST (Default)**
+
 - Standard request-response pattern
 - OpenAI Chat Completions compatible
 - Supports both streaming and non-streaming responses
 - Best for: Simple request-response workflows, stateless interactions
 
 **WebSocket (Real-time)**
+
 - Bidirectional persistent connections
 - Required for Human-in-the-Loop (HITL) workflows
 - Enables server-initiated messages and interruptions
@@ -179,9 +189,11 @@ For detailed WebSocket integration and message formats, refer to the [WebSocket 
 ### Settings Options
 
 **Appearance:**
+
 - `Theme`: Switch between Light and Dark mode
 
 **API Configuration:**
+
 - `HTTP Endpoint`: Select API endpoint type:
   - **Chat Completions — Streaming** - Real-time OpenAI Chat Completions compatible API endpoint with streaming responses
   - **Chat Completions — Non-Streaming** - Standard OpenAI Chat Completions compatible API endpoint
@@ -191,6 +203,7 @@ For detailed WebSocket integration and message formats, refer to the [WebSocket 
 - `Optional Generation Parameters`: OpenAI Chat Completions compatible JSON parameters that can be added to the request body (available for chat endpoints)
 
 **WebSocket Configuration:** The WebSocket path defaults to `websocket`.
+
 - `WebSocket Schema`: Select schema for real-time connections:
   - **Chat Completions — Streaming** - Streaming chat over WebSocket
   - **Chat Completions — Non-Streaming** - Non-streaming chat over WebSocket
@@ -199,6 +212,7 @@ For detailed WebSocket integration and message formats, refer to the [WebSocket 
 
 > [!IMPORTANT]
 > WebSocket mode **must be enabled** for interactive workflows like Human-in-the-Loop (HITL). To enable:
+>
 > 1. Open the panel on the top right of the webpage
 > 2. Toggle the **WebSocket** button to ON
 > 3. You will see a notification that says "websocket connected" when successfully connected
@@ -217,7 +231,6 @@ For more detail, see the [README for live data streaming](DATA_STREAMING.md).
 ## Usage Examples
 
 ### Quick Start: Simple Calculator Example
-
 
 This example demonstrates an agent workflow using HTTP streaming with intermediate step visualization.
 
@@ -248,6 +261,7 @@ Is 4 + 4 greater than the current hour of the day?
 ```
 
 The agent will:
+
 1. Break down the problem into steps
 2. Call the calculator tool to compute `4 + 4 = 8`
 3. Get the current time
@@ -299,8 +313,6 @@ Is 4 + 4 greater than the current hour of the day?
 ![HITL Input Request](public/screenshots/hitl_prompt.png)
 
 **Step 3**: Enter your response in the human-in-the-loop modal (e.g., "yes" or "no") and click Submit.
-
-
 
 **Expected Result**: The agent receives your input and continues execution, displaying intermediate reasoning steps and the final answer. The result will be identical to what was demonstrated in the [Quick Start: Simple Calculator Example](#quick-start-simple-calculator-example) above.
 

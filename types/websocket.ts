@@ -18,7 +18,7 @@ export type SystemResponseStatus = 'in_progress' | 'complete';
 export interface SystemResponseMessage extends WebSocketMessageBase {
   type: 'system_response_message';
   status: SystemResponseStatus;
-  content?: { 
+  content?: {
     text?: string;
   };
 }
@@ -67,10 +67,10 @@ export interface ErrorMessage extends WebSocketMessageBase {
 }
 
 // Union type for all WebSocket messages
-export type WebSocketInbound = 
-  | SystemResponseMessage 
-  | SystemIntermediateMessage 
-  | SystemInteractionMessage 
+export type WebSocketInbound =
+  | SystemResponseMessage
+  | SystemIntermediateMessage
+  | SystemInteractionMessage
   | ObservabilityTraceMessage
   | ErrorMessage;
 
@@ -85,29 +85,33 @@ export interface IntermediateStep {
 }
 
 // Type guards for WebSocket messages
-export function isSystemResponseMessage(message: any): message is SystemResponseMessage {
+export function isSystemResponseMessage(
+  message: any,
+): message is SystemResponseMessage {
   return message?.type === 'system_response_message';
 }
 
-export function isSystemResponseInProgress(message: any): message is SystemResponseMessage {
-  return (
-    isSystemResponseMessage(message) && 
-    message.status === 'in_progress'
-  );
+export function isSystemResponseInProgress(
+  message: any,
+): message is SystemResponseMessage {
+  return isSystemResponseMessage(message) && message.status === 'in_progress';
 }
 
-export function isSystemResponseComplete(message: any): message is SystemResponseMessage {
-  return (
-    isSystemResponseMessage(message) && 
-    message.status === 'complete'
-  );
+export function isSystemResponseComplete(
+  message: any,
+): message is SystemResponseMessage {
+  return isSystemResponseMessage(message) && message.status === 'complete';
 }
 
-export function isSystemIntermediateMessage(message: any): message is SystemIntermediateMessage {
+export function isSystemIntermediateMessage(
+  message: any,
+): message is SystemIntermediateMessage {
   return message?.type === 'system_intermediate_message';
 }
 
-export function isSystemInteractionMessage(message: any): message is SystemInteractionMessage {
+export function isSystemInteractionMessage(
+  message: any,
+): message is SystemInteractionMessage {
   return message?.type === 'system_interaction_message';
 }
 
@@ -115,11 +119,15 @@ export function isErrorMessage(message: any): message is ErrorMessage {
   return message?.type === 'error_message';
 }
 
-export function isObservabilityTraceMessage(message: any): message is ObservabilityTraceMessage {
+export function isObservabilityTraceMessage(
+  message: any,
+): message is ObservabilityTraceMessage {
   return message?.type === 'observability_trace_message';
 }
 
-export function isOAuthConsentMessage(message: any): message is SystemInteractionMessage {
+export function isOAuthConsentMessage(
+  message: any,
+): message is SystemInteractionMessage {
   return (
     isSystemInteractionMessage(message) &&
     message.content?.input_type === 'oauth_consent'
@@ -133,10 +141,10 @@ export function validateConversationId(message: any): boolean {
   if (!message || typeof message !== 'object') {
     return false;
   }
-  
+
   // conversation_id must be present and be a non-empty string
   return (
-    typeof message.conversation_id === 'string' && 
+    typeof message.conversation_id === 'string' &&
     message.conversation_id.trim().length > 0
   );
 }
@@ -144,19 +152,21 @@ export function validateConversationId(message: any): boolean {
 /**
  * Validates that a message has the minimum required structure
  */
-export function validateWebSocketMessage(message: any): message is WebSocketInbound {
+export function validateWebSocketMessage(
+  message: any,
+): message is WebSocketInbound {
   if (!message || typeof message !== 'object') {
     return false;
   }
-  
+
   return (
     typeof message.type === 'string' &&
     [
       'system_response_message',
-      'system_intermediate_message', 
+      'system_intermediate_message',
       'system_interaction_message',
       'observability_trace_message',
-      'error_message'
+      'error_message',
     ].includes(message.type)
   );
 }
@@ -165,32 +175,40 @@ export function validateWebSocketMessage(message: any): message is WebSocketInbo
  * Validates WebSocket message structure AND conversation ID presence
  * Throws descriptive errors for debugging
  */
-export function validateWebSocketMessageWithConversationId(message: any): message is WebSocketInbound {
+export function validateWebSocketMessageWithConversationId(
+  message: any,
+): message is WebSocketInbound {
   // First check basic message structure
   if (!validateWebSocketMessage(message)) {
     throw new Error(
-      `Invalid WebSocket message structure. Expected message with valid 'type' field, got: ${JSON.stringify(message)}`
+      `Invalid WebSocket message structure. Expected message with valid 'type' field, got: ${JSON.stringify(
+        message,
+      )}`,
     );
   }
-  
+
   // Then check conversation ID
   if (!validateConversationId(message)) {
     throw new Error(
-      `WebSocket message missing required conversation_id. Message type: ${message.type}, message: ${JSON.stringify(message)}`
+      `WebSocket message missing required conversation_id. Message type: ${
+        message.type
+      }, message: ${JSON.stringify(message)}`,
     );
   }
-  
+
   return true;
 }
 
 /**
  * Extracts OAuth URL from interaction message safely
  */
-export function extractOAuthUrl(message: SystemInteractionMessage): string | null {
+export function extractOAuthUrl(
+  message: SystemInteractionMessage,
+): string | null {
   if (!isOAuthConsentMessage(message)) {
     return null;
   }
-  
+
   return (
     message.content?.oauth_url ||
     message.content?.redirect_url ||
@@ -202,7 +220,9 @@ export function extractOAuthUrl(message: SystemInteractionMessage): string | nul
 /**
  * Determines if a response should append content (type guards + content check)
  */
-export function shouldAppendResponseContent(message: WebSocketInbound): boolean {
+export function shouldAppendResponseContent(
+  message: WebSocketInbound,
+): boolean {
   return (
     isSystemResponseInProgress(message) &&
     Boolean(message.content?.text?.trim())
