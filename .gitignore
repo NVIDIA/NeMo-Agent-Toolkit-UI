@@ -41,3 +41,6 @@ yarn.lock
 # Content files
 /public/content/*
 !/public/content/*.*.example
+
+
+/.codex
