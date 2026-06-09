@@ -102,6 +102,7 @@
     "babel-plugin-istanbul": "8.0.2",
     "jose": "^4.15.9",
     "mdast-util-to-hast": "13.2.1",
+    "shell-quote": "^1.8.4",
     "test-exclude": {
       "minimatch": "9.0.8"
     }
