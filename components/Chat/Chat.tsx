@@ -228,6 +228,7 @@ export const Chat = () => {
   const [interactionMessage, setInteractionMessage] = useState(null);
   const webSocketRef = useRef<WebSocket | null>(null);
   const webSocketConnectedRef = useRef(false);
+  const oauthPopupCancelledRef = useRef(false);
   const webSocketModeRef = useRef(
     sessionStorage.getItem('webSocketMode') === 'false' ? false : webSocketMode,
   );
@@ -545,6 +546,53 @@ export const Chat = () => {
     }
   }, [intermediateStepOverride]);
 
+  const persistOAuthPendingMessage = () => {
+    const conversation = selectedConversationRef.current;
+    if (!conversation) return;
+    const lastUserMessage = fetchLastMessage({ messages: conversation.messages, role: 'user' });
+    if (!lastUserMessage) return;
+    sessionStorage.setItem('oauth_pending_message', JSON.stringify(lastUserMessage));
+    sessionStorage.setItem('oauth_pending_conversation_id', conversation.id);
+  };
+
+  /**
+   * Handles OAuth consent flow by opening a popup window or navigating in the same tab
+   */
+  const handleOAuthConsent = (message: WebSocketInbound) => {
+    if (!isSystemInteractionMessage(message)) return false;
+
+    if (message.content?.input_type === 'oauth_consent') {
+      const oauthUrl = extractOAuthUrl(message);
+      if (oauthUrl) {
+        // Validate URL before opening
+        if (!isValidConsentPromptURL(oauthUrl)) {
+          console.error('OAuth URL validation failed in popup handler, refusing to open potentially malicious URL.');
+          toast.error('OAuth URL validation failed.');
+          return false;
+        }
+
+        const shouldUsePopup = !message.content?.use_redirect;
+        if (shouldUsePopup) {
+          const popup = window.open(
+            oauthUrl,
+            'oauth-popup',
+            'noopener,noreferrer'
+          );
+          const handleOAuthComplete = (event: MessageEvent) => {
+            if (popup && !popup.closed) popup.close();
+            window.removeEventListener('message', handleOAuthComplete);
+          };
+          window.addEventListener('message', handleOAuthComplete);
+        } else {
+          persistOAuthPendingMessage();
+          window.location.href = oauthUrl;
+        }
+      }
+      return true;
+    }
+    return false;
+  };
+
   /**
    * Updates refs immediately before React dispatch to prevent stale reads
    */
@@ -774,8 +822,23 @@ export const Chat = () => {
         if (oauthUrl) {
           // Validate URL before opening to prevent Open Redirect attacks
           if (isValidConsentPromptURL(oauthUrl)) {
-            // Open the validated OAuth URL in a new tab
-            window.open(oauthUrl, '_blank', 'noopener,noreferrer');
+            const shouldUsePopup = !message?.content?.use_redirect;
+            if (shouldUsePopup) {
+              if (oauthPopupCancelledRef.current) return;
+              // Open the validated OAuth URL in a new tab
+              const popup = window.open(oauthUrl, 'oauth-popup', 'noopener,noreferrer');
+              const handleOAuthComplete = (event: MessageEvent) => {
+                if (popup && !popup.closed) popup.close();
+                window.removeEventListener('message', handleOAuthComplete);
+                if (event.data?.type === 'AUTH_CANCELLED') {
+                  oauthPopupCancelledRef.current = true;
+                }
+              };
+              window.addEventListener('message', handleOAuthComplete);
+            } else {
+              persistOAuthPendingMessage();
+              window.location.href = oauthUrl;
+            }
           } else {
             console.error(
               'OAuth URL validation failed, refusing to open potentially malicious URL:',
@@ -863,6 +926,7 @@ export const Chat = () => {
   const handleSend = useCallback(
     async (message: Message, deleteCount = 0, _retry = false) => {
       message.id = uuidv4();
+      oauthPopupCancelledRef.current = false;
 
       // Set the active user message ID for WebSocket message tracking
       activeUserMessageId.current = message.id;
@@ -1487,6 +1551,63 @@ export const Chat = () => {
     },
     [handleSend],
   );
+
+  // After returning from the OAuth provider, resubmit the message that triggered auth.
+  useEffect(() => {
+    const pendingMessageRaw = sessionStorage.getItem('oauth_pending_message');
+    const pendingConversationId = sessionStorage.getItem('oauth_pending_conversation_id');
+    if (!pendingMessageRaw || !pendingConversationId) return;
+    if (!selectedConversation || selectedConversation.id !== pendingConversationId) return;
+
+    // The success page runs at the NAT server origin, so sessionStorage is cross-origin and
+    // unavailable here. The flag is instead passed back as a URL query parameter.
+    const urlParams = new URLSearchParams(window.location.search);
+    const authCompleted = urlParams.get('oauth_auth_completed');
+    if (authCompleted) {
+      urlParams.delete('oauth_auth_completed');
+      const cleanUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+      window.history.replaceState({}, '', cleanUrl);
+    }
+
+    sessionStorage.removeItem('oauth_pending_message');
+    sessionStorage.removeItem('oauth_pending_conversation_id');
+
+    // If the user pressed back without completing OAuth, show a cancellation message.
+    if (!authCompleted) {
+      const conversation = selectedConversationRef.current;
+      if (conversation) {
+        const messages = conversation.messages;
+        const lastMessage = messages.at(-1);
+        const updatedMessages = lastMessage?.role === 'assistant'
+          ? messages.map((m, idx) =>
+              idx === messages.length - 1 ? updateAssistantMessage(m, 'Authorization cancelled.') : m
+            )
+          : [...messages, createAssistantMessage(undefined, undefined, 'Authorization cancelled.')];
+        const updatedConversation = { ...conversation, messages: updatedMessages };
+        const updatedConversations = conversationsRef.current.map(c =>
+          c.id === updatedConversation.id ? updatedConversation : c
+        );
+        updateRefsAndDispatch(updatedConversations, updatedConversation, conversation);
+      }
+      return;
+    }
+
+    const resume = async () => {
+      let pendingMessage: Message;
+      try {
+        pendingMessage = JSON.parse(pendingMessageRaw);
+      } catch {
+        return;
+      }
+      // Ensure the WebSocket is connected before calling handleSend
+      if (webSocketModeRef.current && !webSocketConnectedRef.current) {
+        await connectWebSocket();
+      }
+      // Delete the user message + empty assistant placeholder appended during original send, then resubmit.
+      handleSend(pendingMessage, 2);
+    };
+    resume();
+  }, [selectedConversation?.id]);
 
   // Add a new effect to handle streaming state changes
   useEffect(() => {

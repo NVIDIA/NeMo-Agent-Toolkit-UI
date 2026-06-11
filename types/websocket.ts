@@ -44,6 +44,7 @@ export interface SystemInteractionMessage extends WebSocketMessageBase {
     text?: string;
     timeout?: number | null;
     error?: string | null;
+    use_redirect?: boolean;
   };
   thread_id?: string;
 }
