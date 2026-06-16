@@ -37,9 +37,11 @@ import {
   isSystemResponseMessage,
   isSystemIntermediateMessage,
   isSystemInteractionMessage,
+  isOAuthConsentMessage,
   isErrorMessage,
   isSystemResponseComplete,
   isObservabilityTraceMessage,
+  extractOAuthUrl,
 } from '@/types/websocket';
 import HomeContext from '@/pages/api/home/home.context';
 import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
@@ -720,7 +722,27 @@ export const Chat = () => {
    * Processes different message types and updates conversation state
    */
   const handleWebSocketMessage = (message: any) => {
-    // Validate message structure AND conversation ID with detailed error reporting
+    if (isOAuthConsentMessage(message)) {
+      const oauthUrl = extractOAuthUrl(message);
+      if (oauthUrl) {
+        if (isValidConsentPromptURL(oauthUrl)) {
+          window.open(oauthUrl, '_blank', 'noopener,noreferrer');
+        } else {
+          console.error(
+            'OAuth URL validation failed, refusing to open potentially malicious URL:',
+            oauthUrl,
+          );
+          toast.error('Invalid OAuth URL received. Please contact support.');
+        }
+      } else {
+        console.error(
+          'OAuth consent message received but no URL found in content:',
+          message?.content,
+        );
+        toast.error('OAuth URL not found in message content');
+      }
+      return;
+    }
     try {
       validateWebSocketMessageWithConversationId(message);
     } catch (error: any) {
@@ -764,34 +786,6 @@ export const Chat = () => {
 
     // Handle human-in-the-loop interactions using type guard
     if (isSystemInteractionMessage(message)) {
-      // Check for OAuth consent message and securely open OAuth URL
-      if (message?.content?.input_type === 'oauth_consent') {
-        // Expect the OAuth URL to be directly in the message content
-        const oauthUrl =
-          message?.content?.oauth_url ||
-          message?.content?.redirect_url ||
-          message?.content?.text;
-        if (oauthUrl) {
-          // Validate URL before opening to prevent Open Redirect attacks
-          if (isValidConsentPromptURL(oauthUrl)) {
-            // Open the validated OAuth URL in a new tab
-            window.open(oauthUrl, '_blank', 'noopener,noreferrer');
-          } else {
-            console.error(
-              'OAuth URL validation failed, refusing to open potentially malicious URL:',
-              oauthUrl,
-            );
-            toast.error('Invalid OAuth URL received. Please contact support.');
-          }
-        } else {
-          console.error(
-            'OAuth consent message received but no URL found in content:',
-            message?.content,
-          );
-          toast.error('OAuth URL not found in message content');
-        }
-        return; // Don't process further or show modal
-      }
       openModal(message);
       return;
     }
