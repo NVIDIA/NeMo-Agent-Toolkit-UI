@@ -38,6 +38,7 @@ import {
   isSystemIntermediateMessage,
   isSystemInteractionMessage,
   isOAuthConsentMessage,
+  isUserAuthErrorMessage,
   isErrorMessage,
   isSystemResponseComplete,
   isObservabilityTraceMessage,
@@ -786,6 +787,16 @@ export const Chat = () => {
         );
         toast.error('OAuth URL not found in message content');
       }
+      return;
+    }
+    // Auth was cancelled or failed (bare Error payload, no type/conversation_id).
+    // Stop the in-flight request instead of surfacing a raw validation error.
+    if (isUserAuthErrorMessage(message)) {
+      console.warn('Authentication error received over WebSocket:', message);
+      homeDispatch({ field: 'loading', value: false });
+      homeDispatch({ field: 'messageIsStreaming', value: false });
+      activeUserMessageId.current = null;
+      toast.error(message?.message || 'Authentication failed or was cancelled.');
       return;
     }
     try {

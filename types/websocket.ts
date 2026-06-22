@@ -136,6 +136,16 @@ export function isOAuthConsentMessage(
 }
 
 /**
+ * Detects a bare auth-error payload sent when (pre-flight) authentication fails
+ * or is cancelled. These arrive as a plain `Error` object (`{ code, message,
+ * details }`) with no `type`/`conversation_id`, so they must be handled before
+ * structural validation rejects them.
+ */
+export function isUserAuthErrorMessage(message: any): boolean {
+  return message?.code === 'user_auth_error';
+}
+
+/**
  * Validates that a message has a valid conversation ID
  */
 export function validateConversationId(message: any): boolean {
