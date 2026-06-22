@@ -1572,8 +1572,12 @@ export const Chat = () => {
       if (webSocketModeRef.current && !webSocketConnectedRef.current) {
         await connectWebSocket();
       }
-      // Delete the user message + empty assistant placeholder appended during original send, then resubmit.
-      handleSend(pendingMessage, 2);
+      // Delete the user message that triggered auth, plus the assistant bubble if one was
+      // created (e.g. by intermediate steps before consent). Preflight auth has no assistant
+      // bubble, so deleting 2 unconditionally would clobber the previous turn's reply.
+      const lastIsAssistant =
+        selectedConversationRef.current?.messages.at(-1)?.role === 'assistant';
+      handleSend(pendingMessage, lastIsAssistant ? 2 : 1);
     };
     resume();
   }, [selectedConversation?.id]);
