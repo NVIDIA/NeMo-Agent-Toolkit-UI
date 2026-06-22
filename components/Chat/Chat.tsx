@@ -566,10 +566,12 @@ export const Chat = () => {
     const shouldUsePopup = !message.content?.use_redirect;
     if (shouldUsePopup) {
       if (oauthPopupCancelledRef.current) return;
+      // Omit noopener/noreferrer: they force window.open to return null, which would
+      // leave us unable to close the popup once auth completes.
       const popup = window.open(
         oauthUrl,
         'oauth-popup',
-        'width=600,height=700,scrollbars=yes,resizable=yes,noopener,noreferrer'
+        'width=600,height=700,scrollbars=yes,resizable=yes'
       );
       const handleOAuthComplete = (event: MessageEvent) => {
         if (popup && !popup.closed) popup.close();
