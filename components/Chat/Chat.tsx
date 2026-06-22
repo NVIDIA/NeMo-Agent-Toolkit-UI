@@ -339,8 +339,33 @@ export const Chat = () => {
     }
   }, [selectedConversation?.id]);
 
+  // Detect on page load whether we just returned from an OAuth redirect that wasn't completed.
+  // Must run before the WS toggle effect so the cancel guard is in place before connectWebSocket.
+  // This is the only reliable guard for preflight auth, where no user message is pending so
+  // oauth_pending_message is never saved and the resume effect returns early.
   useEffect(() => {
-    if (webSocketMode && !webSocketConnectedRef.current) {
+    const redirectInitiated = sessionStorage.getItem('oauth_redirect_initiated') === 'true';
+    if (!redirectInitiated) return;
+    sessionStorage.removeItem('oauth_redirect_initiated');
+    const urlParams = new URLSearchParams(window.location.search);
+    if (!urlParams.get('oauth_auth_completed')) {
+      sessionStorage.setItem('oauth_redirect_cancelled', 'true');
+      // Preflight cancellation leaves the socket closed with no message to annotate, so the
+      // user would otherwise get no feedback. (When a message is pending, the resume effect
+      // shows an in-chat cancellation message instead, so don't double up.)
+      if (!sessionStorage.getItem('oauth_pending_message')) {
+        toast.error('Authorization cancelled. Send a message to sign in and try again.');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    // Don't auto-reconnect right after a cancelled redirect login: a fresh connection would
+    // re-run preflight auth and bounce the user back to the login page in a loop. The guard is
+    // cleared when the user explicitly sends a message (handleSend).
+    const redirectAuthCancelled =
+      sessionStorage.getItem('oauth_redirect_cancelled') === 'true';
+    if (webSocketMode && !webSocketConnectedRef.current && !redirectAuthCancelled) {
       connectWebSocket();
     } else {
       // todo cancel ongoing connection attempts
@@ -588,7 +613,12 @@ export const Chat = () => {
       };
       window.addEventListener('message', handleOAuthComplete);
     } else {
+      // Don't re-initiate a redirect the user just cancelled (see the reconnect guard).
+      if (sessionStorage.getItem('oauth_redirect_cancelled') === 'true') return;
       persistOAuthPendingMessage();
+      // Mark that a redirect is in flight so we can detect cancellation on reload even
+      // when preflight auth fires before any user message exists (no pending message saved).
+      sessionStorage.setItem('oauth_redirect_initiated', 'true');
       window.location.href = oauthUrl;
     }
   };
@@ -914,6 +944,8 @@ export const Chat = () => {
     async (message: Message, deleteCount = 0, _retry = false) => {
       message.id = uuidv4();
       oauthPopupCancelledRef.current = false;
+      // Explicit user action clears the redirect-cancellation guard so auth can run again.
+      sessionStorage.removeItem('oauth_redirect_cancelled');
 
       // Set the active user message ID for WebSocket message tracking
       activeUserMessageId.current = message.id;
@@ -1561,6 +1593,9 @@ export const Chat = () => {
 
     // If the user pressed back without completing OAuth, show a cancellation message.
     if (!authCompleted) {
+      // Suppress automatic re-prompting until the user explicitly acts again. Without this,
+      // preflight + redirect auth loops: cancel -> reload -> preflight -> redirect -> cancel...
+      sessionStorage.setItem('oauth_redirect_cancelled', 'true');
       const conversation = selectedConversationRef.current;
       if (conversation) {
         const messages = conversation.messages;
