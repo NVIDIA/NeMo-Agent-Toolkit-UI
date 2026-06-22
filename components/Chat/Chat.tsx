@@ -573,7 +573,12 @@ export const Chat = () => {
         'oauth-popup',
         'width=600,height=700,scrollbars=yes,resizable=yes'
       );
+      // Only trust messages from our own popup. The cancel page is posted from the NAT
+      // server origin (distinct from both this app and the IdP that oauthUrl points to)
+      // with targetOrigin '*', so an origin check can't be used; identity of the source
+      // window is the correct trust boundary and survives the popup's cross-origin hops.
       const handleOAuthComplete = (event: MessageEvent) => {
+        if (event.source !== popup) return;
         if (popup && !popup.closed) popup.close();
         window.removeEventListener('message', handleOAuthComplete);
         if (event.data?.type === 'AUTH_CANCELLED') {
