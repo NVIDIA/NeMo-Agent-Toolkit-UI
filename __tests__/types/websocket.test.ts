@@ -19,6 +19,7 @@ import {
   SystemIntermediateMessage,
   SystemInteractionMessage,
   ErrorMessage,
+  OAuthModePreferenceMessage,
 } from '@/types/websocket';
 
 describe('WebSocket Type Guards', () => {
@@ -370,6 +371,16 @@ describe('WebSocket Type Guards', () => {
       };
 
       expect(shouldAppendResponseContent(message)).toBe(false);
+    });
+  });
+
+  describe('OAuthModePreferenceMessage', () => {
+    it('builds an oauth mode preference message', () => {
+      const msg: OAuthModePreferenceMessage = {
+        type: 'auth_message',
+        payload: { method: 'oauth_mode_preference', mode: 'popup' },
+      };
+      expect(msg.payload.mode).toBe('popup');
     });
   });
 

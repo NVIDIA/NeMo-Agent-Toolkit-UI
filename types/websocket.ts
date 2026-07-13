@@ -44,7 +44,6 @@ export interface SystemInteractionMessage extends WebSocketMessageBase {
     text?: string;
     timeout?: number | null;
     error?: string | null;
-    use_redirect?: boolean;
   };
   thread_id?: string;
 }
@@ -74,6 +73,15 @@ export type WebSocketInbound =
   | SystemInteractionMessage
   | ObservabilityTraceMessage
   | ErrorMessage;
+
+// Outbound: UI-declared OAuth presentation preference (not a credential).
+export interface OAuthModePreferenceMessage {
+  type: 'auth_message';
+  payload: {
+    method: 'oauth_mode_preference';
+    mode: 'redirect' | 'popup';
+  };
+}
 
 // Intermediate step structure
 export interface IntermediateStep {
