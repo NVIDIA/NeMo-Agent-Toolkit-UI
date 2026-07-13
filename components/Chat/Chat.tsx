@@ -10,7 +10,7 @@ import {
 import toast from 'react-hot-toast';
 import { v4 as uuidv4 } from 'uuid';
 
-import { webSocketMessageTypes } from '@/utils/app/const';
+import { webSocketMessageTypes, getOAuthMode } from '@/utils/app/const';
 import {
   saveConversation,
   saveConversations,
@@ -499,6 +499,17 @@ export const Chat = () => {
         homeDispatch({ field: 'webSocketConnected', value: true });
         webSocketRef.current = ws;
 
+        // Declare the OAuth presentation mode up front, on connect, so the server
+        // has it before any auth flow starts. In redirect mode the consent prompt
+        // navigates this tab away via window.location.href, which can drop a
+        // just-queued WebSocket frame; sending on open avoids that race.
+        ws.send(
+          JSON.stringify({
+            type: 'auth_message',
+            payload: { method: 'oauth_mode_preference', mode: getOAuthMode() },
+          }),
+        );
+
         // Restore activeUserMessageId from sessionStorage on reconnect
         const conversationId = selectedConversationRef.current?.id;
         if (conversationId) {
@@ -589,7 +600,7 @@ export const Chat = () => {
   const openOAuthConsentUrl = (message: WebSocketInbound, oauthUrl: string) => {
     if (!isOAuthConsentMessage(message)) return;
 
-    const shouldUsePopup = !message.content?.use_redirect;
+    const shouldUsePopup = getOAuthMode() === 'popup';
     if (shouldUsePopup) {
       if (oauthPopupCancelledRef.current) return;
       // Omit noopener/noreferrer: they force window.open to return null, which would

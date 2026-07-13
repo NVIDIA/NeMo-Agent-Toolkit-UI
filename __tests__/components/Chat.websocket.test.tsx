@@ -14,6 +14,7 @@ import {
 import { InteractionModal } from '@/components/Chat/ChatInteractionMessage';
 import MockWebSocket from '@/__mocks__/websocket';
 import { SESSION_COOKIE_NAME } from '@/constants';
+import { getOAuthMode } from '@/utils/app/const';
 
 // Mock react-hot-toast for notification tests
 jest.mock('react-hot-toast', () => ({
@@ -205,6 +206,35 @@ describe('WebSocket Functionality', () => {
       expect(ws.url).toBe(wsUrl);
       expect(ws.url).toContain('session=');
       expect(ws.url).toContain(encodeURIComponent(sessionId));
+    });
+  });
+
+  describe('OAuth Mode Preference on Connect', () => {
+    it('should send oauth mode preference frame once the socket opens (redirect by default)', () => {
+      // Mirror the Chat component's ws.onopen: declare the OAuth presentation
+      // mode up front so the server has it before any auth flow starts.
+      const ws = new MockWebSocket('ws://test.com/websocket');
+      ws.send = jest.fn();
+
+      ws.onopen = () => {
+        ws.send(
+          JSON.stringify({
+            type: 'auth_message',
+            payload: { method: 'oauth_mode_preference', mode: getOAuthMode() },
+          }),
+        );
+      };
+
+      // Drive the connection open via the mock helper.
+      ws.mockOpen();
+
+      expect(ws.send).toHaveBeenCalledTimes(1);
+      expect(ws.send).toHaveBeenCalledWith(
+        JSON.stringify({
+          type: 'auth_message',
+          payload: { method: 'oauth_mode_preference', mode: 'redirect' },
+        }),
+      );
     });
   });
 
