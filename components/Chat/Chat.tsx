@@ -348,11 +348,15 @@ export const Chat = () => {
   // This is the only reliable guard for preflight auth, where no user message is pending so
   // oauth_pending_message is never saved and the resume effect returns early.
   useEffect(() => {
+    // Read the in-flight-redirect marker: 'true' means this page load is a return from a redirect
+    // login. Clear it immediately so this detection runs exactly once per redirect round-trip.
     const redirectInitiated = sessionStorage.getItem('oauth_redirect_initiated') === 'true';
     if (!redirectInitiated) return;
     sessionStorage.removeItem('oauth_redirect_initiated');
     const urlParams = new URLSearchParams(window.location.search);
     if (!urlParams.get('oauth_auth_completed')) {
+      // Returned without the completion flag => the user abandoned the login. Set the cancel guard
+      // so the auto-reconnect effect doesn't immediately re-trigger preflight and loop.
       sessionStorage.setItem('oauth_redirect_cancelled', 'true');
       // Preflight cancellation leaves the socket closed with no message to annotate, so the
       // user would otherwise get no feedback. (When a message is pending, the resume effect
@@ -584,11 +588,16 @@ export const Chat = () => {
     }
   }, [intermediateStepOverride]);
 
+  // Same-tab redirect login reloads the page, so the message that triggered auth must survive the
+  // navigation to be resubmitted on return. See the inline comments at each oauth_* sessionStorage
+  // site for the full key lifecycle.
   const persistOAuthPendingMessage = () => {
     const conversation = selectedConversationRef.current;
     if (!conversation) return;
     const lastUserMessage = fetchLastMessage({ messages: conversation.messages, role: 'user' });
     if (!lastUserMessage) return;
+    // Persist the message (and its conversation) that triggered auth so the resume effect can
+    // resubmit it after the redirect navigates the tab away and back. Cleared once resubmitted.
     sessionStorage.setItem('oauth_pending_message', JSON.stringify(lastUserMessage));
     sessionStorage.setItem('oauth_pending_conversation_id', conversation.id);
   };
@@ -1598,6 +1607,8 @@ export const Chat = () => {
       window.history.replaceState({}, '', cleanUrl);
     }
 
+    // Consume the pending-message keys now that this return has been handled (whether auth
+    // completed or was cancelled) so they don't replay on a later, unrelated page load.
     sessionStorage.removeItem('oauth_pending_message');
     sessionStorage.removeItem('oauth_pending_conversation_id');
 
