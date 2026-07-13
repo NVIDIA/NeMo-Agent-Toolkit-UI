@@ -213,18 +213,18 @@ describe('WebSocket Functionality', () => {
     // buildOAuthModePreferenceMessage is the EXACT symbol Chat.tsx's ws.onopen
     // serializes and sends on connect (ws.send(JSON.stringify(buildOAuthModePreferenceMessage()))),
     // so asserting its shape here guards the real frame the server receives.
-    const originalMode = process.env.NEXT_PUBLIC_OAUTH_MODE;
+    const originalMode = process.env.NEXT_PUBLIC_NAT_OAUTH_MODE;
 
     afterEach(() => {
       if (originalMode === undefined) {
-        delete process.env.NEXT_PUBLIC_OAUTH_MODE;
+        delete process.env.NEXT_PUBLIC_NAT_OAUTH_MODE;
       } else {
-        process.env.NEXT_PUBLIC_OAUTH_MODE = originalMode;
+        process.env.NEXT_PUBLIC_NAT_OAUTH_MODE = originalMode;
       }
     });
 
     it('builds the redirect-mode frame by default', () => {
-      delete process.env.NEXT_PUBLIC_OAUTH_MODE;
+      delete process.env.NEXT_PUBLIC_NAT_OAUTH_MODE;
 
       expect(buildOAuthModePreferenceMessage()).toEqual({
         type: 'auth_message',
@@ -232,8 +232,8 @@ describe('WebSocket Functionality', () => {
       });
     });
 
-    it('builds the popup-mode frame when NEXT_PUBLIC_OAUTH_MODE is popup', () => {
-      process.env.NEXT_PUBLIC_OAUTH_MODE = 'popup';
+    it('builds the popup-mode frame when NEXT_PUBLIC_NAT_OAUTH_MODE is popup', () => {
+      process.env.NEXT_PUBLIC_NAT_OAUTH_MODE = 'popup';
 
       expect(buildOAuthModePreferenceMessage()).toEqual({
         type: 'auth_message',

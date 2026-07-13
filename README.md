@@ -115,6 +115,7 @@ The application uses a unified proxy architecture for improved security. All con
 - `NAT_MAX_FILE_SIZE_STRING` - Maximum file upload size for all operations (e.g., '5mb', '10mb', '1gb')
 - `NEXT_TELEMETRY_DISABLED` - Disable Next.js telemetry data collection (1 to disable)
 - `NEXT_PUBLIC_MCP_PATH` - MCP client API path (defaults to `/mcp/client/tool/list`)
+- `NEXT_PUBLIC_NAT_OAUTH_MODE` - How the OAuth 2.0 login page opens: `redirect` (default) or `popup`
 
 ### Welcome Message Customization
 

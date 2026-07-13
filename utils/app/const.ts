@@ -22,7 +22,7 @@ export type OAuthMode = 'redirect' | 'popup';
 // The UI, not the server, decides how the OAuth login page opens. Redirect is the
 // default because it survives popup blockers; popup is opt-in.
 export const getOAuthMode = (): OAuthMode =>
-  process.env.NEXT_PUBLIC_OAUTH_MODE === 'popup' ? 'popup' : 'redirect';
+  process.env.NEXT_PUBLIC_NAT_OAUTH_MODE === 'popup' ? 'popup' : 'redirect';
 
 // The exact frame the UI sends on WebSocket open to declare its OAuth presentation
 // mode. Kept here (not inline in Chat) so both production and tests share one source
