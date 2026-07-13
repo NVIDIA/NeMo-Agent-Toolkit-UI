@@ -10,7 +10,11 @@ import {
 import toast from 'react-hot-toast';
 import { v4 as uuidv4 } from 'uuid';
 
-import { webSocketMessageTypes, getOAuthMode } from '@/utils/app/const';
+import {
+  webSocketMessageTypes,
+  getOAuthMode,
+  buildOAuthModePreferenceMessage,
+} from '@/utils/app/const';
 import {
   saveConversation,
   saveConversations,
@@ -503,12 +507,7 @@ export const Chat = () => {
         // has it before any auth flow starts. In redirect mode the consent prompt
         // navigates this tab away via window.location.href, which can drop a
         // just-queued WebSocket frame; sending on open avoids that race.
-        ws.send(
-          JSON.stringify({
-            type: 'auth_message',
-            payload: { method: 'oauth_mode_preference', mode: getOAuthMode() },
-          }),
-        );
+        ws.send(JSON.stringify(buildOAuthModePreferenceMessage()));
 
         // Restore activeUserMessageId from sessionStorage on reconnect
         const conversationId = selectedConversationRef.current?.id;
