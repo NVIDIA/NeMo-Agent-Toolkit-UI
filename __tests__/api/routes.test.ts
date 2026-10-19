@@ -97,7 +97,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         expect(result.stream).toBe(false);
         expect(result.messages).toEqual(messages);
-        expect(result.model).toBe('placeholder');
+        expect(result.model).toBeUndefined();
         expect(result.temperature).toBe(0.7);
       });
 
@@ -183,7 +183,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const result = buildChatPayload(messages, true, '{invalid json}');
 
         expect(result.stream).toBe(false);
-        expect(result.model).toBe('placeholder');
+        expect(result.model).toBeUndefined();
         expect(result.temperature).toBe(0.7);
       });
     });
@@ -199,7 +199,7 @@ describe('Proxy Request Transformers and Response Processors', () => {
 
         expect(result.stream).toBe(true);
         expect(result.messages).toEqual(messages);
-        expect(result.model).toBe('placeholder');
+        expect(result.model).toBeUndefined();
         expect(result.temperature).toBe(0.7);
       });
 
@@ -293,8 +293,22 @@ describe('Proxy Request Transformers and Response Processors', () => {
         const result = buildChatStreamPayload(messages, true, '{invalid json}');
 
         expect(result.stream).toBe(true);
-        expect(result.model).toBe('placeholder');
+        expect(result.model).toBeUndefined();
         expect(result.temperature).toBe(0.7);
+      });
+
+      it('should forward a model supplied through optionalParams', () => {
+        const messages = [{ role: 'user', content: 'Test' }];
+        const result = buildChatStreamPayload(messages, true, '{"model": "custom-model"}');
+
+        expect(result.model).toBe('custom-model');
+      });
+
+      it('should not add a model field when none is supplied', () => {
+        const messages = [{ role: 'user', content: 'Test' }];
+        const result = buildChatStreamPayload(messages, true, '');
+
+        expect('model' in result).toBe(false);
       });
     });
 
